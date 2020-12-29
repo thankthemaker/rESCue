@@ -8,6 +8,7 @@ extern Adafruit_NeoPixel pixels;
 class LedController {
     public:
         LedController();
+        void init();
         void fadeIn(boolean isForward);
         void fadeOut(boolean isForward);
         void flash(boolean isForward);

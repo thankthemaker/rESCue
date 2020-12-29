@@ -29,6 +29,7 @@ void setup() {
   
   // initialize the UART bridge from VESC to Bluetooth
   bridge->init();
+  ledController->init();
 
   delay(100);
   // initialize the LED (either COB or Neopixel)

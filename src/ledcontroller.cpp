@@ -2,7 +2,9 @@
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
-LedController::LedController() {
+LedController::LedController() {}
+
+void LedController::init() {
   pixels.begin(); // This initializes the NeoPixel library.
 }
 
@@ -81,6 +83,9 @@ void LedController::flash(boolean isForward) {
 }
 
 void LedController::startSequence(byte red, byte green, byte blue, int speedDelay) {
+#ifdef DEBUG
+    Serial.println("Startsequence ");
+#endif
   for (int j=0; j<10; j++) {  //do 10 cycles of chasing
     for (int q=0; q < 3; q++) {
       for (int i=0; i < NUMPIXELS; i=i+3) {

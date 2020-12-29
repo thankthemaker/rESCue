@@ -7,6 +7,9 @@ BluetoothSerial bleSerial;
 BluetoothBridge::BluetoothBridge() {}
 
 void BluetoothBridge::init() {
+ #ifdef DEBUG
+  Serial.println("BluetoothBridge init");
+#endif
     bleSerial.begin(BT_NAME);
     vescSerial.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);         
 }
