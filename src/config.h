@@ -17,6 +17,12 @@
 #define MAX_BATTARY_VOLTAGE 4200 // set your max. battery voltage here
 #define MIN_BATTARY_VOLTAGE 3600 // set your max. battery voltage here
 
+#define VESC_BAUD_RATE 115200
+#define VESC_RX_PIN 24
+#define VESC_TX_PIN 25
+
+#define BT_NAME "FunWheel Controller"
+
 #define DEBUG
 
 #endif

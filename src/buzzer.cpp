@@ -1,4 +1,4 @@
-#include "buzzer.h";
+#include "buzzer.h"
 
 #ifdef ESP32
   int channel = 0;

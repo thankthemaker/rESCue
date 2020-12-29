@@ -1,8 +1,7 @@
 #ifndef BUZZER_H_
 #define BUZZER_H_
 
-#include "Arduino.h";
-
+#include "Arduino.h"
 
 #ifndef BUZPIN
  #define BUZPIN 0  // digital pin for buzzer

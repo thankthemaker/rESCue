@@ -2,6 +2,7 @@
 #define BATTERY_CONTROLLER_H
 
 #include "config.h"
+#include "buzzer.h"
 
 class BatteryController {
     public:
