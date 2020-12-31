@@ -70,7 +70,7 @@ void LedController::flash(boolean isForward) {
 #ifdef DEBUG
   Serial.println("flash " + String(isForward));
 #endif
-  for(int j=0; j<20; j++) {
+  for(int j=0; j<10; j++) {
     for(int i = 0; i < NUMPIXELS/2; i++ ) {
       isForward ? this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0) : this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
     }
@@ -84,7 +84,7 @@ void LedController::flash(boolean isForward) {
 
 void LedController::startSequence(byte red, byte green, byte blue, int speedDelay) {
 #ifdef DEBUG
-    Serial.println("Startsequence ");
+    Serial.println("startSequence ");
 #endif
   for (int j=0; j<10; j++) {  //do 10 cycles of chasing
     for (int q=0; q < 3; q++) {
@@ -107,9 +107,9 @@ void LedController::loop(int *new_forward, int *old_forward, int *new_backward, 
    // is there a change detected
   if(old_forward != new_forward || old_backward != new_backward) { 
 #ifdef DEBUG
-    Serial.println("change detected ");
-    Serial.println("forward is "  + String(*new_forward)  + " was " + String(*old_forward));
-    Serial.println("backward is " + String(*new_backward) + " was " + String(*old_backward));
+    Serial.print("change detected: ");
+    Serial.print(", forward is "  + String(*new_forward)  + " was " + String(*old_forward));
+    Serial.println(", backward is " + String(*new_backward) + " was " + String(*old_backward));
 #endif
 
   if(*new_forward == HIGH && *new_backward == LOW) {

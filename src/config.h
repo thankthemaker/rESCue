@@ -3,10 +3,10 @@
 
 #include <Adafruit_NeoPixel.h>
 
-#define PIN_NEOPIXEL   23
-#define PIN_FORWARD    34
-#define PIN_BACKWARD   35
-#define PIN_BRAKE      33
+#define PIN_NEOPIXEL   5
+#define PIN_FORWARD    18
+#define PIN_BACKWARD   19
+#define PIN_BRAKE      21
 #define BUZPIN         0
 
 // How many NeoPixels are attached to the Arduino?
@@ -18,11 +18,11 @@
 #define MIN_BATTARY_VOLTAGE 3600 // set your max. battery voltage here
 
 #define VESC_BAUD_RATE 115200
-#define VESC_RX_PIN 24
-#define VESC_TX_PIN 25
+#define VESC_RX_PIN 16 //ESP32 UART2-RX
+#define VESC_TX_PIN 17 //ESP32 UART2-TX
 
 #define BT_NAME "FunWheel Controller"
 
-#define DEBUG
+//#define DEBUG
 
 #endif

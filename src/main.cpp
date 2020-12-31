@@ -4,6 +4,7 @@
 #include "batterycontroller.h"
 #include "buzzer.h"
 #include "btbridge.h"
+//#include "vescuartcontroller.h"
 
 int old_forward  = LOW;
 int old_backward = LOW;
@@ -12,16 +13,18 @@ int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
 int currentVoltage = 0;
+int lastVescValues = 0;
 
 LedController *ledController = new LedController();
 BatteryController * batController = new BatteryController();
 Buzzer *buzzer = new Buzzer();
 BluetoothBridge *bridge = new BluetoothBridge();
+//VescUartController *vescUart = new VescUartController();
 
 void setup() {
-#ifdef DEBUG
+//#ifdef DEBUG
   Serial.begin(115200);
-#endif
+//#endif
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
@@ -30,6 +33,7 @@ void setup() {
   // initialize the UART bridge from VESC to Bluetooth
   bridge->init();
   ledController->init();
+  //vescUart->init();
 
   delay(100);
   // initialize the LED (either COB or Neopixel)
@@ -57,6 +61,11 @@ void loop() {
 
   // call the VESC UART-to-Bluetooth bridge
   bridge->loop();
+
+  if(millis() - lastVescValues > 2000) {
+    //vescUart->getVescValues();
+    lastVescValues = millis();
+  }
 
   delay(20);
 }
