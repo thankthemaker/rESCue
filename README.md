@@ -61,7 +61,7 @@ The recommended COB (see above) are very bright, use up to 10W and  get very hot
 
 In this version WS28xx (aka Neopixel) LEDs are used for the front- and backlight. Dependening on the number of LEDs and the specs of the used ESP32 and WS28xx, it might also be possible to connect the WS28xx stripe directly to 3,3V of the ESP32. Nevertheless it's recommended to safely power the WS28xx stripe with a separate DC/DC converter.
 
-![Neopoxel wiring](neopixel-wiring.png)
+![Neopixel wiring](neopixel-wiring.png)
 
 Using any other number of LEDs then 16, the `NUMPIXELS` definition has to be changed in the config.h file.
 
