@@ -49,6 +49,14 @@ When powered the lights show a short startup sequence. While riding, the LEDs in
 
 When braking the lights at the back will flash red.
 
+#### COB version
+
+![COB wiring](cob-wiring.png)
+
+#### WS28xx version
+
+_ToDo_
+
 ### Battery monitor
 
 The battery level is monitored against the configured values. If the battery level drops close the configured value, the piezo buzzer will give you a warning tone. If the battery level drops under the configured value, an alarm tone sounds.
