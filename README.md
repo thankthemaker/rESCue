@@ -51,11 +51,19 @@ When braking the lights at the back will flash red.
 
 #### COB version
 
+In this version, two 12V COB modules are controlled by MOSFETs. When using tri-color COB, switching the light color from white to red and vice versa based on the driving direction is supported.
+
+The recommended COB (see above) are very bright, use up to 10W and  get very hot when operating at 12V. Therefore they should be operates with 10.5V only.
+
 ![COB wiring](cob-wiring.png)
 
-#### WS28xx version
+#### WS28xx (Neopixel) version
 
-_ToDo_
+In this version WS28xx (aka Neopixel) LEDs are used for the front- and backlight. Dependening on the number of LEDs and the specs of the used ESP32 and WS28xx, it might also be possible to connect the WS28xx stripe directly to 3,3V of the ESP32. Nevertheless it's recommended to safely power the WS28xx stripe with a separate DC/DC converter.
+
+![Neopoxel wiring](neopixel-wiring.png)
+
+Using any other number of LEDs then 16, the `NUMPIXELS` definition has to be changed in the config.h file.
 
 ### Battery monitor
 
