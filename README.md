@@ -43,6 +43,10 @@ Connect your Piezo buzzer with the negative lead to GPIO 0 and the positive lead
 
 ## Features
 
+- Support for Front- and Backlight
+- Battery monitor (visual and acoustic)
+- transparent BLE-UART bridge for VESC-App
+
 ### Front- and backlight control
 
 When powered the lights show a short startup sequence. While riding, the LEDs in drive direction are shining white and the LEDs facing against riding direction shine red.
