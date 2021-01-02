@@ -1,16 +1,15 @@
-#include "btbridge.h"
+#include "BleBridge.h"
 
 HardwareSerial vescSerial(2);
-//BluetoothSerial bleSerial;
-
 BLEServer *pServer = NULL;
 BLECharacteristic * pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
-BluetoothBridge::BluetoothBridge() {}
+BleBridge::BleBridge() {}
 
-void initBluetooth(){
+void initBle(){
+
   // Create the BLE Device
   BLEDevice::init(BT_NAME);
 
@@ -41,19 +40,20 @@ void initBluetooth(){
 
   // Start advertising
   pServer->getAdvertising()->start();
-  Serial.println("Waiting a client connection to notify...");
+#if DEBUG > 0
+  Serial.println("Waiting for a BLE client connection...");
+#endif
 }
 
-void BluetoothBridge::init() {
-#ifdef DEBUG
-  Serial.println("BluetoothBridge init");
+void BleBridge::init() {
+#if DEBUG > 0
+  Serial.println("BleBridge init");
 #endif
-  initBluetooth();
-  //bleSerial.begin(BT_NAME);
+  initBle();
   vescSerial.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);         
 }
 
-void BluetoothBridge::loop() {
+void BleBridge::loop() {
     if (deviceConnected) {
         if(vescSerial.available()) {
           uint8_t incomingByte = vescSerial.read();
@@ -67,7 +67,9 @@ void BluetoothBridge::loop() {
     if (!deviceConnected && oldDeviceConnected) {
         delay(500); // give the bluetooth stack the chance to get things ready
         pServer->startAdvertising(); // restart advertising
+#if DEBUG > 0
         Serial.println("start advertising");
+#endif
         oldDeviceConnected = deviceConnected;
     }
     // connecting

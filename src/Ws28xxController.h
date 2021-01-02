@@ -2,12 +2,18 @@
 #define LED_CONTROLLER_H
 
 #include "config.h"
+#include "ILedController.h"
+#include <Adafruit_NeoPixel.h>
+
+#ifndef PIN_NEOPIXEL
+ #define PIN_NEOPIXEL   5
+#endif
 
 extern Adafruit_NeoPixel pixels;
 
-class LedController {
+class Ws28xxController : public ILedController {
     public:
-        LedController();
+        Ws28xxController();
         void init();
         void fadeIn(boolean isForward);
         void fadeOut(boolean isForward);

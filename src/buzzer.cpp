@@ -1,4 +1,4 @@
-#include "buzzer.h"
+#include "Buzzer.h"
 
 #ifdef ESP32
   int channel = 0;
@@ -54,8 +54,12 @@ void Buzzer::beep(byte number){
 }
 
 void Buzzer::startSequence() {
+  for(int i=0; i<3; i++) {
+    if(i%2 == 0) beep(1);
+    beep(3);
+  }
 }
 
 void Buzzer::alarm() {
-  this->beep(4);
+  beep(4);
 }

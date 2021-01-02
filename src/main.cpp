@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include "config.h"
-#include "ledcontroller.h"
-#include "batterycontroller.h"
-#include "buzzer.h"
-#include "btbridge.h"
-//#include "vescuartcontroller.h"
+#include "BatteryController.h"
+#include "Buzzer.h"
+#include "BleBridge.h"
+#include "ILedController.h"
+//#include "VescUartController.h"
+#include "Ws28xxController.h"
 
 int old_forward  = LOW;
 int old_backward = LOW;
@@ -15,30 +16,31 @@ int new_brake    = LOW;
 int currentVoltage = 0;
 int lastVescValues = 0;
 
-LedController *ledController = new LedController();
-BatteryController * batController = new BatteryController();
+ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
+BatteryController *batController = new BatteryController();
 Buzzer *buzzer = new Buzzer();
-BluetoothBridge *bridge = new BluetoothBridge();
+BleBridge *bridge = new BleBridge();
 //VescUartController *vescUart = new VescUartController();
 
 void setup() {
-//#ifdef DEBUG
+#if DEBUG > 0
   Serial.begin(115200);
-//#endif
+#endif
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
   pinMode(PIN_BRAKE, INPUT);
-  
+
   // initialize the UART bridge from VESC to Bluetooth
   bridge->init();
+  // initialize the LED (either COB or Neopixel)
   ledController->init();
   //vescUart->init();
 
   delay(100);
-  // initialize the LED (either COB or Neopixel)
   ledController->startSequence(0, 0, MAX_BRIGHTNESS, 100);
   ledController->stop();
+  buzzer->startSequence();
 }
 
 void loop() {

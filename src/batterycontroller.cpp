@@ -1,4 +1,4 @@
-#include "batterycontroller.h"
+#include "BatteryController.h"
 
 int min_voltage = MIN_BATTARY_VOLTAGE;
 int max_voltage = MAX_BATTARY_VOLTAGE;

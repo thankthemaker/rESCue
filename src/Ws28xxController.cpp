@@ -1,23 +1,26 @@
-#include "ledcontroller.h"
+#include "ws28xxcontroller.h"
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
-LedController::LedController() {}
+Ws28xxController::Ws28xxController() {}
 
-void LedController::init() {
+void Ws28xxController::init() {
+#if DEBUG > 0
+  Serial.println("Initializing Ws28xxController");
+#endif
   pixels.begin(); // This initializes the NeoPixel library.
 }
 
-void LedController::setPixel(int pixel, byte red, byte green, byte blue) {
+void Ws28xxController::setPixel(int pixel, byte red, byte green, byte blue) {
    pixels.setPixelColor(pixel, pixels.Color(red, green, blue));
 }
 
-void LedController::showStrip() {
+void Ws28xxController::showStrip() {
    pixels.show();
 }
 
-void LedController::stop() {
-#ifdef DEBUG
+void Ws28xxController::stop() {
+#if DEBUG > 1
   Serial.println("stop");
 #endif
   for(int i = 0; i < NUMPIXELS; i++ ) {
@@ -26,7 +29,7 @@ void LedController::stop() {
   this->showStrip();
 }
 
-void LedController::forward(byte brightness) {
+void Ws28xxController::forward(byte brightness) {
   for(int i = 0; i < NUMPIXELS/2; i++ ) {
     this->setPixel(i, brightness, brightness, brightness);
   }
@@ -36,7 +39,7 @@ void LedController::forward(byte brightness) {
   this->showStrip();
 } 
 
-void LedController::backward(byte brightness) {
+void Ws28xxController::backward(byte brightness) {
   for(int i = 0; i < NUMPIXELS/2; i++ ) {
     this->setPixel(i, brightness, 0, 0);
   }
@@ -46,8 +49,8 @@ void LedController::backward(byte brightness) {
   this->showStrip();
 } 
 
-void LedController::fadeIn(boolean isForward) {
-#ifdef DEBUG
+void Ws28xxController::fadeIn(boolean isForward) {
+#if DEBUG > 1
   Serial.println("fadein " + String(isForward));
 #endif
   for(int k = 0; k < MAX_BRIGHTNESS+1; k++) {
@@ -56,8 +59,8 @@ void LedController::fadeIn(boolean isForward) {
   }
 }
 
-void LedController::fadeOut(boolean isForward){
-#ifdef DEBUG
+void Ws28xxController::fadeOut(boolean isForward){
+#if DEBUG > 1
    Serial.println("fadeout " + String(isForward));
 #endif
    for(int k = MAX_BRIGHTNESS; k >= 0; k--) {
@@ -66,8 +69,8 @@ void LedController::fadeOut(boolean isForward){
     }
 }
 
-void LedController::flash(boolean isForward) {
-#ifdef DEBUG
+void Ws28xxController::flash(boolean isForward) {
+#if DEBUG > 1
   Serial.println("flash " + String(isForward));
 #endif
   for(int j=0; j<10; j++) {
@@ -82,9 +85,9 @@ void LedController::flash(boolean isForward) {
   }
 }
 
-void LedController::startSequence(byte red, byte green, byte blue, int speedDelay) {
-#ifdef DEBUG
-    Serial.println("startSequence ");
+void Ws28xxController::startSequence(byte red, byte green, byte blue, int speedDelay) {
+#if DEBUG > 1
+    Serial.println("Ws28xxController startSequence ");
 #endif
   for (int j=0; j<10; j++) {  //do 10 cycles of chasing
     for (int q=0; q < 3; q++) {
@@ -103,10 +106,10 @@ void LedController::startSequence(byte red, byte green, byte blue, int speedDela
 }
 
 
-void LedController::loop(int *new_forward, int *old_forward, int *new_backward, int *old_backward) {
+void Ws28xxController::loop(int *new_forward, int *old_forward, int *new_backward, int *old_backward) {
    // is there a change detected
   if(old_forward != new_forward || old_backward != new_backward) { 
-#ifdef DEBUG
+#if DEBUG > 1
     Serial.print("change detected: ");
     Serial.print(", forward is "  + String(*new_forward)  + " was " + String(*old_forward));
     Serial.println(", backward is " + String(*new_backward) + " was " + String(*old_backward));
