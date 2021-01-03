@@ -105,3 +105,9 @@ To build the firmware and upload it to you ESP32 MCU run
 ```shell
 platformio run --target upload
 ```
+
+## Donate
+
+If you'd like to donate for my work
+
+[![Donate with PayPal](https://raw.githubusercontent.com/thankthemaker/funwheel-controller/master/donate-button.png ](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
