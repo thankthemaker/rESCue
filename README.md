@@ -83,6 +83,8 @@ If a WS28xx stripe is connected, the battery level will also been shown in 100/P
 
 The VESC applications for Desktop and Mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
 
+![ESP32 BLE wiring](esp32-ble-wiring.png)
+
 ## Build Firmware
 
 This project is build on PlatformIO. To build the firmware for the ESP32 install the [core version](https://platformio.org/install/cli) of PlatformIO to your computer. An alternative way is to install the PlatformIO extension for your [favourite IDE](https://platformio.org/install/ide).
