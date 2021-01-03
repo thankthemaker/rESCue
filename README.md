@@ -60,7 +60,7 @@ When braking the lights at the back will flash red.
 
 In this version, two 12V COB modules are controlled by MOSFETs. When using tri-color COB, switching the light color from white to red and vice versa based on the driving direction is supported.
 
-The recommended COB (see above) are very bright, use up to 10W and  get very hot when operating at 12V. Therefore they should be operates with 10.5V only.
+The recommended COB (see above) are very bright, use up to 10W and  get very hot when operating at 12V. Therefore they should be operated at 10.5V only.
 
 ![COB wiring](cob-wiring.png)
 
