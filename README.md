@@ -82,6 +82,8 @@ The battery level is monitored against the configured values. If the battery lev
 
 If a WS28xx stripe is connected, the battery level will also been shown in 100/PIXEL_NUMBER steps. (Coming soon)
 
+For further information on measuring voltages with the ESP32, check this [great video](https://www.youtube.com/watch?v=5srvxIm1mcQ).
+
 ### Transparent BLE-UART proxy for VESC app
 
 The VESC applications for Desktop and Mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
