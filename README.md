@@ -110,4 +110,4 @@ platformio run --target upload
 
 If you'd like to donate for my work
 
-[![Donate with PayPal](https://raw.githubusercontent.com/thankthemaker/funwheel-controller/master/donate-button.png ](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
+[![Donate with PayPal](https://github.com/thankthemaker/funwheel-controller/raw/master/donate-button.png) ](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
