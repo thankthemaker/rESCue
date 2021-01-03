@@ -34,6 +34,8 @@ void setup() {
   vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);         
   delay(50);
 
+  // initializes the battery monitor
+  batController->init();
   // initialize the UART bridge from VESC to Bluetooth
   bridge->init(&vesc);
   // initialize the LED (either COB or Neopixel)
@@ -46,6 +48,7 @@ void setup() {
 }
 
 void loop() {
+/*
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
@@ -64,4 +67,11 @@ void loop() {
 
   // call the VESC UART-to-Bluetooth bridge
   bridge->loop();
+*/
+
+  for(float val=50.4; val>40; val=val-0.1) {
+    batController->updateBatteryBar(val);
+    delay(500);
+  }
+  delay(5000);
 }
