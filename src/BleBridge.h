@@ -1,7 +1,6 @@
 #ifndef BLUETOOTH_BRIDGE_H
 #define BLUETOOTH_BRIDGE_H
 
-#include <LoopbackStream.h>
 #include "config.h"
 #include "BluetoothSerial.h"
 #include <HardwareSerial.h>
@@ -15,13 +14,13 @@
 #define CHARACTERISTIC_UUID_RX "0A7EFBDE-7E87-4CDC-AF88-49888AD819B0"
 #define CHARACTERISTIC_UUID_TX "0A7EFBDE-7E87-4CDC-AF88-49888AD819B0"
 
-extern HardwareSerial vescSerial;
+extern Stream* vescSerial;
 extern bool deviceConnected; 
 
 class BleBridge {
     public:
         BleBridge();
-        void init();
+        void init(Stream *vesc);
         void loop();
 };
 
@@ -47,7 +46,7 @@ class BleCallbacks: public BLECharacteristicCallbacks {
 
       if (rxValue.length() > 0) {
         for (int i = 0; i < rxValue.length(); i++) {
-          vescSerial.write(rxValue[i]);
+          vescSerial->write(rxValue[i]);
         }
       }
     }

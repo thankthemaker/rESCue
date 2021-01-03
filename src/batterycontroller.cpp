@@ -7,12 +7,19 @@ int lastWarn = 0;
 
 BatteryController::BatteryController() {}
 
-int BatteryController::getVoltage() {
-  // TODO
-  return 4200;  
+int BatteryController::readVoltage() {
+    int sensorValue = analogRead(BATTERY_PIN);
+    float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;
+#if DEBUG > 0
+    // print out the value you read:
+    Serial.print("Voltage: ");
+    Serial.print(voltage);
+    Serial.println(" V");
+#endif
 }
 
-void BatteryController::checkVoltage(int voltage, Buzzer *buzzer) {
+void BatteryController::checkVoltage(Buzzer *buzzer) {
+    int voltage = readVoltage();
     if(voltage < min_voltage || voltage > max_voltage) {
         buzzer->alarm();
         return;

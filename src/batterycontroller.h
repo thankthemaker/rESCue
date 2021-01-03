@@ -7,8 +7,8 @@
 class BatteryController {
     public:
         BatteryController();
-        int getVoltage();
-        void checkVoltage(int voltage, Buzzer *buzzer);
+        int readVoltage();
+        void checkVoltage(Buzzer *buzzer);
 };
 
 #endif

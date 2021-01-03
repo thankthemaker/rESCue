@@ -1,10 +1,11 @@
 #include "BleBridge.h"
 
-HardwareSerial vescSerial(2);
+Stream *vescSerial;
 BLEServer *pServer = NULL;
 BLECharacteristic * pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
+uint8_t incomingByte = -1;
 
 BleBridge::BleBridge() {}
 
@@ -45,36 +46,36 @@ void initBle(){
 #endif
 }
 
-void BleBridge::init() {
+void BleBridge::init(Stream* vesc) {
 #if DEBUG > 0
   Serial.println("BleBridge init");
 #endif
   initBle();
-  vescSerial.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);         
+  vescSerial = vesc;  
 }
 
 void BleBridge::loop() {
+  if(vescSerial->available()) {
+    incomingByte = vescSerial->read();
     if (deviceConnected) {
-        if(vescSerial.available()) {
-          uint8_t incomingByte = vescSerial.read();
-          pTxCharacteristic->setValue(&incomingByte, 1);
-          pTxCharacteristic->notify();
-        }
-		    delay(3); // bluetooth stack will go into congestion, if too many packets are sent
-	}
+      pTxCharacteristic->setValue(&incomingByte, 1);
+      pTxCharacteristic->notify();
+		  delay(3); // bluetooth stack will go into congestion, if too many packets are sent
+	  }
+  }
 
-    // disconnecting
-    if (!deviceConnected && oldDeviceConnected) {
-        delay(500); // give the bluetooth stack the chance to get things ready
-        pServer->startAdvertising(); // restart advertising
+  // disconnecting
+  if (!deviceConnected && oldDeviceConnected) {
+    delay(500); // give the bluetooth stack the chance to get things ready
+    pServer->startAdvertising(); // restart advertising
 #if DEBUG > 0
-        Serial.println("start advertising");
+    Serial.println("start advertising");
 #endif
-        oldDeviceConnected = deviceConnected;
-    }
-    // connecting
-    if (deviceConnected && !oldDeviceConnected) {
+    oldDeviceConnected = deviceConnected;
+  }
+  // connecting
+  if (deviceConnected && !oldDeviceConnected) {
 		// do stuff here on connecting
-        oldDeviceConnected = deviceConnected;
-    }
+    oldDeviceConnected = deviceConnected;
+  }
 }
