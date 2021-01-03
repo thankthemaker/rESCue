@@ -10,7 +10,10 @@ The ESP32 D1 Mini is highly recommended, but other ESP32 also work.
 
 Find the recommended hardware below. Other parts may also work, but the recommended parts are best tested.
 
+- [ESP32 D1 Mini](https://www.amazon.de/AZDelivery-Bluetooth-Internet-Development-Compatible/dp/B08BTRQNB3/), other ESP32 might also work but check if all needed GPIO are accessible
+
 - DC-DC converter ([LM2576HV](https://www.banggood.com/RIDEN-5V-60V-To-1_25V-30V-LM2576HV-DC-DC-Step-Down-Module-p-1060892.html?cur_warehouse=CN&rmmds=search))
+
 - Piezo-Buzzer (any model should work)
 
 For WS28xx Adafruit Neopixel are recommended
