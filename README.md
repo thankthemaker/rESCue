@@ -71,9 +71,13 @@ Using any other number of LEDs then 16, the `NUMPIXELS` definition has to be cha
 
 ### Battery monitor
 
+The battery monitor uses a simple voltage divider which allows measuring the voltage from 0 - 100 V with the analog input of an ESP32. The voltage divider. The ESP12 uses 12bit (0-4095 )and 3.3V logic.
+
+![Battery Monitor wiring](battery-monitor-wiring.png)
+
 The battery level is monitored against the configured values. If the battery level drops close the configured value, the piezo buzzer will give you a warning tone. If the battery level drops under the configured value, an alarm tone sounds.
 
-If a WS28xx stripe is connected, the battery level will also been shown in 100/PIXEL_NUMBER steps.
+If a WS28xx stripe is connected, the battery level will also been shown in 100/PIXEL_NUMBER steps. (Coming soon)
 
 ### Transparent BLE-UART proxy for VESC app
 

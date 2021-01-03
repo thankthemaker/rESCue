@@ -25,7 +25,7 @@
 #define MAX_BRIGHTNESS       100 // allowed values 1-255
 #define MAX_BRIGHTNESS_BRAKE 255 // allowed values 1-255
 
-#define BATTERY_PIN              36
+#define BATTERY_PIN              34
 #define VOLTAGE_DIVIDER_CONSTANT 22.19 // for calculation see at bottom
 // min and max battery voltage as int (voltage * 100)
 #define MAX_BATTARY_VOLTAGE      5040  // set your max. battery voltage here
