@@ -17,11 +17,12 @@ class BatteryController {
     public:
         BatteryController();
         void init();
-        int readVoltage();
+        float readVoltage();
         void checkVoltage(Buzzer *buzzer);
-    //private:
+    private:
         void updateBatteryBar(float voltage);
         int calcVal(int value);
+        int smoothAnalogReading();
 };
 
 #endif

@@ -48,7 +48,6 @@ void setup() {
 }
 
 void loop() {
-/*
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
@@ -67,11 +66,4 @@ void loop() {
 
   // call the VESC UART-to-Bluetooth bridge
   bridge->loop();
-*/
-
-  for(float val=50.4; val>40; val=val-0.1) {
-    batController->updateBatteryBar(val);
-    delay(500);
-  }
-  delay(5000);
 }
