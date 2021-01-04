@@ -91,6 +91,12 @@ The VESC applications for Desktop and Mobile are able to connect to the VESC via
 
 ![ESP32 BLE wiring](esp32-ble-wiring.png)
 
+## Configuration
+
+All the configuration can be found in the `config.h` file and is mostly self explaining (I hope).
+
+There are some parameters you should check, e.g. the settings for battery voltage and which type of front- and backlight you want to use. Just read the comments on each parameter.
+
 ## Build Firmware
 
 This project is build on PlatformIO. To build the firmware for the ESP32 install the [core version](https://platformio.org/install/cli) of PlatformIO to your computer. An alternative way is to install the PlatformIO extension for your [favourite IDE](https://platformio.org/install/ide).

@@ -50,7 +50,7 @@
 #define BT_NAME "FunWheel Controller"
 
 // enable DEBUG, the higher the number, the more DEBUG output
-#define DEBUG 2
+#define DEBUG 0
 
 #endif
 
