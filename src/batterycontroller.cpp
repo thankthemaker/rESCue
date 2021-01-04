@@ -36,7 +36,7 @@ float BatteryController::readVoltage() {
 #ifdef BATTERY_BAR
     updateBatteryBar(voltage);
 #endif
-#if DEBUG > 0
+#if DEBUG > 1
     Serial.print("ADC: ");
     Serial.println(adc);
     Serial.print("Sensorvalue: ");
@@ -57,12 +57,19 @@ void BatteryController::checkVoltage(Buzzer *buzzer) {
 
     int voltage = readVoltage() * 100;
     if(voltage < min_voltage || voltage > max_voltage) {
- //       buzzer->alarm();
+#if DEBUG > 0
+        Serial.println("ALARM: Battery voltage dropped");
+#endif
+        buzzer->alarm();
         return;
     } 
     if(voltage < warn_voltage) {
         if(millis() - lastWarn > 5000) {
-//            buzzer->beep(3);
+#if DEBUG > 0
+            Serial.println("WARN: Battery voltage dropped");
+#endif
+            buzzer->beep(3);
+            lastWarn = millis();
         }
     }
 }
@@ -76,7 +83,7 @@ void BatteryController::updateBatteryBar(float voltage) {
     int whole = count; // number of "full" green pixels
     int remainder = (count - whole) * 100; // percentage of usage of current pixel
 
-#if DEBUG > 1
+#if DEBUG > 2
     Serial.println("used=" + String(used) + ", value=" + String(value));
     Serial.println("count=" + String(count) + ", diffPerPixel=" + String(diffPerPixel));
     Serial.println("whole=" + String(whole) + ", remainder=" + String(remainder));
@@ -86,9 +93,11 @@ void BatteryController::updateBatteryBar(float voltage) {
         if(i==whole) {
             int val = calcVal(remainder);
             batPixels.setPixelColor(i, MAX_BRIGHTNESS-val, val, 0);
-        } else if(i>whole) {
+        }
+        if(i>whole) {
             batPixels.setPixelColor(i, 0, 0, 0);
-        } else {
+        } 
+        if(i<whole) {
             batPixels.setPixelColor(i, 0, MAX_BRIGHTNESS, 0);
         }
         if(value < 0) {

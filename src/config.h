@@ -37,7 +37,7 @@
 // optional WS28xx battery bar params
 #define BATTERY_BAR                    // activates a visual WS28xx battery bar, if connected
 #define BATTERY_BAR_PIN          5     // the PIN for the battery bar
-#define BATTERY_BAR_NUMPIXELS    6     // the number of LEDS of the battery bar
+#define BATTERY_BAR_NUMPIXELS    3     // the number of LEDS of the battery bar
 #define VOLTAGE_DIVIDER_CONSTANT 23.54 // for calculation see at bottom
 
 /**** Definition of the UART connection to the Cheap Focer 2 ****/

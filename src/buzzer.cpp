@@ -39,16 +39,14 @@ void Buzzer::beep(byte number){
     delay(duration);    
     break; 
   case 4:  // alarm (for whatever)
-    for (int a = 0; a < 3; a++){
-      for (int i = 2300; i > 600; i-=50){
-        tone(BUZPIN,i,20);
-        delay(18);
-      }     
-      for (int i = 600; i < 2300; i+=50){
-        tone(BUZPIN,i,20);
-        delay(18);
-      }
-    }  
+    for (int i = 2300; i > 600; i-=50){
+      tone(BUZPIN,i,20);
+      delay(10);
+    }     
+    for (int i = 600; i < 2300; i+=50){
+      tone(BUZPIN,i,20);
+      delay(10);
+    }
   }
   noTone(BUZPIN);
 }
