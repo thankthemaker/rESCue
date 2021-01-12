@@ -1,5 +1,7 @@
 #include "BleBridge.h"
 
+#ifdef ESP32
+
 Stream *vescSerial;
 BLEServer *pServer = NULL;
 BLECharacteristic * pTxCharacteristic;
@@ -79,3 +81,5 @@ void BleBridge::loop() {
     oldDeviceConnected = deviceConnected;
   }
 }
+
+#endif // BLE_ENABLED

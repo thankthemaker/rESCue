@@ -23,18 +23,24 @@ void BatteryController::init() {
 #if DEBUG > 0
   Serial.println("Initializing BatteryController");
 #endif
+  // initialize the array for smoothing the analog value
   for (int i = 0; i < numReadings; i++) {
     readings[i] = 0;
   }
   batPixels.begin(); // This initializes the NeoPixel library.
 }
 
+// Read the voltage from the voltage divider and update the battery bar if connected
 float BatteryController::readVoltage() {
-    int adc = smoothAnalogReading();
-    float sensorValue = ( adc * 3.3 ) / (4095);
-    float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;
+    int adc = smoothAnalogReading();  // read the sensor and smooth the value
+#ifdef ESP32
+    float sensorValue = ( adc * 3.3 ) / (4096);  // calculate the voltage at the ESP32 GPIO
+#else
+    float sensorValue = ( adc * 3.3 ) / (1024);  // calculate the voltage at the ESP8266 GPIO
+#endif
+    float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
 #ifdef BATTERY_BAR
-    updateBatteryBar(voltage);
+    updateBatteryBar(voltage);  // update the WS28xx battery bar
 #endif
 #if DEBUG > 1
     Serial.print("ADC: ");
@@ -49,33 +55,38 @@ float BatteryController::readVoltage() {
     return voltage;
 }
 
+// check the voltage against the configured min and max values
 void BatteryController::checkVoltage(Buzzer *buzzer) {
     if(millis() - lastCheck < 300) {
+        // only check every 300ms
         return;
     } 
     lastCheck = millis();
 
     int voltage = readVoltage() * 100;
+    // check if voltage is below absolute minimum or above absolute maximum (regen)
     if(voltage < min_voltage || voltage > max_voltage) {
 #if DEBUG > 0
-        Serial.println("ALARM: Battery voltage dropped");
+        Serial.println("ALARM: Battery voltage out of range");
 #endif
-        buzzer->alarm();
+        buzzer->alarm();  // play an anoying alarm tone
         return;
     } 
+    // check if the voltage is close to the minimum
     if(voltage < warn_voltage) {
         if(millis() - lastWarn > 5000) {
 #if DEBUG > 0
-            Serial.println("WARN: Battery voltage dropped");
+            Serial.println("WARN: Battery voltage out of range");
 #endif
-            buzzer->beep(3);
+            buzzer->beep(3); // play a warn tonen every 5 seconds
             lastWarn = millis();
         }
     }
 }
 
+// updates the battery bar, depending on the LED count
 void BatteryController::updateBatteryBar(float voltage) {
-    int used = max_voltage - voltage * 100; // calculate how much voltage has dropped
+    int used = max_voltage - voltage * 100; // calculate how much the voltage has dropped
     int value = voltage_range - used; // calculate the remaining value to lowest voltage
     float diffPerPixel = voltage_range / 100.0 / pixel_count; // calculate how much voltage a single pixel shall represent
     float count = value / 100.0 / diffPerPixel; // calculate how many pixels must shine
@@ -89,28 +100,36 @@ void BatteryController::updateBatteryBar(float voltage) {
     Serial.println("whole=" + String(whole) + ", remainder=" + String(remainder));
 #endif
 
+    // update every pixel individually
     for(int i=0; i<pixel_count; i++) {
         if(i==whole) {
+            // the last pixel, the battery voltage somewhere in the range of this pixel
+            // the lower the remaining value the more the pixel goes from green to red
             int val = calcVal(remainder);
             batPixels.setPixelColor(i, MAX_BRIGHTNESS-val, val, 0);
         }
         if(i>whole) {
+            // these pixels must be turned off, we already reached a lower battery voltage 
             batPixels.setPixelColor(i, 0, 0, 0);
         } 
         if(i<whole) {
+            // turn on this pixel completely green, the battery voltage is still above this value
             batPixels.setPixelColor(i, 0, MAX_BRIGHTNESS, 0);
         }
         if(value < 0) {
+            // ohhh, we already hit the absolute minimum, set all pixel to full red.
             batPixels.setPixelColor(i, MAX_BRIGHTNESS, 0, 0);
         }
     }
     batPixels.show();
 }
 
+// map the remaining value to a value between 0 and MAX_BRIGHTNESS
 int BatteryController::calcVal(int value) {
     return map(value, 0, 100, 0, MAX_BRIGHTNESS);
 }
 
+// smoothing the values read from the ADC, there sometimes is some noise
 int BatteryController::smoothAnalogReading() {
   total = total - readings[readIndex];
   // read from the sensor:

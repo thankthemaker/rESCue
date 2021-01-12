@@ -9,6 +9,10 @@
  #define PIN_NEOPIXEL   5
 #endif
 
+#ifndef NUMPIXELS
+ #define NUMPIXELS    16  
+#endif
+
 extern Adafruit_NeoPixel pixels;
 
 class Ws28xxController : public ILedController {

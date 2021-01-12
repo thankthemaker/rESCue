@@ -2,9 +2,11 @@
 #include "config.h"
 #include "BatteryController.h"
 #include "Buzzer.h"
-#include "BleBridge.h"
 #include "ILedController.h"
 #include "Ws28xxController.h"
+#ifdef ESP32
+ #include "BleBridge.h"
+#endif
 
 int old_forward  = LOW;
 int old_backward = LOW;
@@ -15,29 +17,37 @@ int new_brake    = LOW;
 int currentVoltage = 0;
 int lastVescValues = 0;
 
+#ifdef ESP32
 HardwareSerial vesc(2);
+#endif
 
 ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
 BatteryController *batController = new BatteryController();
 Buzzer *buzzer = new Buzzer();
-BleBridge *bridge = new BleBridge();
+#ifdef ESP32
+ BleBridge *bridge = new BleBridge();
+#endif
 
 void setup() {
 #if DEBUG > 0
-  Serial.begin(115200);
+  Serial.begin(VESC_BAUD_RATE);
 #endif
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
   pinMode(PIN_BRAKE, INPUT);
 
-  vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);         
+#ifdef ESP32
+  vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);      
+#endif
   delay(50);
 
   // initializes the battery monitor
   batController->init();
+#ifdef BLE_ENABLED
   // initialize the UART bridge from VESC to Bluetooth
   bridge->init(&vesc);
+#endif
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 
@@ -64,6 +74,8 @@ void loop() {
   // measure and check voltage
   batController->checkVoltage(buzzer);
 
+#ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
   bridge->loop();
+#endif
 }

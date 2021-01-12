@@ -1,6 +1,8 @@
 #ifndef BLUETOOTH_BRIDGE_H
 #define BLUETOOTH_BRIDGE_H
 
+#ifdef ESP32
+
 #include "config.h"
 #include "BluetoothSerial.h"
 #include <HardwareSerial.h>
@@ -52,4 +54,5 @@ class BleCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
+#endif // ESP32
 #endif
