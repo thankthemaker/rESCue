@@ -1,5 +1,5 @@
-#ifndef LED_CONTROLLER_H
-#define LED_CONTROLLER_H
+#ifndef __LED_CONTROLLER_H__
+#define __LED_CONTROLLER_H__
 
 #include "config.h"
 #include "ILedController.h"
@@ -7,11 +7,11 @@
 
 #ifndef PIN_NEOPIXEL
  #define PIN_NEOPIXEL   5
-#endif
+#endif //PIN_NEOPIXEL
 
 #ifndef NUMPIXELS
  #define NUMPIXELS    16  
-#endif
+#endif //NUMPIXELS
 
 extern Adafruit_NeoPixel pixels;
 
@@ -31,4 +31,4 @@ class Ws28xxController : public ILedController {
         void setPixel(int pixel, byte red, byte green, byte blue);
         void showStrip();
 };
-#endif
+#endif //__LED_CONTROLLER_H__

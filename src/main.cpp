@@ -6,7 +6,8 @@
 #include "Ws28xxController.h"
 #ifdef ESP32
  #include "BleBridge.h"
-#endif
+ #include "CanBus.h"
+#endif //ESP32
 
 int old_forward  = LOW;
 int old_backward = LOW;
@@ -18,15 +19,22 @@ int currentVoltage = 0;
 int lastVescValues = 0;
 
 #ifdef ESP32
-HardwareSerial vesc(2);
-#endif
+ HardwareSerial vesc(2);
+#endif //ESP32
 
-ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
-BatteryController *batController = new BatteryController();
 Buzzer *buzzer = new Buzzer();
+ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
+
+#if defined(CANBUS_ENABLED) && defined(ESP32)
+ CanBus * canbus = new CanBus();
+ BatteryController *batController = new BatteryController(canbus->vescData);
+#else
+ BatteryController *batController = new BatteryController();
+#endif //CANBUS_ENABLED && ESP32
+
 #ifdef ESP32
  BleBridge *bridge = new BleBridge();
-#endif
+#endif //ESP32
 
 void setup() {
 #if DEBUG > 0
@@ -39,15 +47,18 @@ void setup() {
 
 #ifdef ESP32
   vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);      
-#endif
+#endif //ESP32
   delay(50);
+
+  // initializes the CANBUS
+  canbus->init();
 
   // initializes the battery monitor
   batController->init();
-#ifdef BLE_ENABLED
+#ifdef ESP32
   // initialize the UART bridge from VESC to Bluetooth
   bridge->init(&vesc);
-#endif
+#endif //ESP32
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 
@@ -61,6 +72,8 @@ void loop() {
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
+
+  canbus->loop();
 
   // is motor brake active?
   if(new_brake == HIGH) {
@@ -77,5 +90,5 @@ void loop() {
 #ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
   bridge->loop();
-#endif
+#endif //ESP32
 }

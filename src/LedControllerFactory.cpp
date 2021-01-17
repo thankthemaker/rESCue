@@ -17,9 +17,9 @@ LedControllerFactory* LedControllerFactory::getInstance() {
 ILedController* LedControllerFactory::createLedController() {
 #ifdef LED_WS28xx
   return new Ws28xxController();
-#endif
+#endif //LED_WS28xx
 #ifdef LED_COB
   return new CobController();
-#endif
+#endif //LED_COB
 }
 

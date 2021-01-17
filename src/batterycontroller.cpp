@@ -19,6 +19,11 @@ int readings[numReadings];   // the readings from the analog input
 
 BatteryController::BatteryController() {}
 
+BatteryController::BatteryController(CanBus::VescData &vescData) {
+  this->vescData = vescData;
+}
+
+
 void BatteryController::init() {
 #if DEBUG > 0
   Serial.println("Initializing BatteryController");
@@ -32,22 +37,29 @@ void BatteryController::init() {
 
 // Read the voltage from the voltage divider and update the battery bar if connected
 float BatteryController::readVoltage() {
+#ifndef CANBUS_ENABLED
     int adc = smoothAnalogReading();  // read the sensor and smooth the value
 #ifdef ESP32
     float sensorValue = ( adc * 3.3 ) / (4096);  // calculate the voltage at the ESP32 GPIO
 #else
     float sensorValue = ( adc * 3.3 ) / (1024);  // calculate the voltage at the ESP8266 GPIO
-#endif
+#endif //ESP32
     float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
+#else
+    float voltage = vescData.inputVoltage; 
+#endif //CANBUS_ENABLED
+
 #ifdef BATTERY_BAR
     updateBatteryBar(voltage);  // update the WS28xx battery bar
 #endif
 #if DEBUG > 1
+#ifndef CANBUS_ENABLED
     Serial.print("ADC: ");
     Serial.println(adc);
     Serial.print("Sensorvalue: ");
     Serial.print(sensorValue);
     Serial.println(" V");
+#endif
     Serial.print("Voltage: ");
     Serial.print(voltage);
     Serial.println(" V");

@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
 // ###################################################################### //
 // ## For board specific GPIO-PIN definition please see platformio.ini ## //
@@ -13,10 +13,10 @@
 
 #ifdef LED_WS28xx
  #define NUMPIXELS    16  // the number of LEDs if WS28xx is used
-#endif
+#endif //LED_WS28xx
 #ifdef LED_COB
  #define DUAL_MOSFET     // uncomment if you use two MOSFET to activate color switching
-#endif
+#endif //LED_COB
 
 #define MAX_BRIGHTNESS       100 // max brightness of LEDs, allowed values 1-255
 #define MAX_BRIGHTNESS_BRAKE 255 // max brightness of LEDs for brake signal, allowed values 1-255
@@ -37,15 +37,21 @@
 
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
+#define CANBUS_ENABLED
+#ifdef CANBUS_ENABLED
+ #define VESC_CAN_ID 25
+ #define ESP_CAN_ID 3
+#endif //CANBUS_ENABLED
+
 // The name this controller should advertise for BLE
 #ifdef ESP32
  #define BT_NAME "FunWheel Controller"
-#endif
+#endif //ESP32
 
 // enable DEBUG, the higher the number, the more DEBUG output
 #define DEBUG 2
 
-#endif
+#endif //__CONFIG_H__
 
 /**** Calibration / Calculation of VOLTAGE_DIVIDER_CONSTANT ****
 

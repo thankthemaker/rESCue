@@ -1,5 +1,5 @@
-#ifndef I_LED_CONTROLLER_H
-#define I_LED_CONTROLLER_H
+#ifndef __I_LED_CONTROLLER_H__
+#define __I_LED_CONTROLLER_H__
 
 #include <Arduino.h>
 
@@ -25,5 +25,6 @@ class LedControllerFactory {
         LedControllerFactory();    
         static LedControllerFactory *instance;    
 };
-#endif
+
+#endif //__I_LED_CONTROLLER_H__
 
