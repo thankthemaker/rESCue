@@ -1,11 +1,11 @@
-#ifndef BUZZER_H_
-#define BUZZER_H_
+#ifndef __BUZZER_H__
+#define __BUZZER_H__
 
 #include "Arduino.h"
 
 #ifndef BUZPIN
  #define BUZPIN 0  // digital pin for buzzer
-#endif
+#endif //BUZPIN
 
 class Buzzer {
     public:
@@ -14,5 +14,5 @@ class Buzzer {
         void alarm();
         void beep(byte number);
 };
-#endif
+#endif //__BUZZER_H__
 

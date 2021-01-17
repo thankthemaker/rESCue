@@ -35,8 +35,10 @@ Connect your Cheap FOCer to GPIOs of the ESP32 as follows:
 
 |ESP32 | Cheap FOCer 2|Description|
 |:---:|:---:|:---:|
-|GPIO 16 | TX||
-|GPIO 17 | RX||
+|GPIO 16 | TX| UART (if used)|
+|GPIO 17 | RX| UART (if used)|
+|GPIO 26 | CANBUS-TX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
+|GPIO 27 | CANBUS-RX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
 |GPIO 18 | PC13 | forward|
 |GPIO 19 | PC14 | backward|
 |GPIO 21 | PA15 | brake |
@@ -90,6 +92,30 @@ For further information on measuring voltages with the ESP32, check this [great 
 The VESC applications for Desktop and Mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
 
 ![ESP32 BLE wiring](esp32-ble-wiring.png)
+
+### CANBUS and VESC-Status (new)
+
+___Attention___: this feature is only available using a ESP32 and a separate CAN-tranceiver, 
+e.g. the SN65HVD230.
+
+Connection to the VESC via CANBUS is now also supported. The connection to the CANBUS will bring you status updates of your VESC. These information include
+
+- dutyCycle - the current duty cycle
+- rpm - the RPM  from the VESC
+- current - the current, the VESC uses
+- ampHours - the ampere hours the VESC has used from the battery
+- ampHoursCharged - the ampere hours the battery has been charged by the VESC
+- wattHours - the watt hours the VESC has used from the battery
+- wattHoursCharged - the watt hours the battery has been charged by the VESC
+- mosfetTemp - the temperature of the MOSFETs
+- motorTemp - the temperature of the Motor, if supported by the motor
+- inputVoltage - the input voltage, which is the voltage of the battery
+- tachometer - the current speed calculated by the VESC
+
+Please check your CAN configuration in VESC. Make sure the VESC_ID matches the VESC_CAN_ID in `config.h` and doesn't collide with the ESP_CAN_ID.
+This application assumes you have enabled status messages 1-5, please update your CAN-settings in VESC appropriate to have full support of all features. It is also recommended to reduce the frequency for status updates from the VESC. The default setting is 50Hz, but it is sufficient for this application to reduce the frequency to somehow around 1-5Hz.
+
+If the CANBUS-feature is enabled, the battery monitor can also use the voltage measured by the VESC. A separate voltage divider isn't necessary in that case.
 
 ## Configuration
 

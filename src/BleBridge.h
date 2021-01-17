@@ -1,5 +1,5 @@
-#ifndef BLUETOOTH_BRIDGE_H
-#define BLUETOOTH_BRIDGE_H
+#ifndef __BLUETOOTH_BRIDGE_H__
+#define __BLUETOOTH_BRIDGE_H__
 
 #ifdef ESP32
 
@@ -54,5 +54,5 @@ class BleCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
-#endif // ESP32
-#endif
+#endif //ESP32
+#endif //__BLUETOOTH_BRIDGE_H__

@@ -50,7 +50,7 @@ void initBle(){
 
 void BleBridge::init(Stream* vesc) {
 #if DEBUG > 0
-  Serial.println("BleBridge init");
+  Serial.println("Initializing BleBridge");
 #endif
   initBle();
   vescSerial = vesc;  
