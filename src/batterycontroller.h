@@ -17,12 +17,12 @@
 class BatteryController {
     public:
         BatteryController();
-        BatteryController(CanBus::VescData &vescData);
+        BatteryController(CanBus *canbus);
         void init();
         float readVoltage();
         void checkVoltage(Buzzer *buzzer);
     private:
-        CanBus::VescData vescData;
+        CanBus *canbus;
 
         void updateBatteryBar(float voltage);
         int calcVal(int value);

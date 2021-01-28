@@ -27,7 +27,7 @@ ILedController *ledController = LedControllerFactory::getInstance()->createLedCo
 
 #if defined(CANBUS_ENABLED) && defined(ESP32)
  CanBus * canbus = new CanBus();
- BatteryController *batController = new BatteryController(canbus->vescData);
+ BatteryController *batController = new BatteryController(canbus);
 #else
  BatteryController *batController = new BatteryController();
 #endif //CANBUS_ENABLED && ESP32

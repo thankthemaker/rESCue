@@ -80,6 +80,10 @@ void CanBus::loop() {
 #endif
 }
 
+double CanBus::getVoltage() {
+    return vescData.inputVoltage;
+}
+
 void CanBus::requestRealtimeData() {
     Serial.println("requestRealtimeData");
     CAN_frame_t tx_frame;

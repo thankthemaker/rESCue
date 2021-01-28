@@ -19,8 +19,8 @@ int readings[numReadings];   // the readings from the analog input
 
 BatteryController::BatteryController() {}
 
-BatteryController::BatteryController(CanBus::VescData &vescData) {
-  this->vescData = vescData;
+BatteryController::BatteryController(CanBus *canbus) {
+  this->canbus = canbus;
 }
 
 
@@ -46,7 +46,7 @@ float BatteryController::readVoltage() {
 #endif //ESP32
     float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
 #else
-    float voltage = vescData.inputVoltage; 
+    float voltage = canbus->getVoltage(); 
 #endif //CANBUS_ENABLED
 
 #ifdef BATTERY_BAR

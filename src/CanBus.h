@@ -81,6 +81,7 @@ class CanBus {
       void init();
       void loop();
       void dumpVescValues();
+      double getVoltage();
     private:
 
       void requestRealtimeData();
