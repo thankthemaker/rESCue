@@ -19,16 +19,16 @@ class Ws28xxController : public ILedController {
     public:
         Ws28xxController();
         void init();
-        void fadeIn(boolean isForward);
-        void fadeOut(boolean isForward);
-        void flash(boolean isForward);
+        void fade(int* isForward);
+        void flash(int* isForward);
         void stop();
-        void startSequence(byte red, byte green, byte blue, int speedDelay);
-        void loop(int* new_forward, int* old_forward, int* new_backward, int* old_backward);
+        void startSequence();
     private:
-        void forward(byte brightness);
-        void backward(byte brightness);
+        void setLight(boolean forward, byte brightness);
         void setPixel(int pixel, byte red, byte green, byte blue);
         void showStrip();
+        void startSequenceChasing(byte red, byte green, byte blue, int speedDelay);
+        void startSequenceCylon(uint16_t cycles, uint16_t speed, uint8_t width, uint32_t color);
+        uint32_t dimColor(uint32_t color, uint8_t width);
 };
 #endif //__LED_CONTROLLER_H__

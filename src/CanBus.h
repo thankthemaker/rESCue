@@ -1,8 +1,12 @@
 #ifndef __CANBUS_H__
 #define __CANBUS_H__
 
+
 #include "Arduino.h"
 #include "config.h"
+
+#ifdef CANBUS_ENABLED
+
 #include <ESP32CAN.h>
 #include <CAN_config.h>
 
@@ -81,7 +85,6 @@ class CanBus {
       void init();
       void loop();
       void dumpVescValues();
-      double getVoltage();
     private:
 
       void requestRealtimeData();
@@ -93,4 +96,5 @@ class CanBus {
       int16_t readInt16Value(CAN_frame_t rx_frame, int startbyte);
 };
 
+#endif //CANBUS_ENABLED
 #endif //__CANBUS_H__

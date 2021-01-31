@@ -3,7 +3,9 @@
 
 #include "config.h"
 #include "Buzzer.h"
-#include "CanBus.h"
+#ifdef CANBUS_ENABLED
+ #include "CanBus.h"
+#endif
 
 #ifdef BATTERY_BAR
  #include <Adafruit_NeoPixel.h>
@@ -17,13 +19,16 @@
 class BatteryController {
     public:
         BatteryController();
-        BatteryController(CanBus *canbus);
+#ifdef CANBUS_ENABLED
+        BatteryController(CanBus::VescData *vescData);
+#endif
         void init();
         float readVoltage();
         void checkVoltage(Buzzer *buzzer);
     private:
-        CanBus *canbus;
-
+#ifdef CANBUS_ENABLED
+        CanBus::VescData *vescData;
+#endif
         void updateBatteryBar(float voltage);
         int calcVal(int value);
         int smoothAnalogReading();

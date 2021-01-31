@@ -1,5 +1,7 @@
 #include "CanBus.h"
 
+#ifdef CANBUS_ENABLED
+
 #ifndef VESC_CAN_ID
  #define VESC_CAN_ID 25
 #endif
@@ -78,10 +80,6 @@ void CanBus::loop() {
 #if DEBUG > 1
     dumpVescValues();
 #endif
-}
-
-double CanBus::getVoltage() {
-    return vescData.inputVoltage;
 }
 
 void CanBus::requestRealtimeData() {
@@ -223,3 +221,4 @@ int16_t CanBus::readInt16Value(CAN_frame_t rx_frame, int startbyte) {
       ((int16_t)rx_frame.data.u8[startbyte+1]));
   return intVal;
 }
+#endif //CANBUS_ENABLED

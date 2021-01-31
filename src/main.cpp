@@ -18,6 +18,9 @@ int new_brake    = LOW;
 int currentVoltage = 0;
 int lastVescValues = 0;
 
+int lastFade = 0;
+int count = 0;
+
 #ifdef ESP32
  HardwareSerial vesc(2);
 #endif //ESP32
@@ -27,7 +30,7 @@ ILedController *ledController = LedControllerFactory::getInstance()->createLedCo
 
 #if defined(CANBUS_ENABLED) && defined(ESP32)
  CanBus * canbus = new CanBus();
- BatteryController *batController = new BatteryController(canbus);
+ BatteryController *batController = new BatteryController(&canbus->vescData);
 #else
  BatteryController *batController = new BatteryController();
 #endif //CANBUS_ENABLED && ESP32
@@ -45,13 +48,13 @@ void setup() {
   pinMode(PIN_BACKWARD, INPUT);
   pinMode(PIN_BRAKE, INPUT);
 
-#ifdef ESP32
+#ifdef CANBUS_ENABLED
   vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);      
-#endif //ESP32
   delay(50);
-
   // initializes the CANBUS
   canbus->init();
+#endif //ESP32
+
 
   // initializes the battery monitor
   batController->init();
@@ -63,7 +66,7 @@ void setup() {
   ledController->init();
 
   delay(50);
-  ledController->startSequence(0, 0, MAX_BRIGHTNESS, 100);
+  ledController->startSequence();
   ledController->stop();
   buzzer->startSequence();
 }
@@ -73,22 +76,24 @@ void loop() {
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
 
-  canbus->loop();
+#ifdef CANBUS_ENABLED
+  ////canbus->loop();
+#endif
 
   // is motor brake active?
   if(new_brake == HIGH) {
     // flash backlights
-    ledController->flash(new_forward == LOW);
+     ledController->flash(&new_forward);
   } 
 
   // call the led controller loop
-  ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);       
+  ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check voltage
-  batController->checkVoltage(buzzer);
+  ////batController->checkVoltage(buzzer);
 
 #ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
-  bridge->loop();
+  ////bridge->loop();
 #endif //ESP32
 }

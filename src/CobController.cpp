@@ -22,32 +22,25 @@ void CobController::init() {
 #endif
 }
 
-void CobController::fadeIn(boolean isForward){
-    for (int i=0; i<MAX_BRIGHTNESS; i=i+5) {
+void CobController::fade(int *isForward){
 #ifdef DUAL_MOSFET
-        writePWM(isForward ? 0 : 1, i); // set the for
+  for (int i=MAX_BRIGHTNESS; i>0; i=i-5) {
+    writePWM(*(isForward) ? 0 : 1, i);
+    writePWM(*(isForward) ? 1 : 0, MAX_BRIGHTNESS - i);
+    delay(COB_DELAY);
+  }
 #else
-        ledcWrite(0, i); // set the brightness LED
+  writePWM(0, MAX_BRIGHTNESS);
 #endif
-        delay(COB_DELAY);
-    }
 }
 
-void CobController::fadeOut(boolean isForward){
-    for (int i=MAX_BRIGHTNESS; i>0; i=i-5) {
-#ifdef DUAL_MOSFET
-        writePWM(isForward ? 0 : 1, i); // set the for
-#else
-        ledcWrite(0, i); // set the brightness LED
-#endif
-        delay(COB_DELAY);
-    }
-}
-
-void CobController::flash(boolean isForward){
+void CobController::flash(int *isForward){
     for(int i=0; i<10; i++) {
-        writePWM(0, MAX_BRIGHTNESS); // set the brightness LED
-        writePWM(1, MAX_BRIGHTNESS); // set the brightness LED
+        if(*(isForward)) {
+          writePWM(0, MAX_BRIGHTNESS_BRAKE); // set the brightness LED
+        } else {
+          writePWM(1, MAX_BRIGHTNESS_BRAKE); // set the brightness LED
+        }
         delay(COB_DELAY);
         writePWM(0, 0); // turn off the front LED
         writePWM(1, 0); // turn off the back LED
@@ -59,16 +52,10 @@ void CobController::stop(){
     writePWM(1, 0); // turn off the back LED  
 }
 
-void CobController::startSequence(byte red, byte green, byte blue, int speedDelay){
-  fadeIn(true);
-  fadeOut(true);
-  flash(true);
-  fadeIn(true);
-  fadeOut(true);
-}
-
-void CobController::loop(int* new_forward, int* old_forward, int* new_backward, int* old_backward){
-  ; //nothing to do for COB
+void CobController::startSequence(){
+  int new_forward  = HIGH; 
+  flash(&new_forward);
+  fade(&new_forward);
 }
 
 void CobController::writePWM(int channel, int dutyCycle){
@@ -78,7 +65,7 @@ void CobController::writePWM(int channel, int dutyCycle){
   if(0 == channel) {
     analogWrite(MOSFET_PIN_1, dutyCycle);
   } else {
-    analogWrite(MOSFET_PIN_1, dutyCycle);
+    analogWrite(MOSFET_PIN_2, dutyCycle);
   }
 #endif
 }

@@ -18,12 +18,10 @@ class CobController : public ILedController {
     public:
       CobController();
         void init();
-        void fadeIn(boolean isForward);
-        void fadeOut(boolean isForward);
-        void flash(boolean isForward);
+        void fade(int* isForward);
+        void flash(int* isForward);
         void stop();
-        void startSequence(byte red, byte green, byte blue, int speedDelay);
-        void loop(int* new_forward, int* old_forward, int* new_backward, int* old_backward);
+        void startSequence();
     private:
       void writePWM(int channel, int dutyCycle);
 };
