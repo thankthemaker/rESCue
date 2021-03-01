@@ -138,10 +138,10 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
   String frametype = ""; 
   uint32_t ID = rx_frame.MsgID;
   if(STATUS_1 == ID) {
-      frametype = "status1";
-      vescData.erpm = readInt32Value(rx_frame, 0);
-      vescData.current = readInt16Value(rx_frame, 4) / 10.0;
-      vescData.dutyCycle = readInt16Value(rx_frame, 6);
+    frametype = "status1";
+    vescData.erpm = readInt32Value(rx_frame, 0);
+    vescData.current = readInt16Value(rx_frame, 4) / 10.0;
+    vescData.dutyCycle = readInt16Value(rx_frame, 6);
   }
   if(STATUS_2 == ID) {
     frametype = "status2";
@@ -152,7 +152,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
     frametype = "status3";
     vescData.wattHours = readInt32Value(rx_frame, 0) / 10000.0;
     vescData.wattHoursCharged = readInt32Value(rx_frame, 4) / 10000.0;
- }
+  }
   if(STATUS_4 == ID) {
     frametype = "status4";
     vescData.mosfetTemp = readInt16Value(rx_frame, 0) / 10.0;

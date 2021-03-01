@@ -7,7 +7,7 @@ BLEServer *pServer = NULL;
 BLECharacteristic * pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
-uint8_t incomingByte = -1;
+std::string bufferString;
 
 BleBridge::BleBridge() {}
 
@@ -23,7 +23,7 @@ void initBle(){
   // Create the BLE Service
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
-  // Create a BLE Characteristic
+  // Create a BLE Characteristic for RX and TX
   pTxCharacteristic = pService->createCharacteristic(
 										CHARACTERISTIC_UUID_TX,
 										BLECharacteristic::PROPERTY_NOTIFY
@@ -37,12 +37,13 @@ void initBle(){
 										);
 
   pRxCharacteristic->setCallbacks(new BleCallbacks());
-
+  
   // Start the service
   pService->start();
 
   // Start advertising
-  pServer->getAdvertising()->start();
+pServer->getAdvertising()->addServiceUUID(SERVICE_UUID);
+pServer->getAdvertising()->start();
 #if DEBUG > 0
   Serial.println("Waiting for a BLE client connection...");
 #endif
@@ -58,11 +59,15 @@ void BleBridge::init(Stream* vesc) {
 
 void BleBridge::loop() {
   if(vescSerial->available()) {
-    incomingByte = vescSerial->read();
+    while(vescSerial->available()) {
+      bufferString.push_back(vescSerial->read());
+    }
+
     if (deviceConnected) {
-      pTxCharacteristic->setValue(&incomingByte, 1);
+      pTxCharacteristic->setValue(bufferString);
       pTxCharacteristic->notify();
-		  delay(3); // bluetooth stack will go into congestion, if too many packets are sent
+      bufferString.clear();
+		  delay(10); // bluetooth stack will go into congestion, if too many packets are sent
 	  }
   }
 

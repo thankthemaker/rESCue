@@ -55,7 +55,6 @@ void setup() {
   canbus->init();
 #endif //ESP32
 
-
   // initializes the battery monitor
   batController->init();
 #ifdef ESP32
@@ -72,28 +71,34 @@ void setup() {
 }
 
 void loop() {
+#ifdef CANBUS_ENABLED
+  new_forward  = canbus->vescData.dutyCycle >= 0 ? 1 : 0;
+  new_backward = canbus->vescData.dutyCycle < 0 ? 1 : 0;
+  new_brake    = 0;
+#else
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
+#endif
 
 #ifdef CANBUS_ENABLED
-  ////canbus->loop();
+  canbus->loop();
 #endif
 
   // is motor brake active?
   if(new_brake == HIGH) {
     // flash backlights
-     ledController->flash(&new_forward);
+    ledController->flash(&new_forward);
   } 
 
   // call the led controller loop
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check voltage
-  ////batController->checkVoltage(buzzer);
+  batController->checkVoltage(buzzer);
 
 #ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
-  ////bridge->loop();
+  bridge->loop();
 #endif //ESP32
 }
