@@ -26,8 +26,10 @@ CanBus::CanBus() {}
 
 void CanBus::init() {
     CAN_cfg.speed=CAN_SPEED_500KBPS;
-    CAN_cfg.tx_pin_id = GPIO_NUM_26;
-    CAN_cfg.rx_pin_id = GPIO_NUM_27;
+    //CAN_cfg.tx_pin_id = GPIO_NUM_26;
+    //CAN_cfg.rx_pin_id = GPIO_NUM_27;
+    CAN_cfg.tx_pin_id = GPIO_NUM_27;
+    CAN_cfg.rx_pin_id = GPIO_NUM_26;
     CAN_cfg.rx_queue = xQueueCreate(50,sizeof(CAN_frame_t));
     
     CAN_filter_t p_filter;

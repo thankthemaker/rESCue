@@ -45,8 +45,21 @@ class BleServerCallbacks: public BLEServerCallbacks {
 };
 
 class BleCallbacks: public BLECharacteristicCallbacks {
+    void onRead(BLECharacteristic *pCharacteristic) {
+      Serial.print(F("\nBLE-write from phone: "));
+    }
+
     void onWrite(BLECharacteristic *pCharacteristic) {
       std::string rxValue = pCharacteristic->getValue();
+
+#if DEBUG > 2
+      unsigned char buffer[rxValue.length()];
+      memcpy(buffer, rxValue.data(), rxValue.length());
+      Serial.print(F("\nBLE-write from phone: "));
+     for (int i = 0; i < rxValue.length(); i++) {
+       Serial.print((int)rxValue.data()[i], HEX);
+     }
+#endif
 
       if (rxValue.length() > 0) {
         for (int i = 0; i < rxValue.length(); i++) {

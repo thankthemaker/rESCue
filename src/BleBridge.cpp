@@ -26,15 +26,13 @@ void initBle(){
   // Create a BLE Characteristic for RX and TX
   pTxCharacteristic = pService->createCharacteristic(
 										CHARACTERISTIC_UUID_TX,
-										BLECharacteristic::PROPERTY_NOTIFY
-									);
+										BLECharacteristic::PROPERTY_NOTIFY);
                       
   pTxCharacteristic->addDescriptor(new BLE2902());
 
   BLECharacteristic * pRxCharacteristic = pService->createCharacteristic(
 											 CHARACTERISTIC_UUID_RX,
-											BLECharacteristic::PROPERTY_WRITE
-										);
+											BLECharacteristic::PROPERTY_WRITE);
 
   pRxCharacteristic->setCallbacks(new BleCallbacks());
   
@@ -59,13 +57,25 @@ void BleBridge::init(Stream* vesc) {
 
 void BleBridge::loop() {
   if(vescSerial->available()) {
-    while(vescSerial->available()) {
-      bufferString.push_back(vescSerial->read());
+    int oneByte;
+#if DEBUG > 2
+   Serial.print("\nBLE from VESC: ");
+#endif
+   while(vescSerial->available()) {
+      oneByte = vescSerial->read();
+      bufferString.push_back(oneByte);
+#if DEBUG > 2
+      Serial.print(oneByte, HEX);
+#endif
     }
 
     if (deviceConnected) {
-      pTxCharacteristic->setValue(bufferString);
-      pTxCharacteristic->notify();
+//      while(bufferString.length() > 600) {
+        pTxCharacteristic->setValue(bufferString.substr(0, 600));
+        pTxCharacteristic->notify();
+//        delay(10);
+//        bufferString = bufferString.substr(600);
+//      }
       bufferString.clear();
 		  delay(10); // bluetooth stack will go into congestion, if too many packets are sent
 	  }

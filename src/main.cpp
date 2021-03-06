@@ -11,15 +11,9 @@
 
 int old_forward  = LOW;
 int old_backward = LOW;
-int old_brake    = LOW;
 int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
-int currentVoltage = 0;
-int lastVescValues = 0;
-
-int lastFade = 0;
-int count = 0;
 
 #ifdef ESP32
  HardwareSerial vesc(2);
@@ -72,8 +66,8 @@ void setup() {
 
 void loop() {
 #ifdef CANBUS_ENABLED
-  new_forward  = canbus->vescData.dutyCycle >= 0 ? 1 : 0;
-  new_backward = canbus->vescData.dutyCycle < 0 ? 1 : 0;
+  new_forward  = canbus->vescData.erpm >= 0 ? 1 : 0;
+  new_backward = canbus->vescData.erpm < 0 ? 1 : 0;
   new_brake    = 0;
 #else
   new_forward  = digitalRead(PIN_FORWARD);
