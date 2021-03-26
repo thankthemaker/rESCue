@@ -11,40 +11,27 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-//#define SERVICE_UUID           "6e400001-b5a3-f393-e0a9-e50e24dcca9e" 
-//#define CHARACTERISTIC_UUID_RX "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-//#define CHARACTERISTIC_UUID_TX "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
-#define SERVICE_UUID           "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" 
-#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+#define VESC_SERVICE_UUID            "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" 
+#define VESC_CHARACTERISTIC_UUID_RX  "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+#define VESC_CHARACTERISTIC_UUID_TX  "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+#define BLYNK_SERVICE_UUID           "713D0000-503E-4C75-BA94-3148F18D941E"
+#define BLYNK_CHARACTERISTIC_UUID_RX "713D0003-503E-4C75-BA94-3148F18D941E"
+#define BLYNK_CHARACTERISTIC_UUID_TX "713D0002-503E-4C75-BA94-3148F18D941E"
 
 extern Stream* vescSerial;
-extern bool deviceConnected; 
 
-class BleBridge {
+class BleUartBridge {
     public:
-        BleBridge();
+        BleUartBridge(BLEServer *pServer);
         void init(Stream *vesc);
         void loop();
+        BLEServer *pServer;
+        BLECharacteristic *pTxCharacteristicUart; 
+        bool deviceConnected;
+        bool oldDeviceConnected;
 };
 
-class BleServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-#if DEBUG > 0
-      Serial.println("BLE device connected");
-#endif
-      deviceConnected = true;
-    };
-
-    void onDisconnect(BLEServer* pServer) {
-#if DEBUG > 0
-     Serial.println("BLE device disconnected");
-#endif
-     deviceConnected = false;
-    }
-};
-
-class BleCallbacks: public BLECharacteristicCallbacks {
+class BleUartCallbacks: public BLECharacteristicCallbacks {
     void onRead(BLECharacteristic *pCharacteristic) {
       Serial.print(F("\nBLE-write from phone: "));
     }

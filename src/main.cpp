@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include "config.h"
-#include "BatteryController.h"
+#include "BatteryMonitor.h"
 #include "Buzzer.h"
 #include "ILedController.h"
 #include "Ws28xxController.h"
 #ifdef ESP32
- #include "BleBridge.h"
+ #include "BleServer.h"
  #include "CanBus.h"
 #endif //ESP32
 
@@ -24,14 +24,15 @@ ILedController *ledController = LedControllerFactory::getInstance()->createLedCo
 
 #if defined(CANBUS_ENABLED) && defined(ESP32)
  CanBus * canbus = new CanBus();
- BatteryController *batController = new BatteryController(&canbus->vescData);
+ BatteryMonitor *batMonitor = new BatteryMonitor(&canbus->vescData);
 #else
- BatteryController *batController = new BatteryController();
+ BatteryMonitor *batMonitor = new BatteryMonitor();
 #endif //CANBUS_ENABLED && ESP32
 
 #ifdef ESP32
- BleBridge *bridge = new BleBridge();
+ BleServer *bleServer = new BleServer();
 #endif //ESP32
+
 
 void setup() {
 #if DEBUG > 0
@@ -42,18 +43,20 @@ void setup() {
   pinMode(PIN_BACKWARD, INPUT);
   pinMode(PIN_BRAKE, INPUT);
 
-#ifdef CANBUS_ENABLED
   vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);      
   delay(50);
+#ifdef CANBUS_ENABLED
   // initializes the CANBUS
   canbus->init();
 #endif //ESP32
 
   // initializes the battery monitor
-  batController->init();
+  batMonitor->init();
 #ifdef ESP32
   // initialize the UART bridge from VESC to Bluetooth
-  bridge->init(&vesc);
+  bleServer->init();
+  ////bridge->init(&vesc);
+  ////blynkApp->init();
 #endif //ESP32
   // initialize the LED (either COB or Neopixel)
   ledController->init();
@@ -88,11 +91,12 @@ void loop() {
   // call the led controller loop
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
-  // measure and check voltage
-  batController->checkVoltage(buzzer);
+  // measure and check values (voltage, current)
+  ////batMonitor->checkValues(buzzer);
 
 #ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
-  bridge->loop();
+  ////bridge->loop();
+  ////blynkApp->loop();
 #endif //ESP32
 }
