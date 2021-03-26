@@ -120,6 +120,27 @@ void Ws28xxController::startSequenceCylon(uint16_t cycles, uint16_t speed, uint8
   }
 }
 
+void Ws28xxController::idleSequence() {
+  if(millis() - lastPulse < 70) {
+    for (int count = 0; count<NUMPIXELS; count++) {
+      pixels.setPixelColor(count, pulse);
+      showStrip();
+    }
+    if(pulse == 127) {
+      up = false;
+    } else if(pulse == 0) {
+      up = true;
+    }
+    if(up) {
+      pulse++;
+    } else {
+      pulse--;
+    }
+  }
+  lastPulse = millis();
+}
+
+
 void Ws28xxController::startSequence() {
 #if DEBUG > 1
     Serial.println("Ws28xxController startSequence ");

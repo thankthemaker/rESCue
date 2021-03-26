@@ -23,6 +23,7 @@ class Ws28xxController : public ILedController {
         void flash(int* isForward);
         void stop();
         void startSequence();
+        void idleSequence();
     private:
         void setLight(boolean forward, byte brightness);
         void setPixel(int pixel, byte red, byte green, byte blue);
@@ -30,5 +31,8 @@ class Ws28xxController : public ILedController {
         void startSequenceChasing(byte red, byte green, byte blue, int speedDelay);
         void startSequenceCylon(uint16_t cycles, uint16_t speed, uint8_t width, uint32_t color);
         uint32_t dimColor(uint32_t color, uint8_t width);
+        uint8_t pulse = 0;
+        uint32_t lastPulse = 0;
+        boolean up = false;
 };
 #endif //__LED_CONTROLLER_H__

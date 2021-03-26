@@ -58,6 +58,9 @@ void CobController::startSequence(){
   fade(&new_forward);
 }
 
+void CobController::idleSequence(){
+}
+
 void CobController::writePWM(int channel, int dutyCycle){
 #ifdef ESP32
   ledcWrite(channel, dutyCycle);

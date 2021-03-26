@@ -27,11 +27,12 @@
 #define MAX_BATTARY_VOLTAGE      5040  // set your max. battery voltage here
 #define MIN_BATTARY_VOLTAGE      4000  // set your min. battery voltage here
 
+#define MAX_AVG_CURRENT          40.00
+
 // optional WS28xx battery bar params
 #define BATTERY_BAR                    // activates a visual WS28xx battery bar, if connected
-#define BATTERY_BAR_NUMPIXELS    3     // the number of LEDS of the battery bar
-//#define VOLTAGE_DIVIDER_CONSTANT 23.54 // for calculation see at bottom ESP32
-#define VOLTAGE_DIVIDER_CONSTANT 23.955 // for calculation see at bottom ESP8266
+#define BATTERY_BAR_NUMPIXELS    5     // the number of LEDS of the battery bar
+#define VOLTAGE_DIVIDER_CONSTANT 24.527 // for calculation see at bottom
 
 /**** Definition of the UART connection to the Cheap Focer 2 ****/
 

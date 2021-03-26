@@ -10,6 +10,7 @@ class ILedController {
         virtual void fade(int* isForward) = 0;
         virtual void flash(int* isForward) = 0;
         virtual void stop() = 0;
+        virtual void idleSequence() = 0;
         virtual void startSequence() = 0;
         void loop(int* new_forward, int* old_forward, int* new_backward, int* old_backward);
 };

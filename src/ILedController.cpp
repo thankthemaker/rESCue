@@ -14,5 +14,12 @@ void ILedController::loop(int* new_forward, int* old_forward, int* new_backward,
       
     *(old_forward) = *(new_forward);
     *(old_backward) = *(new_backward);
+    return;
   } 
+
+  //idle state???
+  if(*(old_forward) == LOW && *(old_backward) == LOW && 
+     *(new_forward) == LOW && *(new_backward) == LOW) {
+    this->idleSequence();
+  }
 }
