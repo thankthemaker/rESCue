@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "config.h"
-#include "BatteryController.h"
+#include "BatteryMonitor.h"
 #include "Buzzer.h"
 #include "ILedController.h"
 #include "Ws28xxController.h"
@@ -24,7 +24,7 @@ ILedController *ledController = LedControllerFactory::getInstance()->createLedCo
 
 #if defined(CANBUS_ENABLED) && defined(ESP32)
  CanBus * canbus = new CanBus();
- BatteryController *batController = new BatteryController(&canbus->vescData);
+ BatteryMonitor *batMonitor = new BatteryMonitor(&canbus->vescData);
 #else
  BatteryController *batController = new BatteryController();
 #endif //CANBUS_ENABLED && ESP32
@@ -50,7 +50,7 @@ void setup() {
 #endif //ESP32
 
   // initializes the battery monitor
-  batController->init();
+  batMonitor->init();
 #ifdef ESP32
   // initialize the UART bridge from VESC to Bluetooth
   bridge->init(&vesc);
@@ -89,7 +89,7 @@ void loop() {
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check voltage
-  batController->checkVoltage(buzzer);
+  batMonitor->checkValues(buzzer);
 
 #ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
