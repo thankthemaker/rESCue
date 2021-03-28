@@ -13,6 +13,8 @@
 #define B10000001 129
 #define B11000011 195
 
+#define LOG_TAG_CANBUS "CanBus"
+
 typedef enum {
   CAN_PACKET_SET_DUTY = 0,
   CAN_PACKET_SET_CURRENT,

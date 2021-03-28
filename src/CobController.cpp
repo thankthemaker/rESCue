@@ -1,12 +1,11 @@
 #include <Arduino.h>
+#include <Logger.h>
 #include "CobController.h"
 
 CobController::CobController() {}
 
 void CobController::init() {
-#if DEBUG > 0
-  Serial.println("Initializing CobController");
-#endif
+  Logger::notice(LOG_TAG_COB, "initializing ...");
 #ifdef ESP32
   ledcAttachPin(MOSFET_PIN_1, 0); // assign a led pins to a channel
  #ifdef DUAL_MOSFET

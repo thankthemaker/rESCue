@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Logger.h>
 #include "config.h"
 #include "BatteryMonitor.h"
 #include "Buzzer.h"
@@ -33,11 +34,15 @@ ILedController *ledController = LedControllerFactory::getInstance()->createLedCo
  BleServer *bleServer = new BleServer();
 #endif //ESP32
 
+// Declare the local logger function before it is called.
+void localLogger(Logger::Level level, const char* module, const char* message);
 
 void setup() {
-#if DEBUG > 0
-  Serial.begin(VESC_BAUD_RATE);
-#endif
+  Logger::setOutputFunction(localLogger);
+  Logger::setLogLevel(Logger::NOTICE);
+  if(Logger::getLogLevel() != Logger::SILENT) {
+    Serial.begin(VESC_BAUD_RATE);
+  }
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
@@ -54,9 +59,7 @@ void setup() {
   batMonitor->init();
 #ifdef ESP32
   // initialize the UART bridge from VESC to Bluetooth
-  bleServer->init();
-  ////bridge->init(&vesc);
-  ////blynkApp->init();
+  bleServer->init(&vesc);
 #endif //ESP32
   // initialize the LED (either COB or Neopixel)
   ledController->init();
@@ -92,11 +95,30 @@ void loop() {
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check values (voltage, current)
-  ////batMonitor->checkValues(buzzer);
+  batMonitor->checkValues(buzzer);
 
 #ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
-  ////bridge->loop();
-  ////blynkApp->loop();
+  canbus->vescData.inputVoltage = random(400, 504)/10.0;
+  canbus->vescData.erpm = random(5000, 8000);
+  canbus->vescData.dutyCycle = random(-100, 100);
+  bleServer->loop(&canbus->vescData);
 #endif //ESP32
+}
+
+void localLogger(Logger::Level level, const char* module, const char* message) {
+  Serial.print(F("FWC: ["));
+
+  Serial.print(Logger::asString(level));
+
+  Serial.print(F("] "));
+
+  if (strlen(module) > 0)
+  {
+      Serial.print(F(": "));
+      Serial.print(module);
+      Serial.print(" ");
+  }
+
+  Serial.println(message);
 }

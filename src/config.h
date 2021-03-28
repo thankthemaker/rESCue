@@ -42,6 +42,7 @@
 #ifdef ESP32
  #define BT_NAME "FunWheel Controller"
  #define CANBUS_ENABLED
+ #define BLYNK_ENABLED
 #endif //ESP32
 
 #ifdef CANBUS_ENABLED
@@ -49,6 +50,9 @@
  #define ESP_CAN_ID 3
 #endif //CANBUS_ENABLED
 
+#ifdef BLYNK_ENABLED
+  #define BLYNK_AUTH_TOKEN "l7b1ongYuGiRcnDHufxwnazMH6hAn3Xl"
+#endif
 
 // There are two different start sequences 1==chasing, 2==cylon
 #define STARTSEQUENCE 1

@@ -1,4 +1,5 @@
 #include "CanBus.h"
+#include <Logger.h>
 
 #ifdef CANBUS_ENABLED
 
@@ -73,19 +74,19 @@ void CanBus::loop() {
     while(xQueueReceive(CAN_cfg.rx_queue,&rx_frame, 3*portTICK_PERIOD_MS)==pdTRUE){
       //VESC only uses ext packages, so skip std packages
       if(rx_frame.FIR.B.FF==CAN_frame_ext) {
-#if DEBUG > 2
+        if(Logger::getLogLevel() == Logger::VERBOSE) {
           printFrame(rx_frame);
-#endif
-          processFrame(rx_frame);
+        }
+        processFrame(rx_frame);
       }
     }
-#if DEBUG > 1
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
     dumpVescValues();
-#endif
+  }
 }
 
 void CanBus::requestRealtimeData() {
-    Serial.println("requestRealtimeData");
+    Logger::notice(LOG_TAG_CANBUS, "requestRealtimeData");
     CAN_frame_t tx_frame;
 
     tx_frame.FIR.B.FF = CAN_frame_ext;
@@ -103,7 +104,7 @@ void CanBus::requestRealtimeData() {
 }
 
 void CanBus::requestBalanceData(){
-    Serial.println("requestBalanceData");
+    Logger::notice(LOG_TAG_CANBUS, "requestBalanceData");
     CAN_frame_t tx_frame;
 
     tx_frame.FIR.B.FF = CAN_frame_ext;
@@ -173,38 +174,53 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
   if(PROCESS_RX_BUFFER == ID) {
     frametype = "process rx buffer";
   }
-
-#if DEBUG > 2
-  Serial.println("processed frame " + frametype);
-#endif
+ 
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
+    Logger::verbose(LOG_TAG_CANBUS, String("processed frame " + String(frametype)).c_str());
+  }
 }
 
 void CanBus::dumpVescValues() {
     if(millis() - lastDump < 1000) {
         return;
     }
-    Serial.print("dutycycle=");
-    Serial.print(vescData.dutyCycle);
-    Serial.print(", erpm=");
-    Serial.print(vescData.erpm);
-    Serial.print(", current=");
-    Serial.print(vescData.current);
-    Serial.print(", ampHours=");
-    Serial.print(vescData.ampHours);
-    Serial.print(", ampHoursCharged=");
-    Serial.print(vescData.ampHoursCharged);
-    Serial.print(", wattHours=");
-    Serial.print(vescData.wattHours);
-    Serial.print(", wattHoursCharged=");
-    Serial.print(vescData.wattHoursCharged);
-    Serial.print(", mosfetTemp=");
-    Serial.print(vescData.mosfetTemp);
-    Serial.print(", motorTemp=");
-    Serial.print(vescData.motorTemp);
-    Serial.print(", inputVoltage=");
-    Serial.print(vescData.inputVoltage);
-    Serial.print(", tachometer=");
-    Serial.println(vescData.tachometer);
+    int size = 25;
+    char val[size];
+    std::string bufferString = "";
+    bufferString += "dutycycle=";
+    snprintf(val, size, "%f", vescData.dutyCycle);
+    bufferString += val;
+    bufferString += ", erpm=";
+    snprintf(val, size, "%f", vescData.erpm);
+    bufferString += val;
+    bufferString += ", current=";
+    snprintf(val, size, "%f", vescData.current);
+    bufferString += val;
+    bufferString += ", ampHours=";
+    snprintf(val, size, "%f", vescData.ampHours);
+    bufferString += val;
+    bufferString +=  ", ampHoursCharged=";
+    snprintf(val, size, "%f", vescData.ampHoursCharged);
+    bufferString += val;
+    bufferString +=  ", wattHours=";
+    snprintf(val, size, "%f", vescData.wattHours);
+    bufferString += val;
+    bufferString +=  ", wattHoursCharged=";
+    snprintf(val, size, "%f", vescData.wattHoursCharged);
+    bufferString += val;
+    bufferString +=  ", mosfetTemp=";
+    snprintf(val, size, "%f", vescData.mosfetTemp);
+    bufferString += val;
+    bufferString +=  ", motorTemp=";
+    snprintf(val, size, "%f", vescData.motorTemp);
+    bufferString += val;
+    bufferString +=  ", inputVoltage=";
+    snprintf(val, size, "%f", vescData.inputVoltage);
+    bufferString += val;
+    bufferString +=  ", tachometer=";
+    snprintf(val, size, "%f", vescData.tachometer);
+    bufferString += val;
+    Logger::verbose(LOG_TAG_CANBUS, bufferString.c_str());
     lastDump = millis();
 }
 
