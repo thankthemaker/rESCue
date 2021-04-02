@@ -1,5 +1,8 @@
 #include "BleServer.h"
+#include "BlynkPins.h"
 #include <Logger.h>
+#include "esp_bt_main.h"
+#include "esp_bt_device.h"
 
 NimBLEServer* pServer = NULL;
 NimBLECharacteristic* pCharacteristicBlynkTx = NULL;
@@ -13,6 +16,29 @@ BlynkFifo<uint8_t, BLYNK_MAX_READBYTES*2> mBuffRX;
 Stream *vescSerial;
 std::string bufferString;
 int lastLoop = 0;
+
+BLYNK_WRITE_DEFAULT() {
+  int pin = request.pin;
+  char buf[128];
+  switch (pin) {
+    case VPIN_APP_LIGHT_INDEX:
+      snprintf(buf, 128, "Updated param \"LightIndex\" to %d", param.asInt());
+      break;
+    case VPIN_APP_SOUND_INDEX:
+      snprintf(buf, 128, "Updated param \"SoundIndex\" to %d", param.asInt());
+      break;
+    case VPIN_APP_MIN_BAT_VOLTAGE:
+      snprintf(buf, 128, "Updated param \"MinBatVoltage\" to %f", param.asDouble());
+      break;
+    case VPIN_APP_MAX_BAT_VOLTAGE:
+      snprintf(buf, 128, "Updated param \"MaxBatVoltage\" to %f", param.asDouble());
+      break;
+    case VPIN_APP_NOTIFICATION:
+      snprintf(buf, 128, "Updated param \"NotificationEnabled\" to %d", param.asInt());
+      break;
+  }
+  Logger::notice(LOG_TAG_BLESERVER, buf);
+}
 
 class BlynkEsp32_BLE : public BlynkProtocol<BleServer> {
     typedef BlynkProtocol<BleServer> Base;
@@ -39,7 +65,7 @@ BleServer::BleServer():
 // NimBLEServerCallbacks::onConnect
 void BleServer::onConnect(BLEServer* pServer, ble_gap_conn_desc* desc) {
   char buf[128];
-  snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString());
+  snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
   Logger::notice(LOG_TAG_BLESERVER, buf);
   Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
   deviceConnected = true;
@@ -61,7 +87,7 @@ void BleServer::onDisconnect(NimBLEServer* pServer) {
 
 void BleServer::init(Stream *vesc) {
   vescSerial = vesc;
-
+   
   // Create the BLE Device
   NimBLEDevice::init(BT_NAME);
 
@@ -119,7 +145,6 @@ void BleServer::init(Stream *vesc) {
 
   // Start advertising
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-  pAdvertising->setManufacturerData("ThankTheMaker");
   pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
   pAdvertising->addServiceUUID(BLYNK_SERVICE_UUID);
   pAdvertising->setScanResponse(true);
@@ -175,10 +200,8 @@ void BleServer::loop(CanBus::VescData *vescData) {
   Blynk.run();
     
   if(millis() - lastLoop > 1000) {
+    updateBlynk(vescData);
     lastLoop = millis();
-    Blynk.virtualWrite(BLYNK_VPIN_VOLTAGE, vescData->inputVoltage);
-    Blynk.virtualWrite(BLYNK_VPIN_ERPM, vescData->erpm);
-    Blynk.virtualWrite(BLYNK_VPIN_DUTY_CYCLE, vescData->dutyCycle);
   }
 }
 
@@ -266,15 +289,30 @@ void BleServer::onWrite(NimBLECharacteristic* pCharacteristic) {
 //NimBLECharacteristicCallbacks::onSubscribe
 void BleServer::onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue) {
   char buf[256];
-  snprintf(buf, 256, "Client ID: %s, Address: %s, Subvalue %d, Characteristics %s ", 
-    desc->conn_handle, NimBLEAddress(desc->peer_ota_addr), subValue, pCharacteristic->getUUID());
-    Logger::notice(LOG_TAG_BLESERVER, buf);
+  snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
+    desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue, pCharacteristic->getUUID().toString().c_str());
+  Logger::notice(LOG_TAG_BLESERVER, buf);
 }
 
 //NimBLECharacteristicCallbacks::onSubscribe
 void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code) {
   char buf[256];
-  snprintf(buf, 256, "Notification/Indication status code: %s, return code: %d=%s", 
-    status, code, NimBLEUtils::returnCodeToString(code));
+  snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
   Logger::notice(LOG_TAG_BLESERVER, buf);
+}
+
+void BleServer::updateBlynk(CanBus::VescData *vescData) {
+  Blynk.virtualWrite(VPIN_VESC_INPUT_VOLTAGE, vescData->inputVoltage);
+  Blynk.virtualWrite(VPIN_VESC_ERPM, vescData->erpm);
+  Blynk.virtualWrite(VPIN_VESC_DUTY_CYCLE, vescData->dutyCycle);
+  Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color", 
+    vescData->dutyCycle > 0 ? BLINK_COLOR_GREEN : BLINK_COLOR_RED);
+  Blynk.virtualWrite(VPIN_VESC_MOSFET_TEMP, vescData->mosfetTemp);
+  Blynk.virtualWrite(VPIN_VESC_TACHOMETER, vescData->tachometer);   
+  Blynk.virtualWrite(VPIN_VESC_MOTOR_TEMP, vescData->motorTemp);
+  Blynk.virtualWrite(VPIN_VESC_AMP_HOURS, vescData->ampHours);
+  Blynk.virtualWrite(VPIN_VESC_AMP_HOURS_CHARGED, vescData->ampHoursCharged);
+  Blynk.virtualWrite(VPIN_VESC_WATT_HOURS, vescData->wattHours);
+  Blynk.virtualWrite(VPIN_VESC_WATT_HOURS_CHARGED, vescData->wattHoursCharged);
+  Blynk.virtualWrite(VPIN_VESC_CURRENT, vescData->current);
 }

@@ -40,7 +40,7 @@
 
 // The name this controller should advertise for BLE
 #ifdef ESP32
- #define BT_NAME "FunWheel Controller"
+ #define BT_NAME "FWC"
  #define CANBUS_ENABLED
  #define BLYNK_ENABLED
 #endif //ESP32

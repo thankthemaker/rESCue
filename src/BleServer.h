@@ -30,15 +30,6 @@
 #define BLYNK_CHARACTERISTIC_UUID_RX "713D0003-503E-4C75-BA94-3148F18D941E"
 #define BLYNK_CHARACTERISTIC_UUID_TX "713D0002-503E-4C75-BA94-3148F18D941E"
 
-#define BLYNK_VPIN_SOUND_INDEX 1
-#define BLYNK_VPIN_LIGHT_INDEX 2
-#define BLYNK_VPIN_VOLTAGE 3
-#define BLYNK_VPIN_MAX_BAT_VOLTAGE 4
-#define BLYNK_VPIN_MIN_BAT_VOLTAGE 5
-#define BLYNK_VPIN_NOTIFICATION 6
-#define BLYNK_VPIN_DUTY_CYCLE 7
-#define BLYNK_VPIN_ERPM 8
-
 extern BlynkFifo<uint8_t, BLYNK_MAX_READBYTES*2> mBuffRX;
 
 class BleServer : 
@@ -67,6 +58,8 @@ class BleServer :
       void onWrite(NimBLECharacteristic* pCharacteristic);
       void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue);
       void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code);
+      
+      void updateBlynk(CanBus::VescData *vescData);
 
     private:
       bool mConn;

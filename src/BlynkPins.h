@@ -1,0 +1,22 @@
+#define BLINK_COLOR_GREEN "#23C48E"
+#define BLINK_COLOR_RED "#D3435C"
+
+#define VPIN_APP_LIGHT_INDEX     1
+#define VPIN_APP_SOUND_INDEX     2
+#define VPIN_APP_VOLTAGE         3
+#define VPIN_APP_MAX_BAT_VOLTAGE 4
+#define VPIN_APP_MIN_BAT_VOLTAGE 5
+#define VPIN_APP_NOTIFICATION    6
+
+// VESC params
+#define VPIN_VESC_DUTY_CYCLE         21
+#define VPIN_VESC_ERPM               22
+#define VPIN_VESC_CURRENT            23
+#define VPIN_VESC_AMP_HOURS          24
+#define VPIN_VESC_AMP_HOURS_CHARGED  25
+#define VPIN_VESC_WATT_HOURS         26
+#define VPIN_VESC_WATT_HOURS_CHARGED 27
+#define VPIN_VESC_MOSFET_TEMP        28
+#define VPIN_VESC_MOTOR_TEMP         29
+#define VPIN_VESC_INPUT_VOLTAGE      30
+#define VPIN_VESC_TACHOMETER         31

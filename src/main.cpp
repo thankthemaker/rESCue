@@ -39,7 +39,7 @@ void localLogger(Logger::Level level, const char* module, const char* message);
 
 void setup() {
   Logger::setOutputFunction(localLogger);
-  Logger::setLogLevel(Logger::NOTICE);
+  Logger::setLogLevel(Logger::WARNING);
   if(Logger::getLogLevel() != Logger::SILENT) {
     Serial.begin(VESC_BAUD_RATE);
   }
@@ -58,7 +58,7 @@ void setup() {
   // initializes the battery monitor
   batMonitor->init();
 #ifdef ESP32
-  // initialize the UART bridge from VESC to Bluetooth
+  // initialize the UART bridge from VESC to BLE and the BLE support for Blynk (https://blynk.io)
   bleServer->init(&vesc);
 #endif //ESP32
   // initialize the LED (either COB or Neopixel)
@@ -67,7 +67,7 @@ void setup() {
   delay(50);
   ledController->startSequence();
   ledController->stop();
-  buzzer->startSequence();
+  ////buzzer->startSequence();
 }
 
 void loop() {
@@ -95,13 +95,15 @@ void loop() {
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check values (voltage, current)
-  batMonitor->checkValues(buzzer);
+  ////batMonitor->checkValues(buzzer);
 
 #ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
+/*
   canbus->vescData.inputVoltage = random(400, 504)/10.0;
   canbus->vescData.erpm = random(5000, 8000);
   canbus->vescData.dutyCycle = random(-100, 100);
+*/
   bleServer->loop(&canbus->vescData);
 #endif //ESP32
 }
