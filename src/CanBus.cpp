@@ -31,7 +31,7 @@ void CanBus::init() {
     CAN_cfg.tx_pin_id = GPIO_NUM_27;
     CAN_cfg.rx_pin_id = GPIO_NUM_26;
     CAN_cfg.rx_queue = xQueueCreate(50,sizeof(CAN_frame_t));
-    
+  /*  
     CAN_filter_t p_filter;
     p_filter.FM = Single_Mode;
 
@@ -44,7 +44,8 @@ void CanBus::init() {
     p_filter.AMR1 = 0xFF;
     p_filter.AMR2 = 0xFF;
     p_filter.AMR3 = 0xFF;
-    //ESP32Can.CANConfigFilter(&p_filter);
+    ESP32Can.CANConfigFilter(&p_filter);
+  */
     //start CAN Module
     ESP32Can.CANInit();
 }
@@ -173,10 +174,12 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
   if(PROCESS_RX_BUFFER == ID) {
     frametype = "process rx buffer";
   }
-
-#if DEBUG > 2
-  Serial.println("processed frame " + frametype);
-#endif
+ 
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
+    char buf[32];
+    snprintf(buf, 32, "processed frame %s", frametype.c_str());
+    Logger::verbose(LOG_TAG_CANBUS, buf);
+  }
 }
 
 void CanBus::dumpVescValues() {
