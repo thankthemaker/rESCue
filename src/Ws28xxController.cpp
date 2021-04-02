@@ -1,4 +1,4 @@
-#include "Ws28xxcontroller.h"
+#include "Ws28xxController.h"
 #include <Logger.h>
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
