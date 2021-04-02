@@ -86,8 +86,8 @@ void loop() {
   // call the led controller loop
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
-  // measure and check values (voltage, current)
-  ////batMonitor->checkValues(buzzer);
+  // measure and check voltage
+  batMonitor->checkValues(buzzer);
 
   // call the VESC UART-to-Bluetooth bridge
   bleServer->loop(&canbus->vescData);
