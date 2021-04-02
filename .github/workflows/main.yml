@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: PlatformIO CI
 
 # Controls when the action will run. 
 on:
@@ -42,4 +42,4 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio run -e <ID_1> -e <ID_2> -e <ID_N>
+      run: pio run -e wemos_d1_mini32 -e nodemcu-32s
