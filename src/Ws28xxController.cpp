@@ -1,13 +1,12 @@
 #include "ws28xxcontroller.h"
+#include <Logger.h>
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
 Ws28xxController::Ws28xxController() {}
 
 void Ws28xxController::init() {
-#if DEBUG > 0
-  Serial.println("Initializing Ws28xxController");
-#endif
+  Logger::notice(LOG_TAG_WS28XX, "initializing ...");
   pixels.begin(); // This initializes the NeoPixel library.
 }
 
@@ -20,9 +19,7 @@ void Ws28xxController::showStrip() {
 }
 
 void Ws28xxController::stop() {
-#if DEBUG > 1
-  Serial.println("stop");
-#endif
+  Logger::verbose("stop");
   for(int i = 0; i < NUMPIXELS; i++ ) {
     this->setPixel(i, 0, 0, 0);
   }
@@ -46,9 +43,11 @@ void Ws28xxController::setLight(boolean forward, byte brightness) {
 } 
 
 void Ws28xxController::fade(int* isForward) {
-#if DEBUG > 1
-  Serial.println("fade " + String(*(isForward) ? "forward" : "backward"));
-#endif
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
+    char buf[64];
+    snprintf(buf, 64, "fade %s", *(isForward) ? "forward" : "backward");
+    Logger::verbose(LOG_TAG_WS28XX, buf);
+  }
 
   for(int k = MAX_BRIGHTNESS; k >= 0; k--) {
     this->setLight(!*(isForward), k);
@@ -61,9 +60,11 @@ void Ws28xxController::fade(int* isForward) {
 }
 
 void Ws28xxController::flash(int* isForward) {
-#if DEBUG > 1
-  Serial.println("flash " + String(*(isForward) ? "forward" : "backward"));
-#endif
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
+    char buf[64];
+    snprintf(buf, 64, "flash %s", *(isForward) ? "forward" : "backward");
+    Logger::verbose(LOG_TAG_WS28XX, buf);
+  }
   for(int j=0; j<10; j++) {
     for(int i = 0; i < NUMPIXELS; i++ ) {
       if(i < NUMPIXELS/2)
@@ -142,9 +143,7 @@ void Ws28xxController::idleSequence() {
 
 
 void Ws28xxController::startSequence() {
-#if DEBUG > 1
-    Serial.println("Ws28xxController startSequence ");
-#endif
+  Logger::notice(LOG_TAG_WS28XX, "run startSequence");
 #if STARTSEQUENCE == 1
   startSequenceChasing(0, 0, MAX_BRIGHTNESS, 100);
 #elif STARTSEQUENCE == 2

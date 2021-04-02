@@ -51,6 +51,8 @@ Connect your Piezo buzzer with the negative lead to GPIO 0 and the positive lead
 - Support for Front- and Backlight
 - Battery monitor (visual and acoustic)
 - transparent BLE-UART bridge for VESC-App
+- CANBUS and VESC-Status
+- Blynk-App (Monitoring & Configuration)
 
 ### Front- and backlight control
 
@@ -116,6 +118,11 @@ Please check your CAN configuration in VESC. Make sure the VESC_ID matches the V
 This application assumes you have enabled status messages 1-5, please update your CAN-settings in VESC appropriate to have full support of all features. It is also recommended to reduce the frequency for status updates from the VESC. The default setting is 50Hz, but it is sufficient for this application to reduce the frequency to somehow around 1-5Hz.
 
 If the CANBUS-feature is enabled, the battery monitor can also use the voltage measured by the VESC. A separate voltage divider isn't necessary in that case.
+
+### Blynk-App (Monitoring & Configuration)
+
+The Funwheel-Controller also has support for the Blynk-App. The Blynk-App is used to
+configure the ESP32, e.g. the lights and sounds or the monitoring features.
 
 ## Configuration
 

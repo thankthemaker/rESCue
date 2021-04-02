@@ -1,23 +1,19 @@
 #include "Buzzer.h"
 
-#ifdef ESP32
-  int channel = 0;
-  int resolution = 8;
-  int freq = 2000;
+int channel = 0;
+int resolution = 8;
+int freq = 2000;
 
-  void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
-    ledcWriteTone(channel, frequency);
-  }
-  void noTone(uint8_t _pin) {
-    ledcWriteTone(channel, 0);
-  }
-#endif
+void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
+  ledcWriteTone(channel, frequency);
+}
+void noTone(uint8_t _pin) {
+  ledcWriteTone(channel, 0);
+}
 
 Buzzer::Buzzer() {
-#ifdef ESP32
   ledcSetup(channel, freq, resolution);
   ledcAttachPin(BUZPIN, 0);
-#endif
   noTone(BUZPIN);
 }
 

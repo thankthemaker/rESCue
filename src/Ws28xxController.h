@@ -13,6 +13,8 @@
  #define NUMPIXELS    16  
 #endif //NUMPIXELS
 
+#define LOG_TAG_WS28XX "Ws28xxController"
+
 extern Adafruit_NeoPixel pixels;
 
 class Ws28xxController : public ILedController {
