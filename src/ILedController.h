@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#define LOG_TAG_LED "ILedController"
+
 class ILedController {
     public:    
         // pure virtual (abstract) method definitions

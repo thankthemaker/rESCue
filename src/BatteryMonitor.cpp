@@ -1,4 +1,7 @@
 #include "BatteryMonitor.h"
+#include <Logger.h>
+
+#define LOG_TAG_BATMON "BatteryMonitor"
 
 const int numBatReadings = 50;
 const int numCurReadings = 50;
@@ -30,9 +33,8 @@ BatteryMonitor::BatteryMonitor(CanBus::VescData *vescData) {
 
 
 void BatteryMonitor::init() {
-#if DEBUG > 0
-  Serial.println("Initializing BatteryMonitor");
-#endif
+  Logger::notice(LOG_TAG_BATMON, "initializing...");
+
   // initialize the array for smoothing the analog value
   for (int i = 0; i < numBatReadings; i++) {
     batteryReadings[i] = 0;
@@ -47,11 +49,7 @@ void BatteryMonitor::init() {
 float BatteryMonitor::readValues() {
 #ifndef CANBUS_ENABLED
     int adc = smoothAnalogReading();  // read the sensor and smooth the value
-#ifdef ESP32
     float sensorValue = ( adc * 3.3 ) / (4096);  // calculate the voltage at the ESP32 GPIO
-#else
-    float sensorValue = ( adc * 3.3 ) / (1024);  // calculate the voltage at the ESP8266 GPIO
-#endif //ESP32
     float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
 #else
     float voltage = vescData->inputVoltage; 
@@ -62,19 +60,14 @@ float BatteryMonitor::readValues() {
 #ifdef BATTERY_BAR
     updateBatteryBar(voltage);  // update the WS28xx battery bar
 #endif
-#if DEBUG > 1
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
 #ifndef CANBUS_ENABLED
-    Serial.print("ADC: ");
-    Serial.println(adc);
-    Serial.print("Sensorvalue: ");
-    Serial.print(sensorValue);
-    Serial.println(" V");
+    Logger::verbose(LOG_TAG_BATMON, String("ADC: " + String(adc)).c_str());
+    Logger::verbose(LOG_TAG_BATMON, String("Sensorvalue: " + String(sensorValue) + "V").c_str());
 #endif
-    Serial.print("Voltage: ");
-    Serial.print(voltage);
-    Serial.println(" V");
-#endif
-    return voltage;
+    Logger::verbose(LOG_TAG_BATMON, String("Voltage: " + String(voltage) + "V").c_str());
+  }
+  return voltage;
 }
 
 // check the voltage against the configured min and max values
@@ -88,32 +81,26 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     int voltage = readValues() * 100;
     // check if voltage is below absolute minimum or above absolute maximum (regen)
     if(voltage < min_voltage || voltage > max_voltage) {
-#if DEBUG > 0
-        Serial.println("ALARM: Battery voltage out of range");
-#endif
-        buzzer->alarm();  // play an anoying alarm tone
-        return;
+      Logger::warning(LOG_TAG_BATMON, "ALARM: Battery voltage out of range");
+      buzzer->alarm();  // play an anoying alarm tone
+      return;
     } 
 
     // check if the voltage is close to the minimum
     if(voltage < warn_voltage) {
         if(millis() - lastBatWarn > 5000) {
-#if DEBUG > 0
-            Serial.println("WARN: Battery voltage out of range");
-#endif
-            buzzer->beep(3); // play a warn tonen every 5 seconds
-            lastBatWarn = millis();
+          Logger::warning(LOG_TAG_BATMON, "WARN: Battery voltage out of range");
+          buzzer->beep(3); // play a warn tonen every 5 seconds
+          lastBatWarn = millis();
         }
     }
 
     // check if the average current is higher max
     if(getAverageCurrent() > max_current) {
         if(millis() - lastCurWarn > 5000) {
-#if DEBUG > 0
-            Serial.println("WARN: Average current too high");
-#endif
-            buzzer->beep(3); // play a warn tonen every 5 seconds
-            lastCurWarn = millis();
+          Logger::warning(LOG_TAG_BATMON, "WARN: Average current too high");
+          buzzer->beep(3); // play a warn tonen every 5 seconds
+          lastCurWarn = millis();
         }
     }
 }
@@ -128,11 +115,11 @@ void BatteryMonitor::updateBatteryBar(float voltage) {
     int whole = count; // number of "full" green pixels
     int remainder = (count - whole) * 100; // percentage of usage of current pixel
 
-#if DEBUG > 2
-    Serial.println("used=" + String(used) + ", value=" + String(value));
-    Serial.println("count=" + String(count) + ", diffPerPixel=" + String(diffPerPixel));
-    Serial.println("whole=" + String(whole) + ", remainder=" + String(remainder));
-#endif
+    if(Logger::getLogLevel() == Logger::VERBOSE) {
+      Logger::verbose(LOG_TAG_BATMON, String("used=" + String(used) + ", value=" + String(value)).c_str());
+      Logger::verbose(LOG_TAG_BATMON, String("count=" + String(count) + ", diffPerPixel=" + String(diffPerPixel)).c_str());
+      Logger::verbose(LOG_TAG_BATMON, String("whole=" + String(whole) + ", remainder=" + String(remainder)).c_str());
+    }
 
     // update every pixel individually
     for(int i=0; i<pixel_count; i++) {

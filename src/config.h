@@ -39,22 +39,21 @@
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
 // The name this controller should advertise for BLE
-#ifdef ESP32
- #define BT_NAME "FunWheel Controller"
- #define CANBUS_ENABLED
-#endif //ESP32
+#define BT_NAME "FWC"
+#define CANBUS_ENABLED
+#define BLYNK_ENABLED
 
 #ifdef CANBUS_ENABLED
  #define VESC_CAN_ID 25
  #define ESP_CAN_ID 3
 #endif //CANBUS_ENABLED
 
+#ifdef BLYNK_ENABLED
+  #define BLYNK_AUTH_TOKEN "l7b1ongYuGiRcnDHufxwnazMH6hAn3Xl"
+#endif
 
 // There are two different start sequences 1==chasing, 2==cylon
 #define STARTSEQUENCE 1
-
-// enable DEBUG, the higher the number, the more DEBUG output
-#define DEBUG 1
 
 #endif //__CONFIG_H__
 
