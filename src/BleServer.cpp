@@ -163,13 +163,13 @@ void BleServer::loop(CanBus::VescData *vescData) {
 
   if(vescSerial->available()) {
     int oneByte;
-    Logger::verbose(LOG_TAG_BLESERVER, "BLE from VESC: ");
     while(vescSerial->available()) {
       oneByte = vescSerial->read();
       bufferString.push_back(oneByte);
-#if DEBUG > 2
-      Serial.print(oneByte, HEX);
-#endif
+    }
+    if(Logger::getLogLevel() == Logger::VERBOSE) {
+      Logger::verbose(LOG_TAG_BLESERVER, "BLE from VESC: ");
+      Logger::verbose(LOG_TAG_BLESERVER, bufferString.c_str());
     }
 
     if (deviceConnected) {
@@ -263,24 +263,12 @@ void BleServer::onWrite(NimBLECharacteristic* pCharacteristic) {
   Logger::verbose(LOG_TAG_BLESERVER, "onWrite: " + len);
   if (rxValue.length() > 0) {
     if(pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
-#if DEBUG > 2
-      Serial.println("OnWrite for VESC");
-      unsigned char buffer[rxValue.length()];
-      memcpy(buffer, rxValue.data(), rxValue.length());
-      Serial.print(F("\nBLE-write from phone: "));
-      for (int i = 0; i < rxValue.length(); i++) {
-        Serial.print((int)rxValue.data()[i], HEX);
-      }
-#endif
       for (int i = 0; i < rxValue.length(); i++) {
         vescSerial->write(rxValue[i]);
       }
     } else if (pCharacteristic->getUUID().equals(pCharacteristicBlynkRx->getUUID())) {
       uint8_t* data = (uint8_t*)rxValue.data();
-#if DEBUG > 2
-      Serial.println("OnWrite for BLYNK");
       BLYNK_DBG_DUMP(">> ", data, len);
-#endif
       mBuffRX.put(data, len);
     }
   }

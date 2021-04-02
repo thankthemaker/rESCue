@@ -5,10 +5,8 @@
 #include "Buzzer.h"
 #include "ILedController.h"
 #include "Ws28xxController.h"
-#ifdef ESP32
- #include "BleServer.h"
- #include "CanBus.h"
-#endif //ESP32
+#include "BleServer.h"
+#include "CanBus.h"
 
 int old_forward  = LOW;
 int old_backward = LOW;
@@ -16,23 +14,19 @@ int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
 
-#ifdef ESP32
- HardwareSerial vesc(2);
-#endif //ESP32
+HardwareSerial vesc(2);
 
 Buzzer *buzzer = new Buzzer();
 ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
 
-#if defined(CANBUS_ENABLED) && defined(ESP32)
+#if defined(CANBUS_ENABLED)
  CanBus * canbus = new CanBus();
  BatteryMonitor *batMonitor = new BatteryMonitor(&canbus->vescData);
 #else
  BatteryMonitor *batMonitor = new BatteryMonitor();
-#endif //CANBUS_ENABLED && ESP32
+#endif //CANBUS_ENABLED
 
-#ifdef ESP32
- BleServer *bleServer = new BleServer();
-#endif //ESP32
+BleServer *bleServer = new BleServer();
 
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char* module, const char* message);
@@ -53,14 +47,12 @@ void setup() {
 #ifdef CANBUS_ENABLED
   // initializes the CANBUS
   canbus->init();
-#endif //ESP32
+#endif //CANBUS_ENABLED
 
   // initializes the battery monitor
   batMonitor->init();
-#ifdef ESP32
   // initialize the UART bridge from VESC to BLE and the BLE support for Blynk (https://blynk.io)
   bleServer->init(&vesc);
-#endif //ESP32
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 
@@ -97,15 +89,8 @@ void loop() {
   // measure and check values (voltage, current)
   ////batMonitor->checkValues(buzzer);
 
-#ifdef ESP32
   // call the VESC UART-to-Bluetooth bridge
-/*
-  canbus->vescData.inputVoltage = random(400, 504)/10.0;
-  canbus->vescData.erpm = random(5000, 8000);
-  canbus->vescData.dutyCycle = random(-100, 100);
-*/
   bleServer->loop(&canbus->vescData);
-#endif //ESP32
 }
 
 void localLogger(Logger::Level level, const char* module, const char* message) {

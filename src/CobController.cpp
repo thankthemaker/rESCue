@@ -6,18 +6,16 @@ CobController::CobController() {}
 
 void CobController::init() {
   Logger::notice(LOG_TAG_COB, "initializing ...");
-#ifdef ESP32
   ledcAttachPin(MOSFET_PIN_1, 0); // assign a led pins to a channel
- #ifdef DUAL_MOSFET
+#ifdef DUAL_MOSFET
   ledcAttachPin(MOSFET_PIN_2, 1); // assign a led pins to a channel
- #endif
+#endif
   // Initialize channels
   // channels 0-15, resolution 1-16 bits, freq limits depend on resolution
   // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
   ledcSetup(0, 4000, 8); // 12 kHz PWM, 8-bit resolution
- #ifdef DUAL_MOSFET
+#ifdef DUAL_MOSFET
   ledcSetup(1, 4000, 8); // 12 kHz PWM, 8-bit resolution
- #endif
 #endif
 }
 
@@ -61,13 +59,5 @@ void CobController::idleSequence(){
 }
 
 void CobController::writePWM(int channel, int dutyCycle){
-#ifdef ESP32
   ledcWrite(channel, dutyCycle);
-#else
-  if(0 == channel) {
-    analogWrite(MOSFET_PIN_1, dutyCycle);
-  } else {
-    analogWrite(MOSFET_PIN_2, dutyCycle);
-  }
-#endif
 }

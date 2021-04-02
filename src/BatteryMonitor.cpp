@@ -49,11 +49,7 @@ void BatteryMonitor::init() {
 float BatteryMonitor::readValues() {
 #ifndef CANBUS_ENABLED
     int adc = smoothAnalogReading();  // read the sensor and smooth the value
-#ifdef ESP32
     float sensorValue = ( adc * 3.3 ) / (4096);  // calculate the voltage at the ESP32 GPIO
-#else
-    float sensorValue = ( adc * 3.3 ) / (1024);  // calculate the voltage at the ESP8266 GPIO
-#endif //ESP32
     float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
 #else
     float voltage = vescData->inputVoltage; 

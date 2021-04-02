@@ -176,7 +176,9 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
   }
  
   if(Logger::getLogLevel() == Logger::VERBOSE) {
-    Logger::verbose(LOG_TAG_CANBUS, String("processed frame " + String(frametype)).c_str());
+    char buf[32];
+    snprintf(buf, 32, "processed frame %s", frametype);
+    Logger::verbose(LOG_TAG_CANBUS, buf);
   }
 }
 

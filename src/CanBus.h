@@ -88,7 +88,6 @@ class CanBus {
       void loop();
       void dumpVescValues();
     private:
-
       void requestRealtimeData();
       void requestBalanceData();
       void ping();
