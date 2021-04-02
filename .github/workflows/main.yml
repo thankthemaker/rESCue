@@ -42,8 +42,4 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: |
-        echo PLATFORMIO_CI_SRC: $(PLATFORMIO_CI_SRC)
-        echo DIR: `pwd`
-        echo LS: `ls -l`
-        pio run -e wemos_d1_mini32 -e nodemcu-32s --project-conf=$(PLATFORMIO_CI_SRC)/platformio.ini --project-dir=$(PLATFORMIO_CI_SRC)
+      run: pio run -e wemos_d1_mini32
