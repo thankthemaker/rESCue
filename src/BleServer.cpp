@@ -60,10 +60,10 @@ BlynkEsp32_BLE Blynk(_blynkTransportBLE);
 
 BleServer::BleServer(): 
   mConn (false), 
-  mName ("Blynk") {}
+  mName (BT_NAME) {}
 
 // NimBLEServerCallbacks::onConnect
-void BleServer::onConnect(BLEServer* pServer, ble_gap_conn_desc* desc) {
+void BleServer::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
   char buf[128];
   snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
   Logger::notice(LOG_TAG_BLESERVER, buf);
@@ -96,13 +96,12 @@ void BleServer::init(Stream *vesc) {
   pServer->setCallbacks(this);
 
   // Create the BLE Service
-  BLEService *pServiceBlynk = pServer->createService(BLYNK_SERVICE_UUID);
+  NimBLEService *pServiceBlynk = pServer->createService(BLYNK_SERVICE_UUID);
 
   // Create a BLE Characteristic
   pCharacteristicBlynkTx = pServiceBlynk->createCharacteristic(
                       BLYNK_CHARACTERISTIC_UUID_TX,  
-                      NIMBLE_PROPERTY::NOTIFY   |
-                      NIMBLE_PROPERTY::READ
+                      NIMBLE_PROPERTY::NOTIFY
                     );
   //pCharacteristicBlynkTx->setValue("BLYNK TX");
   pCharacteristicBlynkTx->setCallbacks(this);
@@ -110,7 +109,6 @@ void BleServer::init(Stream *vesc) {
   // Create a BLE Characteristic
   pCharacteristicBlynkRx = pServiceBlynk->createCharacteristic(
                       BLYNK_CHARACTERISTIC_UUID_RX,  
-                      NIMBLE_PROPERTY::READ   |
                       NIMBLE_PROPERTY::WRITE
                     );
   //pCharacteristicBlynkRx->setValue("BLYNK RX");
@@ -120,7 +118,7 @@ void BleServer::init(Stream *vesc) {
   pServiceBlynk->start();
 
   // Create the VESC BLE Service
-  BLEService *pServiceVesc = pServer->createService(VESC_SERVICE_UUID);
+  NimBLEService *pServiceVesc = pServer->createService(VESC_SERVICE_UUID);
 
   // Create a BLE Characteristic for VESC TX
   pCharacteristicVescTx = pServiceVesc->createCharacteristic(
@@ -145,14 +143,14 @@ void BleServer::init(Stream *vesc) {
 
   // Start advertising
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
+  /////pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
   pAdvertising->addServiceUUID(BLYNK_SERVICE_UUID);
   pAdvertising->setScanResponse(true);
   /** Note, this could be left out as that is the default value */
   pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
 
   Logger::verbose(LOG_TAG_BLESERVER, "starting Blynk");
-  Blynk.setDeviceName("Blynk");
+  Blynk.setDeviceName(BT_NAME);
   Blynk.begin(BLYNK_AUTH_TOKEN);
 
   NimBLEDevice::startAdvertising();
