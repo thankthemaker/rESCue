@@ -3,6 +3,7 @@
 #include "config.h"
 #include "BatteryMonitor.h"
 #include "Buzzer.h"
+#include "SoundController.h"
 #include "ILedController.h"
 #include "Ws28xxController.h"
 #include "BleServer.h"
@@ -33,7 +34,7 @@ void localLogger(Logger::Level level, const char* module, const char* message);
 
 void setup() {
   Logger::setOutputFunction(localLogger);
-  Logger::setLogLevel(Logger::WARNING);
+  Logger::setLogLevel(Logger::NOTICE);
   if(Logger::getLogLevel() != Logger::SILENT) {
     Serial.begin(VESC_BAUD_RATE);
   }
@@ -59,7 +60,7 @@ void setup() {
   delay(50);
   ledController->startSequence();
   ledController->stop();
-  ////buzzer->startSequence();
+  /////buzzer->startSequence();
 }
 
 void loop() {
@@ -87,10 +88,15 @@ void loop() {
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check voltage
-  batMonitor->checkValues(buzzer);
+  /////batMonitor->checkValues(buzzer);
 
   // call the VESC UART-to-Bluetooth bridge
+#ifdef CANBUS
+  canbus->vescData.inputVoltage = random(40, 50);
   bleServer->loop(&canbus->vescData);
+#else 
+  bleServer->loop();
+#endif
 }
 
 void localLogger(Logger::Level level, const char* module, const char* message) {

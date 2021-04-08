@@ -5,6 +5,8 @@
 #include "esp_bt_device.h"
 
 NimBLEServer* pServer = NULL;
+NimBLEService* pServiceBlynk = NULL;
+NimBLEService* pServiceVesc = NULL;
 NimBLECharacteristic* pCharacteristicBlynkTx = NULL;
 NimBLECharacteristic* pCharacteristicBlynkRx = NULL;
 NimBLECharacteristic* pCharacteristicVescTx = NULL;
@@ -63,6 +65,7 @@ BleServer::BleServer():
   mName (BT_NAME) {}
 
 // NimBLEServerCallbacks::onConnect
+inline
 void BleServer::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
   char buf[128];
   snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
@@ -76,6 +79,7 @@ void BleServer::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
 };
 
 // NimBLEServerCallbacks::onDisconnect
+inline
 void BleServer::onDisconnect(NimBLEServer* pServer) {
   Logger::notice(LOG_TAG_BLESERVER, "Client disconnected - start advertising");
   deviceConnected = false;
@@ -94,9 +98,11 @@ void BleServer::init(Stream *vesc) {
   // Create the BLE Server
   pServer = NimBLEDevice::createServer();
   pServer->setCallbacks(this);
+  auto pSecurity = new NimBLESecurity();
+  pSecurity->setAuthenticationMode(ESP_LE_AUTH_BOND);
 
   // Create the BLE Service
-  NimBLEService *pServiceBlynk = pServer->createService(BLYNK_SERVICE_UUID);
+  pServiceBlynk = pServer->createService(BLYNK_SERVICE_UUID);
 
   // Create a BLE Characteristic
   pCharacteristicBlynkTx = pServiceBlynk->createCharacteristic(
@@ -118,7 +124,7 @@ void BleServer::init(Stream *vesc) {
   pServiceBlynk->start();
 
   // Create the VESC BLE Service
-  NimBLEService *pServiceVesc = pServer->createService(VESC_SERVICE_UUID);
+  pServiceVesc = pServer->createService(VESC_SERVICE_UUID);
 
   // Create a BLE Characteristic for VESC TX
   pCharacteristicVescTx = pServiceVesc->createCharacteristic(
@@ -143,10 +149,10 @@ void BleServer::init(Stream *vesc) {
 
   // Start advertising
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-  /////pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
+  pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
   pAdvertising->addServiceUUID(BLYNK_SERVICE_UUID);
+  pAdvertising->setAppearance(0x00);
   pAdvertising->setScanResponse(true);
-  /** Note, this could be left out as that is the default value */
   pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
 
   Logger::verbose(LOG_TAG_BLESERVER, "starting Blynk");
@@ -157,8 +163,11 @@ void BleServer::init(Stream *vesc) {
   Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
 }
 
+#ifdef CANBUS
 void BleServer::loop(CanBus::VescData *vescData) {
-
+#else
+void BleServer::loop() {
+#endif
   if(vescSerial->available()) {
     int oneByte;
     while(vescSerial->available()) {
@@ -197,10 +206,12 @@ void BleServer::loop(CanBus::VescData *vescData) {
 
   Blynk.run();
     
+#ifdef CANBUS
   if(millis() - lastLoop > 1000) {
     updateBlynk(vescData);
     lastLoop = millis();
   }
+#endif
 }
 
 // IP redirect not available
@@ -241,7 +252,9 @@ size_t BleServer::read(void* buf, size_t len) {
 }
 
 size_t BleServer::write(const void* buf, size_t len) {
-  Logger::verbose(LOG_TAG_BLESERVER, "write");
+  char buffer[128];
+  snprintf(buffer, 128, "write: %d", (uint8_t*)buf);
+  Logger::verbose(LOG_TAG_BLESERVER, buffer);
   pCharacteristicBlynkTx->setValue((uint8_t*)buf, len);
   pCharacteristicBlynkTx->notify();
   return len;
@@ -254,11 +267,14 @@ size_t BleServer::available() {
 }
 
 //NimBLECharacteristicCallbacks::onWrite
-void BleServer::onWrite(NimBLECharacteristic* pCharacteristic) {
-  Logger::notice(LOG_TAG_BLESERVER, pCharacteristic->getUUID().toString().c_str());
+void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
+  char buffer[128];
+  snprintf(buffer, 128, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
+  Logger::notice(LOG_TAG_BLESERVER, buffer);
   std::string rxValue = pCharacteristic->getValue();
   size_t len = rxValue.length();
-  Logger::verbose(LOG_TAG_BLESERVER, "onWrite: " + len);
+  snprintf(buffer, 128, "onWrite - value: %s", rxValue.data());
+  Logger::notice(LOG_TAG_BLESERVER, buffer);
   if (rxValue.length() > 0) {
     if(pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
       for (int i = 0; i < rxValue.length(); i++) {
@@ -284,9 +300,10 @@ void BleServer::onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_
 void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code) {
   char buf[256];
   snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
-  Logger::notice(LOG_TAG_BLESERVER, buf);
+  Logger::verbose(LOG_TAG_BLESERVER, buf);
 }
 
+#ifdef CANBUS
 void BleServer::updateBlynk(CanBus::VescData *vescData) {
   Blynk.virtualWrite(VPIN_VESC_INPUT_VOLTAGE, vescData->inputVoltage);
   Blynk.virtualWrite(VPIN_VESC_ERPM, vescData->erpm);
@@ -302,3 +319,4 @@ void BleServer::updateBlynk(CanBus::VescData *vescData) {
   Blynk.virtualWrite(VPIN_VESC_WATT_HOURS_CHARGED, vescData->wattHoursCharged);
   Blynk.virtualWrite(VPIN_VESC_CURRENT, vescData->current);
 }
+#endif

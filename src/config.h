@@ -40,7 +40,7 @@
 
 // The name this controller should advertise for BLE
 #define BT_NAME "FWC"
-#define CANBUS_ENABLED
+//define CANBUS_ENABLED
 #define BLYNK_ENABLED
 
 #ifdef CANBUS_ENABLED
@@ -49,7 +49,8 @@
 #endif //CANBUS_ENABLED
 
 #ifdef BLYNK_ENABLED
-  #define BLYNK_AUTH_TOKEN "l7b1ongYuGiRcnDHufxwnazMH6hAn3Xl"
+  //#define BLYNK_AUTH_TOKEN "l7b1ongYuGiRcnDHufxwnazMH6hAn3Xl"
+  #define BLYNK_AUTH_TOKEN "bb48a7193d764ea7a90dbffb54ffcb76"
 #endif
 
 // There are two different start sequences 1==chasing, 2==cylon
