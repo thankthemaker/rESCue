@@ -153,3 +153,11 @@ platformio run --target upload
 If you'd like to donate for my work
 
 [![Donate with PayPal](https://github.com/thankthemaker/funwheel-controller/raw/master/donate-button.png) ](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
+
+## Renaming from "funwheel-controller" to "rESCue"
+
+Why did we rename the project? 
+
+Well, the project is no longer only related to the Funwheel, basically it's valuable for all VESC based vehicles and was already adopted by the Floatwheel community. The project started with the intention to only bring switchable LEDs to the Funwheel but evolved to complete solution to bring more features, fun and of course safety to you VESC based vehicle. Especially for self-balanced vehicles like the Funwheel or the Floatwheel this software might help to prevent damage to yourself and your vehicle by giving you visual and acoustic feedback.
+
+Enjoy and stay / ride save!!!
