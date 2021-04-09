@@ -12,9 +12,15 @@ The ESP32 D1 Mini is highly recommended, but other ESP32 also work.
 
 If you're interested in an almost plug-and-play solution, you might want to get the Wheelbarrow PCB. Jonas from the #Funwheel Discord-server did a great Job and designed a PCB.
 
-Here's what revision 3 of it looks like.
+Here's what rev3 of it looks like.
 
 ![Wheelbarrow PCB Rev. 3](docs/images/wheelbarrow-rev3.png)
+
+- sizing 95mm x 41mm
+- input voltage 7,5V - 76V
+- output 5V, 1A maximum
+- ESP32 D1 mini header
+- JST-PH header for CANBUS, UART, LED-Battery-indicator, LED-lights
 
 More documentation to come as soon as the PCB officially available.
 
@@ -41,22 +47,34 @@ If you want to use COB modules, tri-color 12V COB with two MOSFET modules are re
 
 Connect you VESC (e.g. [Cheap FOCer 2](https://github.com/shamansystems/Cheap-FOCer-2)) to the RX- and TX-PINs of the UART2 of your ESP32 (GPIO 16 & 17).
 
-Connect your WS28xx pixel to the DC-DC converter and attach the DIN-Pin to GPIO 5 of your ESP.
-
 Connect your Cheap FOCer to GPIOs of the ESP32 as follows:
 
 |ESP32 | Cheap FOCer 2|Description|
 |:---:|:---:|:---:|
-|GPIO 16 | TX| UART (if used)|
-|GPIO 17 | RX| UART (if used)|
-|GPIO 26 | CANBUS-TX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
-|GPIO 27 | CANBUS-RX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
+|GPIO 16 | RX| UART (if used)|
+|GPIO 17 | TX| UART (if used)|
+|GPIO 26 | CANBUS-RX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
+|GPIO 27 | CANBUS-TX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
 |GPIO 18 | PC13 | forward|
 |GPIO 19 | PC14 | backward|
 |GPIO 21 | PA15 | brake |
 |GPIO 5 | PB12 | buzzer |
 
-Connect your Piezo buzzer with the negative lead to GPIO 0 and the positive lead to GND.
+Connect your WS28xx pixel to the DC-DC converter and attach the DIN-Pin to GPIO 4 of your ESP.
+
+Connect your Piezo buzzer with the negative lead to GPIO 25 and the positive lead to GND.
+
+This table shows the PIN mapping:
+
+|ESP32 | Component |Description|
+|:---:|:---:|:---:|
+|GPIO 4 | DIN lights|LED-Lights|
+|GPIO 25 | DAC / I2S |Buzzer / Speaker|
+|GPIO 22 | MOSFET1 |COB white front / red back (if COB is used)|
+|GPIO 23 | MOSFET2 |COB red front / white back (if COB is used)|
+|GPIO 34 | Voltage divider |Battery input (if voltage divider is used)|
+|GPIO ?? | DIN battery |Battery indicator|
+
 
 ## Features
 
@@ -136,17 +154,17 @@ If the CANBUS-feature is enabled, the battery monitor can also use the voltage m
 
 ### Blynk-App (Monitoring & Configuration)
 
-rESCue also has support for the Blynk-App.
+rESCue also supports the [Blynk-App](https://blynk.io/).
 
 ![Blynk-Logo](docs/images/Blynk-logo.png)
 
-The Blynk-App is used to configure the ESP32, e.g. the lights and sounds or the monitoring features including local push-notifications (Android only).
+The Blynk-App is used to configure the ESP32, e.g. the lights and sounds and also the monitoring features including charts and local push-notifications (Android only, iOS doesn't work in Blynk at the moment).
 
 ![Blynk-App](docs/images/rESCue-Blynk.png)
 
 If you'd like to use our Blynk dashboard, simply download the Blynk app to your smartphone and scan this QR code.
 
-To use this App with the official Blynk server, you'll might need to buy some energy as this App needs more than the 2000 `free`energy points. Therefore we offer you to use the `thank-the-maker.org` server, which gives you more than enough energy to run this app.
+To use this App with the official Blynk server, you'll might need to buy some energy as this App needs more than the 2000 `free energy` points. Therefore we offer you to use the `thank-the-maker.org` server, which gives you more than enough energy to run this app.
 
 ![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
 
