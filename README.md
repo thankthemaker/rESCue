@@ -90,11 +90,13 @@ Using any other number of LEDs then 16, the `NUMPIXELS` definition has to be cha
 
 ### Battery monitor
 
-The battery monitor uses a simple voltage divider which allows measuring the voltage from 0 - 100 V with the analog input of an ESP32. The voltage divider. The ESP12 uses 12bit (0-4095 )and 3.3V logic.
+The battery monitor uses either the CANBUS or a simple externale voltage divider which allows measuring the voltage from 0 - 100 V with the analog input of an ESP32.
+
+The ESP12 uses 12bit (0-4095 )and 3.3V logic.
 
 ![Battery Monitor wiring](docs/images/battery-monitor-wiring.png)
 
-The battery level is monitored against the configured values. If the battery level drops close the configured value, the piezo buzzer will give you a warning tone. If the battery level drops under the configured value, an alarm tone sounds.
+The battery level is monitored against the configured values, no matter if CANBUS or ean external voltage divider is used. If the battery level drops close the configured value, the piezo buzzer will give you a warning tone. If the battery level drops under the configured value, an alarm tone sounds.
 
 If a WS28xx stripe is connected, the battery level will also been shown in 100/PIXEL_NUMBER steps, e.g. if a stipe with 5 pixel is connected, each pixel represents 20% of the capacity.
 Every single pixel is further subdivided and changes color from green to red.
@@ -103,14 +105,15 @@ For further information on measuring voltages with the ESP32, check this [great 
 
 ### Transparent BLE-UART proxy for VESC app
 
-The VESC applications for Desktop and Mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
+The VESC applications for desktop and mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
+
+The desktop and mobile version of the [VESC tool app](https://vesc-project.com/vesc_tool) (Linux, Windows, Android) and also [Yours Truly](https://apps.apple.com/gb/app/yours-truly/id1523671235) are well tested and should just work fine.
 
 ![ESP32 BLE wiring](docs/images/esp32-ble-wiring.png)
 
 ### CANBUS and VESC-Status (new)
 
-___Attention___: this feature is only available using a ESP32 and a separate CAN-tranceiver, 
-e.g. the SN65HVD230.
+___Attention___: this feature is only available using an ESP32 and a separate CAN-tranceiver, e.g. the SN65HVD230.
 
 Connection to the VESC via CANBUS is now also supported. The connection to the CANBUS will bring you status updates of your VESC. These information include
 
