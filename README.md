@@ -14,7 +14,7 @@ If you're interested in an almost plug-and-play solution, you might want to get 
 
 Here's what revision 3 of it looks like.
 
-![Wheelbarrow PCB Rev. 3](wheelbarrow-rev3.png)
+![Wheelbarrow PCB Rev. 3](docs/images/wheelbarrow-rev3.png)
 
 More documentation to come as soon as the PCB officially available.
 
@@ -78,13 +78,13 @@ In this version, two 12V COB modules are controlled by MOSFETs. When using tri-c
 
 The recommended COB (see above) are very bright, use up to 10W and  get very hot when operating at 12V. Therefore they should be operated at 10.5V only.
 
-![COB wiring](cob-wiring.png)
+![COB wiring](docs/images/cob-wiring.png)
 
 #### WS28xx (Neopixel) version
 
 In this version WS28xx (aka Neopixel) LEDs are used for the front- and backlight. Dependening on the number of LEDs and the specs of the used ESP32 and WS28xx, it might also be possible to connect the WS28xx stripe directly to 3,3V of the ESP32. Nevertheless it's recommended to safely power the WS28xx stripe with a separate DC/DC converter.
 
-![Neopixel wiring](neopixel-wiring.png)
+![Neopixel wiring](docs/images/neopixel-wiring.png)
 
 Using any other number of LEDs then 16, the `NUMPIXELS` definition has to be changed in the config.h file.
 
@@ -92,7 +92,7 @@ Using any other number of LEDs then 16, the `NUMPIXELS` definition has to be cha
 
 The battery monitor uses a simple voltage divider which allows measuring the voltage from 0 - 100 V with the analog input of an ESP32. The voltage divider. The ESP12 uses 12bit (0-4095 )and 3.3V logic.
 
-![Battery Monitor wiring](battery-monitor-wiring.png)
+![Battery Monitor wiring](docs/images/battery-monitor-wiring.png)
 
 The battery level is monitored against the configured values. If the battery level drops close the configured value, the piezo buzzer will give you a warning tone. If the battery level drops under the configured value, an alarm tone sounds.
 
@@ -105,7 +105,7 @@ For further information on measuring voltages with the ESP32, check this [great 
 
 The VESC applications for Desktop and Mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
 
-![ESP32 BLE wiring](esp32-ble-wiring.png)
+![ESP32 BLE wiring](docs/images/esp32-ble-wiring.png)
 
 ### CANBUS and VESC-Status (new)
 
@@ -135,17 +135,17 @@ If the CANBUS-feature is enabled, the battery monitor can also use the voltage m
 
 rESCue also has support for the Blynk-App.
 
-![Blynk-Logo](Blynk-logo.png)
+![Blynk-Logo](docs/images/Blynk-logo.png)
 
 The Blynk-App is used to configure the ESP32, e.g. the lights and sounds or the monitoring features including local push-notifications (Android only).
 
-![Blynk-App](rESCue-Blynk.png)
+![Blynk-App](docs/images/rESCue-Blynk.png)
 
 If you'd like to use our Blynk dashboard, simply download the Blynk app to your smartphone and scan this QR code.
 
 To use this App with the official Blynk server, you'll might need to buy some energy as this App needs more than the 2000 `free`energy points. Therefore we offer you to use the `thank-the-maker.org` server, which gives you more than enough energy to run this app.
 
-![Blynk-App](rESCue-Blynk-QR.jpeg)
+![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
 
 ## Configuration
 
@@ -177,7 +177,7 @@ If you'd like to donate for my work
 
 ## Renaming from "funwheel-controller" to "rESCue"
 
-Why did we rename the project? 
+Why did we rename the project?
 
 Well, the project is no longer only related to the Funwheel, basically it's valuable for all VESC based vehicles and was already adopted by the Floatwheel community. The project started with the intention to only bring switchable LEDs to the Funwheel but evolved to complete solution to bring more features, fun and of course safety to you VESC based vehicle. Especially for self-balanced vehicles like the Funwheel or the Floatwheel this software might help to prevent damage to yourself and your vehicle by giving you visual and acoustic feedback.
 
