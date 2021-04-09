@@ -163,7 +163,7 @@ void BleServer::init(Stream *vesc) {
   Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
 }
 
-#ifdef CANBUS
+#ifdef CANBUS_ENABLED
 void BleServer::loop(CanBus::VescData *vescData) {
 #else
 void BleServer::loop() {
@@ -206,7 +206,7 @@ void BleServer::loop() {
 
   Blynk.run();
     
-#ifdef CANBUS
+#ifdef CANBUS_ENABLED
   if(millis() - lastLoop > 1000) {
     updateBlynk(vescData);
     lastLoop = millis();
@@ -303,7 +303,7 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
   Logger::verbose(LOG_TAG_BLESERVER, buf);
 }
 
-#ifdef CANBUS
+#ifdef CANBUS_ENABLED
 void BleServer::updateBlynk(CanBus::VescData *vescData) {
   Blynk.virtualWrite(VPIN_VESC_INPUT_VOLTAGE, vescData->inputVoltage);
   Blynk.virtualWrite(VPIN_VESC_ERPM, vescData->erpm);

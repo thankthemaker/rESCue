@@ -34,7 +34,7 @@ class BleServer :
     public:
       BleServer();
       void init(Stream *vesc);
-#ifdef CANBUS
+#ifdef CANBUS_ENABLED
       void loop(CanBus::VescData *vescData);
 #else
       void loop();
@@ -59,7 +59,7 @@ class BleServer :
       void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue);
       void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code);
 
-#ifdef CANBUS
+#ifdef CANBUS_ENABLED
       void updateBlynk(CanBus::VescData *vescData);
 #endif
 

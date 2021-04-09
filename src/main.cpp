@@ -91,7 +91,7 @@ void loop() {
   /////batMonitor->checkValues(buzzer);
 
   // call the VESC UART-to-Bluetooth bridge
-#ifdef CANBUS
+#ifdef CANBUS_ENABLED
   canbus->vescData.inputVoltage = random(40, 50);
   bleServer->loop(&canbus->vescData);
 #else 
