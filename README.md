@@ -8,9 +8,19 @@ The ESP32 D1 Mini is highly recommended, but other ESP32 also work.
 
 ## Hardware and wiring
 
+### Wheelbarrow PCB
+
+If you're interested in an almost plug-and-play solution, you might want to get the Wheelbarrow PCB. Jonas from the #Funwheel Discord-server did a great Job and designed a PCB.
+
+Here's what revision 3 of it looks like.
+
+![Wheelbarrow PCB Rev. 3](wheelbarrow-rev3.png)
+
+More documentation to come as soon as the PCB officially available.
+
 ### Hardware
 
-Find the recommended hardware below. Other parts may also work, but the recommended parts are best tested.
+If your not interested in the Wheelbarrow PCB and want build it yourself or only want to use parts of this project, find the recommended hardware below. Other parts may also work, but the recommended parts are best tested.
 
 - [ESP32 D1 Mini](https://www.amazon.de/AZDelivery-Bluetooth-Internet-Development-Compatible/dp/B08BTRQNB3/), other ESP32 might also work but check if all needed GPIO are accessible
 
@@ -123,8 +133,19 @@ If the CANBUS-feature is enabled, the battery monitor can also use the voltage m
 
 ### Blynk-App (Monitoring & Configuration)
 
-rESCue also has support for the Blynk-App. The Blynk-App is used to
-configure the ESP32, e.g. the lights and sounds or the monitoring features.
+rESCue also has support for the Blynk-App.
+
+![Blynk-Logo](Blynk-logo.png)
+
+The Blynk-App is used to configure the ESP32, e.g. the lights and sounds or the monitoring features including local push-notifications (Android only).
+
+![Blynk-App](rESCue-Blynk.png)
+
+If you'd like to use our Blynk dashboard, simply download the Blynk app to your smartphone and scan this QR code.
+
+To use this App with the official Blynk server, you'll might need to buy some energy as this App needs more than the 2000 `free`energy points. Therefore we offer you to use the `thank-the-maker.org` server, which gives you more than enough energy to run this app.
+
+![Blynk-App](rESCue-Blynk-QR.jpeg)
 
 ## Configuration
 
