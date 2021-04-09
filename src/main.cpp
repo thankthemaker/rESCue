@@ -60,7 +60,7 @@ void setup() {
   delay(50);
   ledController->startSequence();
   ledController->stop();
-  /////buzzer->startSequence();
+  buzzer->startSequence();
 }
 
 void loop() {
@@ -88,7 +88,7 @@ void loop() {
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check voltage
-  /////batMonitor->checkValues(buzzer);
+  batMonitor->checkValues(buzzer);
 
   // call the VESC UART-to-Bluetooth bridge
 #ifdef CANBUS_ENABLED
@@ -101,17 +101,12 @@ void loop() {
 
 void localLogger(Logger::Level level, const char* module, const char* message) {
   Serial.print(F("FWC: ["));
-
   Serial.print(Logger::asString(level));
-
   Serial.print(F("] "));
-
-  if (strlen(module) > 0)
-  {
+  if (strlen(module) > 0) {
       Serial.print(F(": "));
       Serial.print(module);
       Serial.print(" ");
   }
-
   Serial.println(message);
 }
