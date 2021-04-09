@@ -1,6 +1,8 @@
-# funwheel-controller
+# rESCue - add more safety and control to your VESC based vehicle
 
-This repository contains code to add some additional features to the [Funwheel](https://www.youtube.com/watch?v=K8beIoe0NuM) by enhancing it with a separate ESP32-controller to control front- and back-lights, monitor the battery and add Bluetooth VESC-UART-bridge
+*2021-04-09: Renamed from "funwheel-controller" to rESCue.*
+
+This repository contains code to add some additional features to the [VESC](https://vesc-project.com)-based vehicles by enhancing it with a separate ESP32-controller to control front- and back-lights, monitor the battery and add Bluetooth VESC-UART-bridge. It was originally created for the [Funwheel](https://www.youtube.com/watch?v=K8beIoe0NuM)
 
 The ESP32 D1 Mini is highly recommended, but other ESP32 also work.
 
