@@ -123,7 +123,7 @@ If the CANBUS-feature is enabled, the battery monitor can also use the voltage m
 
 ### Blynk-App (Monitoring & Configuration)
 
-The Funwheel-Controller also has support for the Blynk-App. The Blynk-App is used to
+rESCue also has support for the Blynk-App. The Blynk-App is used to
 configure the ESP32, e.g. the lights and sounds or the monitoring features.
 
 ## Configuration
@@ -139,7 +139,7 @@ This project is build on PlatformIO. To build the firmware for the ESP32 install
 Clone this repository to your local computer and change into the created directory.
 
 ```shell
-git clone https://github.com/thankthemaker/funwheel-controller && cd funwheel-controller
+git clone https://github.com/thankthemaker/rESCue && cd rESCue
 ```
 
 To build the firmware and upload it to you ESP32 MCU run
