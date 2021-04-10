@@ -15,6 +15,8 @@ int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
 
+int lastFake = 0;
+
 HardwareSerial vesc(2);
 
 Buzzer *buzzer = new Buzzer();
@@ -65,8 +67,8 @@ void setup() {
 
 void loop() {
 #ifdef CANBUS_ENABLED
-  new_forward  = canbus->vescData.erpm >= 0 ? 1 : 0;
-  new_backward = canbus->vescData.erpm < 0 ? 1 : 0;
+  new_forward  = canbus->vescData.erpm >= 0.0 ? 1 : 0;
+  new_backward = canbus->vescData.erpm < 0.0 ? 1 : 0;
   new_brake    = 0;
 #else
   new_forward  = digitalRead(PIN_FORWARD);
@@ -81,7 +83,7 @@ void loop() {
   // is motor brake active?
   if(new_brake == HIGH) {
     // flash backlights
-    ledController->flash(&new_forward);
+    ledController->flash(new_forward == HIGH);
   } 
 
   // call the led controller loop
@@ -92,7 +94,13 @@ void loop() {
 
   // call the VESC UART-to-Bluetooth bridge
 #ifdef CANBUS_ENABLED
-  canbus->vescData.inputVoltage = random(40, 50);
+  #ifdef FAKE_VESC_ENABLED
+    if(millis() - lastFake > 3000) {
+      canbus->vescData.inputVoltage = random(48, 50);
+      canbus->vescData.erpm = random(-1, 1);
+      lastFake = millis();
+    }
+  #endif
   bleServer->loop(&canbus->vescData);
 #else 
   bleServer->loop();

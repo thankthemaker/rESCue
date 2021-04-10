@@ -12,7 +12,7 @@ void ILedController::loop(int* new_forward, int* old_forward, int* new_backward,
       Logger::verbose(LOG_TAG_LED, buf);
     }
 
-    this->fade(new_forward);
+    this->fade((*new_forward) == HIGH);
       
     *(old_forward) = *(new_forward);
     *(old_backward) = *(new_backward);

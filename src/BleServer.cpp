@@ -5,21 +5,24 @@
 #include "esp_bt_device.h"
 
 NimBLEServer* pServer = NULL;
-NimBLEService* pServiceBlynk = NULL;
+#ifdef BLYNK_ENABLED
+ NimBLEService* pServiceBlynk = NULL;
+ NimBLECharacteristic* pCharacteristicBlynkTx = NULL;
+ NimBLECharacteristic* pCharacteristicBlynkRx = NULL;
+ BlynkFifo<uint8_t, BLYNK_MAX_READBYTES*2> mBuffRX;
+#endif
 NimBLEService* pServiceVesc = NULL;
-NimBLECharacteristic* pCharacteristicBlynkTx = NULL;
-NimBLECharacteristic* pCharacteristicBlynkRx = NULL;
 NimBLECharacteristic* pCharacteristicVescTx = NULL;
 NimBLECharacteristic* pCharacteristicVescRx = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t value = 0;
-BlynkFifo<uint8_t, BLYNK_MAX_READBYTES*2> mBuffRX;
 Stream *vescSerial;
 std::string bufferString;
 int lastLoop = 0;
 
-BLYNK_WRITE_DEFAULT() {
+#ifdef BLYNK_ENABLED
+ BLYNK_WRITE_DEFAULT() {
   int pin = request.pin;
   char buf[128];
   switch (pin) {
@@ -40,9 +43,9 @@ BLYNK_WRITE_DEFAULT() {
       break;
   }
   Logger::notice(LOG_TAG_BLESERVER, buf);
-}
+ }
 
-class BlynkEsp32_BLE : public BlynkProtocol<BleServer> {
+ class BlynkEsp32_BLE : public BlynkProtocol<BleServer> {
     typedef BlynkProtocol<BleServer> Base;
     public:
       BlynkEsp32_BLE(BleServer& transp) : Base(transp) {}
@@ -55,10 +58,11 @@ class BlynkEsp32_BLE : public BlynkProtocol<BleServer> {
       }
 
       void setDeviceName(const char* name) {}
-};
+ };
     
-static BleServer _blynkTransportBLE;
-BlynkEsp32_BLE Blynk(_blynkTransportBLE);
+ static BleServer _blynkTransportBLE;
+ BlynkEsp32_BLE Blynk(_blynkTransportBLE);
+#endif
 
 BleServer::BleServer(): 
   mConn (false), 
@@ -72,9 +76,11 @@ void BleServer::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
   Logger::notice(LOG_TAG_BLESERVER, buf);
   Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
   deviceConnected = true;
+#ifdef BLYNK_ENABLED
   BLYNK_LOG1(BLYNK_F("BLE connect"));
   connect();
   Blynk.startSession();
+#endif
   NimBLEDevice::startAdvertising();
 };
 
@@ -83,9 +89,11 @@ inline
 void BleServer::onDisconnect(NimBLEServer* pServer) {
   Logger::notice(LOG_TAG_BLESERVER, "Client disconnected - start advertising");
   deviceConnected = false;
+#ifdef BLYNK_ENABLED
   BLYNK_LOG1(BLYNK_F("BLE disconnect"));
   Blynk.disconnect();
   disconnect();
+#endif
   NimBLEDevice::startAdvertising();
 }
 
@@ -101,6 +109,7 @@ void BleServer::init(Stream *vesc) {
   auto pSecurity = new NimBLESecurity();
   pSecurity->setAuthenticationMode(ESP_LE_AUTH_BOND);
 
+#ifdef BLYNK_ENABLED
   // Create the BLE Service
   pServiceBlynk = pServer->createService(BLYNK_SERVICE_UUID);
 
@@ -122,6 +131,7 @@ void BleServer::init(Stream *vesc) {
 
   // Start the service
   pServiceBlynk->start();
+#endif
 
   // Create the VESC BLE Service
   pServiceVesc = pServer->createService(VESC_SERVICE_UUID);
@@ -150,14 +160,20 @@ void BleServer::init(Stream *vesc) {
   // Start advertising
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
+#ifdef BLYNK_ENABLED
   pAdvertising->addServiceUUID(BLYNK_SERVICE_UUID);
+#endif
   pAdvertising->setAppearance(0x00);
   pAdvertising->setScanResponse(true);
   pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
 
-  Logger::verbose(LOG_TAG_BLESERVER, "starting Blynk");
+#ifdef BLYNK_ENABLED
+  Logger::notice(LOG_TAG_BLESERVER, "Blynk is starting...");
   Blynk.setDeviceName(BT_NAME);
   Blynk.begin(BLYNK_AUTH_TOKEN);
+#else
+  Logger::notice(LOG_TAG_BLESERVER, "Blynk is DEACTIVATED");
+#endif
 
   NimBLEDevice::startAdvertising();
   Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
@@ -204,16 +220,19 @@ void BleServer::loop() {
       oldDeviceConnected = deviceConnected;
   }
 
+#ifdef BLYNK_ENABLED
   Blynk.run();
-    
-#ifdef CANBUS_ENABLED
+  
+ #ifdef CANBUS_ENABLED
   if(millis() - lastLoop > 1000) {
     updateBlynk(vescData);
     lastLoop = millis();
   }
-#endif
+ #endif //CANBUS_ENABLED
+#endif //BLYNK_ENABLED
 }
 
+#ifdef BLYNK_ENABLED
 // IP redirect not available
 void BleServer::begin(char BLYNK_UNUSED *h, uint16_t BLYNK_UNUSED p) {}
 
@@ -265,6 +284,7 @@ size_t BleServer::available() {
   //Logger::verbose(LOG_TAG_BLESERVER, "BleServer::available: " + rxSize);
   return rxSize;
 }
+#endif
 
 //NimBLECharacteristicCallbacks::onWrite
 void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
@@ -280,11 +300,14 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
       for (int i = 0; i < rxValue.length(); i++) {
         vescSerial->write(rxValue[i]);
       }
-    } else if (pCharacteristic->getUUID().equals(pCharacteristicBlynkRx->getUUID())) {
+    } 
+#ifdef BLYNK_ENABLED
+    else if (pCharacteristic->getUUID().equals(pCharacteristicBlynkRx->getUUID())) {
       uint8_t* data = (uint8_t*)rxValue.data();
       BLYNK_DBG_DUMP(">> ", data, len);
       mBuffRX.put(data, len);
     }
+#endif //BLYNK_ENABLED
   }
 }
 
@@ -303,20 +326,22 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
   Logger::verbose(LOG_TAG_BLESERVER, buf);
 }
 
-#ifdef CANBUS_ENABLED
-void BleServer::updateBlynk(CanBus::VescData *vescData) {
-  Blynk.virtualWrite(VPIN_VESC_INPUT_VOLTAGE, vescData->inputVoltage);
-  Blynk.virtualWrite(VPIN_VESC_ERPM, vescData->erpm);
-  Blynk.virtualWrite(VPIN_VESC_DUTY_CYCLE, vescData->dutyCycle);
-  Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color", 
-    vescData->dutyCycle > 0 ? BLINK_COLOR_GREEN : BLINK_COLOR_RED);
-  Blynk.virtualWrite(VPIN_VESC_MOSFET_TEMP, vescData->mosfetTemp);
-  Blynk.virtualWrite(VPIN_VESC_TACHOMETER, vescData->tachometer);   
-  Blynk.virtualWrite(VPIN_VESC_MOTOR_TEMP, vescData->motorTemp);
-  Blynk.virtualWrite(VPIN_VESC_AMP_HOURS, vescData->ampHours);
-  Blynk.virtualWrite(VPIN_VESC_AMP_HOURS_CHARGED, vescData->ampHoursCharged);
-  Blynk.virtualWrite(VPIN_VESC_WATT_HOURS, vescData->wattHours);
-  Blynk.virtualWrite(VPIN_VESC_WATT_HOURS_CHARGED, vescData->wattHoursCharged);
-  Blynk.virtualWrite(VPIN_VESC_CURRENT, vescData->current);
-}
-#endif
+#ifdef BLYNK_ENABLED
+ #ifdef CANBUS_ENABLED
+  void BleServer::updateBlynk(CanBus::VescData *vescData) {
+   Blynk.virtualWrite(VPIN_VESC_INPUT_VOLTAGE, vescData->inputVoltage);
+   Blynk.virtualWrite(VPIN_VESC_ERPM, vescData->erpm);
+   Blynk.virtualWrite(VPIN_VESC_DUTY_CYCLE, vescData->dutyCycle);
+   Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color", 
+     vescData->dutyCycle > 0 ? BLINK_COLOR_GREEN : BLINK_COLOR_RED);
+   Blynk.virtualWrite(VPIN_VESC_MOSFET_TEMP, vescData->mosfetTemp);
+   Blynk.virtualWrite(VPIN_VESC_TACHOMETER, vescData->tachometer);   
+   Blynk.virtualWrite(VPIN_VESC_MOTOR_TEMP, vescData->motorTemp);
+   Blynk.virtualWrite(VPIN_VESC_AMP_HOURS, vescData->ampHours);
+   Blynk.virtualWrite(VPIN_VESC_AMP_HOURS_CHARGED, vescData->ampHoursCharged);
+   Blynk.virtualWrite(VPIN_VESC_WATT_HOURS, vescData->wattHours);
+   Blynk.virtualWrite(VPIN_VESC_WATT_HOURS_CHARGED, vescData->wattHoursCharged);
+   Blynk.virtualWrite(VPIN_VESC_CURRENT, vescData->current);
+ }
+ #endif //CANBUS_ENABLED
+#endif //BLYNK_ENABLED

@@ -21,8 +21,8 @@ class Ws28xxController : public ILedController {
     public:
         Ws28xxController();
         void init();
-        void fade(int* isForward);
-        void flash(int* isForward);
+        void fade(boolean isForward);
+        void flash(boolean isForward);
         void stop();
         void startSequence();
         void idleSequence();

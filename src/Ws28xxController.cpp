@@ -27,50 +27,69 @@ void Ws28xxController::stop() {
 }
 
 void Ws28xxController::setLight(boolean forward, byte brightness) {
+#ifdef LED_MODE_ODD_EVEN
+  for(int i = 0; i < NUMPIXELS/2; i++ ) {
+    this->setPixel(i, 0, 0, 0);
+    if(i%2 == 0 && forward) {
+      this->setPixel(i, brightness, brightness, brightness);
+    } else if(i%2 != 0 && !forward) {
+      this->setPixel(i, brightness, 0, 0);
+    }
+  }
+  for(int i = NUMPIXELS/2; i < NUMPIXELS; i++ ) {
+    this->setPixel(i, 0, 0, 0);
+    if(i%2 == 0 && forward) {
+      this->setPixel(i, brightness, 0, 0);
+    } else if(i%2 != 0 && !forward) {
+      this->setPixel(i, brightness, brightness, brightness);
+    }
+  }
+#else
   for(int i = 0; i < NUMPIXELS; i++ ) {
     if(i < NUMPIXELS/2){
       if(forward)
         this->setPixel(i, brightness, brightness, brightness);
       else
         this->setPixel(i, brightness, 0, 0);
-    } else
+    } else {
       if(forward) 
         this->setPixel(i, brightness, 0, 0);
       else
         this->setPixel(i, brightness, brightness, brightness);
+    }
   }
+#endif
   this->showStrip();
 } 
 
-void Ws28xxController::fade(int* isForward) {
+void Ws28xxController::fade(boolean isForward) {
   if(Logger::getLogLevel() == Logger::VERBOSE) {
     char buf[64];
-    snprintf(buf, 64, "fade %s", *(isForward) ? "forward" : "backward");
+    snprintf(buf, 64, "fade %s", isForward ? "forward" : "backward");
     Logger::verbose(LOG_TAG_WS28XX, buf);
   }
-
   for(int k = MAX_BRIGHTNESS; k >= 0; k--) {
-    this->setLight(!*(isForward), k);
+    this->setLight(!isForward, k);
     delay(5);
   }
   for(int k = 0; k < MAX_BRIGHTNESS+1; k++) {
-    this->setLight(*(isForward), k);
+    this->setLight(isForward, k);
     delay(5);
   }
 }
 
-void Ws28xxController::flash(int* isForward) {
+void Ws28xxController::flash(boolean isForward) {
   if(Logger::getLogLevel() == Logger::VERBOSE) {
     char buf[64];
-    snprintf(buf, 64, "flash %s", *(isForward) ? "forward" : "backward");
+    snprintf(buf, 64, "flash %s", isForward ? "forward" : "backward");
     Logger::verbose(LOG_TAG_WS28XX, buf);
   }
   for(int j=0; j<10; j++) {
     for(int i = 0; i < NUMPIXELS; i++ ) {
       if(i < NUMPIXELS/2)
-        *(isForward) ? this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS): this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0);
+        isForward ? this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS): this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0);
       else
-        *(isForward) ? this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0) : this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
+        isForward ? this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0) : this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
     }    
     this->showStrip();
     delay(80);

@@ -19,11 +19,11 @@ void CobController::init() {
 #endif
 }
 
-void CobController::fade(int *isForward){
+void CobController::fade(boolean isForward){
 #ifdef DUAL_MOSFET
   for (int i=MAX_BRIGHTNESS; i>0; i=i-5) {
-    writePWM(*(isForward) ? 0 : 1, i);
-    writePWM(*(isForward) ? 1 : 0, MAX_BRIGHTNESS - i);
+    writePWM(isForward ? 0 : 1, i);
+    writePWM(isForward ? 1 : 0, MAX_BRIGHTNESS - i);
     delay(COB_DELAY);
   }
 #else
@@ -31,9 +31,9 @@ void CobController::fade(int *isForward){
 #endif
 }
 
-void CobController::flash(int *isForward){
+void CobController::flash(boolean isForward){
     for(int i=0; i<10; i++) {
-        if(*(isForward)) {
+        if(isForward) {
           writePWM(0, MAX_BRIGHTNESS_BRAKE); // set the brightness LED
         } else {
           writePWM(1, MAX_BRIGHTNESS_BRAKE); // set the brightness LED
@@ -50,9 +50,8 @@ void CobController::stop(){
 }
 
 void CobController::startSequence(){
-  int new_forward  = HIGH; 
-  flash(&new_forward);
-  fade(&new_forward);
+  flash(true);
+  fade(true);
 }
 
 void CobController::idleSequence(){

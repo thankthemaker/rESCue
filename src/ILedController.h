@@ -9,8 +9,8 @@ class ILedController {
     public:    
         // pure virtual (abstract) method definitions
         virtual void init() = 0;
-        virtual void fade(int* isForward) = 0;
-        virtual void flash(int* isForward) = 0;
+        virtual void fade(boolean isForward) = 0;
+        virtual void flash(boolean isForward) = 0;
         virtual void stop() = 0;
         virtual void idleSequence() = 0;
         virtual void startSequence() = 0;

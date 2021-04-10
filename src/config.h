@@ -13,6 +13,7 @@
 
 #ifdef LED_WS28xx
  #define NUMPIXELS    16  // the number of LEDs if WS28xx is used
+ #define LED_MODE_ODD_EVEN
 #endif //LED_WS28xx
 #ifdef LED_COB
  #define DUAL_MOSFET     // uncomment if you use two MOSFET to activate color switching
@@ -41,7 +42,7 @@
 // The name this controller should advertise for BLE
 #define BT_NAME "rESCue"
 #define CANBUS_ENABLED
-#define BLYNK_ENABLED
+//#define BLYNK_ENABLED
 
 #ifdef CANBUS_ENABLED
  #define VESC_CAN_ID 25
@@ -55,7 +56,9 @@
 #endif
 
 // There are two different start sequences 1==chasing, 2==cylon
-#define STARTSEQUENCE 1
+#define STARTSEQUENCE 2
+
+//#define FAKE_VESC_ENABLED
 
 #endif //__CONFIG_H__
 
