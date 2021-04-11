@@ -3,11 +3,11 @@
 
 #include "Arduino.h"
 
-typedef enum {
+enum class SOUNDS {
   FORCE = 0,
   JETSON_DOORBELL,
   JETSON_SPACECAR
-} SOUNDS;
+};
 
 extern unsigned char PROGMEM force_wav;
 extern unsigned char PROGMEM jetsons_doorbell_wav;

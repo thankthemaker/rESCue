@@ -59,10 +59,9 @@ void setup() {
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 
-  delay(50);
+  buzzer->startSequence();
   ledController->startSequence();
   ledController->stop();
-  buzzer->startSequence();
 }
 
 void loop() {

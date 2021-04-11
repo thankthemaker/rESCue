@@ -58,7 +58,7 @@
 // There are two different start sequences 1==chasing, 2==cylon
 #define STARTSEQUENCE 2
 
-//#define FAKE_VESC_ENABLED
+////#define FAKE_VESC_ENABLED
 
 #endif //__CONFIG_H__
 

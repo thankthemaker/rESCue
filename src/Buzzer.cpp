@@ -1,59 +1,33 @@
 #include "Buzzer.h"
+#include <Logger.h>
 
-int channel = 0;
-int resolution = 8;
-int freq = 2000;
+#define LOG_TAG_BUZZER "Buzzer"
 
-void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
-  ledcWriteTone(channel, frequency);
-}
-void noTone(uint8_t _pin) {
-  ledcWriteTone(channel, 0);
-}
+MelodyPlayer player(BUZPIN, HIGH);
+String notes[] = { "C4", "G3", "G3", "A3", "G3", "SILENCE", "B3", "C4" };
+Melody startMelody = MelodyFactory.load("melody 1", 175, notes, 8);
 
-Buzzer::Buzzer() {
-  ledcSetup(channel, freq, resolution);
-  ledcAttachPin(BUZPIN, 0);
-  noTone(BUZPIN);
-}
+Buzzer::Buzzer() {}
 
-void Buzzer::beep(byte number){
-  int duration = 200;
-  switch (number) {
-  case 1: // positive feedback
-    tone(BUZPIN,1500,duration);
-    delay(duration);
-    break;
-  case 2: // negative feedback
-    tone(BUZPIN,500,duration);
-    delay(duration);
-    break;     
-  case 3:  // action stopped (e.g. registering) double beep
-    tone(BUZPIN,1000,duration);
-    delay(duration);
-    tone(BUZPIN,1500,duration);
-    delay(duration);    
-    break; 
-  case 4:  // alarm (for whatever)
-    for (int i = 2300; i > 600; i-=50){
-      tone(BUZPIN,i,20);
-      delay(10);
-    }     
-    for (int i = 600; i < 2300; i+=50){
-      tone(BUZPIN,i,20);
-      delay(10);
-    }
+void Buzzer::beep(RTTTL_MELODIES selection){
+  if(player.isPlaying()) {
+    Logger::notice(LOG_TAG_BUZZER, "Still playing melody, abort!");
+    return;
   }
-  noTone(BUZPIN);
+  std::map<RTTTL_MELODIES, const char*>::iterator it = RTTTL_MELODIES_VALUES.find(selection);
+  if (it == RTTTL_MELODIES_VALUES.end()) {
+      Logger::error(LOG_TAG_BUZZER, "Melody not found");
+      return;
+  }
+  Melody sound = MelodyFactory.loadRtttlString(it->second);
+  player.playAsync(sound);
 }
 
 void Buzzer::startSequence() {
-  for(int i=0; i<3; i++) {
-    if(i%2 == 0) beep(1);
-    beep(3);
-  }
+  ////player.playAsync(startMelody);
+  beep(RTTTL_MELODIES::STAR_WARS_END);
 }
 
 void Buzzer::alarm() {
-  beep(4);
+  beep(RTTTL_MELODIES::SIMPLE_BEEP_SIREN);
 }

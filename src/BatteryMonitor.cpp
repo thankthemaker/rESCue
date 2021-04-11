@@ -3,7 +3,7 @@
 
 #define LOG_TAG_BATMON "BatteryMonitor"
 
-const int numBatReadings = 50;
+const int numBatReadings = 15;
 const int numCurReadings = 50;
 const int min_voltage   = MIN_BATTARY_VOLTAGE;
 const int max_voltage   = MAX_BATTARY_VOLTAGE;
@@ -90,7 +90,7 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     if(voltage < warn_voltage) {
         if(millis() - lastBatWarn > 5000) {
           Logger::warning(LOG_TAG_BATMON, "WARN: Battery voltage out of range");
-          buzzer->beep(3); // play a warn tonen every 5 seconds
+          buzzer->beep(RTTTL_MELODIES::SIMPLE_BEEP_NEGATIVE); // play a warn tonen every 5 seconds
           lastBatWarn = millis();
         }
     }
@@ -99,7 +99,7 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     if(getAverageCurrent() > max_current) {
         if(millis() - lastCurWarn > 5000) {
           Logger::warning(LOG_TAG_BATMON, "WARN: Average current too high");
-          buzzer->beep(3); // play a warn tonen every 5 seconds
+          buzzer->beep(RTTTL_MELODIES::SIMPLE_BEEP_NEGATIVE); // play a warn tonen every 5 seconds
           lastCurWarn = millis();
         }
     }
