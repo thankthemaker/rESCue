@@ -42,7 +42,7 @@
 // The name this controller should advertise for BLE
 #define BT_NAME "rESCue"
 #define CANBUS_ENABLED
-//#define BLYNK_ENABLED
+#define BLYNK_ENABLED
 
 #ifdef CANBUS_ENABLED
  #define VESC_CAN_ID 25
@@ -54,9 +54,6 @@
   //#define BLYNK_AUTH_TOKEN "l7b1ongYuGiRcnDHufxwnazMH6hAn3Xl"
   #define BLYNK_AUTH_TOKEN "bb48a7193d764ea7a90dbffb54ffcb76"
 #endif
-
-// There are two different start sequences 1==chasing, 2==cylon
-#define STARTSEQUENCE 2
 
 ////#define FAKE_VESC_ENABLED
 

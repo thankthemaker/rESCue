@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "ILedController.h"
+#include "AppConfiguration.h"
 #include <Adafruit_NeoPixel.h>
 
 #ifndef PIN_NEOPIXEL

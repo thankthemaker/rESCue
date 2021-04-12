@@ -20,28 +20,57 @@ uint32_t value = 0;
 Stream *vescSerial;
 std::string bufferString;
 int lastLoop = 0;
+std::map<int, int> blynkSoundMapping = {
+  {1, 100}, {2, 101}, {3, 102}, {4, 103}, {5, 104}, {6, 105},
+  {7, 106}, {8, 107}, {9, 108}, {10, 109}, {11, 110}, {12, 111},
+  {12, 112},
+};
+std::map<int, int> blynkWarningMapping = {
+  {1, 400}, {2, 402}, {3, 406},
+};
+std::map<int, int> blynkAlarmMapping = {
+    {1, 402}, {2, 300},
+};
 
 #ifdef BLYNK_ENABLED
  BLYNK_WRITE_DEFAULT() {
   int pin = request.pin;
+  int val;
   char buf[128];
   switch (pin) {
     case VPIN_APP_LIGHT_INDEX:
-      snprintf(buf, 128, "Updated param \"LightIndex\" to %d", param.asInt());
+      snprintf(buf, 128, "Updated param \"StartLightIndex\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.startLightIndex = param.asInt();
       break;
     case VPIN_APP_SOUND_INDEX:
-      snprintf(buf, 128, "Updated param \"SoundIndex\" to %d", param.asInt());
+      snprintf(buf, 128, "Updated param \"StartSoundIndex\" to %d", param.asInt());
+      val = blynkSoundMapping.find(param.asInt())->second;
+      AppConfiguration::getInstance()->config.startSoundIndex = val;
+      break;    
+    case VPIN_APP_BATTERY_WARN_INDEX:
+      snprintf(buf, 128, "Updated param \"BatteryWarnIndex\" to %d", param.asInt());
+      val = blynkWarningMapping.find(param.asInt())->second;
+      AppConfiguration::getInstance()->config.batteryWarningSoundIndex = val;
+      break;
+    case VPIN_APP_BATTERY_ALARM_INDEX:
+      snprintf(buf, 128, "Updated param \"BatteryAlarmIndex\" to %d", param.asInt());
+      val = blynkAlarmMapping.find(param.asInt())->second;
+      AppConfiguration::getInstance()->config.batteryAlarmSoundIndex = val;
       break;
     case VPIN_APP_MIN_BAT_VOLTAGE:
       snprintf(buf, 128, "Updated param \"MinBatVoltage\" to %f", param.asDouble());
+      AppConfiguration::getInstance()->config.minBatteryVoltage = param.asDouble();
       break;
     case VPIN_APP_MAX_BAT_VOLTAGE:
       snprintf(buf, 128, "Updated param \"MaxBatVoltage\" to %f", param.asDouble());
+      AppConfiguration::getInstance()->config.maxBatteryVoltage = param.asDouble();
       break;
     case VPIN_APP_NOTIFICATION:
       snprintf(buf, 128, "Updated param \"NotificationEnabled\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.isNotificationEnabled = param.asInt();
       break;
   }
+  AppConfiguration::getInstance()->savePreferences();
   Logger::notice(LOG_TAG_BLESERVER, buf);
  }
 

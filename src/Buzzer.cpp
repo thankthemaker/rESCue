@@ -1,15 +1,12 @@
 #include "Buzzer.h"
-#include <Logger.h>
 
 #define LOG_TAG_BUZZER "Buzzer"
 
 MelodyPlayer player(BUZPIN, HIGH);
-String notes[] = { "C4", "G3", "G3", "A3", "G3", "SILENCE", "B3", "C4" };
-Melody startMelody = MelodyFactory.load("melody 1", 175, notes, 8);
 
 Buzzer::Buzzer() {}
 
-void Buzzer::beep(RTTTL_MELODIES selection){
+void Buzzer::playSound(RTTTL_MELODIES selection){
   if(player.isPlaying()) {
     Logger::notice(LOG_TAG_BUZZER, "Still playing melody, abort!");
     return;
@@ -24,10 +21,16 @@ void Buzzer::beep(RTTTL_MELODIES selection){
 }
 
 void Buzzer::startSequence() {
-  ////player.playAsync(startMelody);
-  beep(RTTTL_MELODIES::STAR_WARS_END);
+  RTTTL_MELODIES val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.startSoundIndex);
+  playSound(val);
+}
+
+void Buzzer::warning() {
+  RTTTL_MELODIES val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.batteryWarningSoundIndex);
+  playSound(val);
 }
 
 void Buzzer::alarm() {
-  beep(RTTTL_MELODIES::SIMPLE_BEEP_SIREN);
+  RTTTL_MELODIES val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.batteryAlarmSoundIndex);
+  playSound(val);
 }

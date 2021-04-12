@@ -8,6 +8,7 @@
 #include "Ws28xxController.h"
 #include "BleServer.h"
 #include "CanBus.h"
+#include "AppConfiguration.h"
 
 int old_forward  = LOW;
 int old_backward = LOW;
@@ -44,6 +45,8 @@ void setup() {
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
   pinMode(PIN_BRAKE, INPUT);
+
+  AppConfiguration::getInstance()->readPreferences();
 
   vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);      
   delay(50);

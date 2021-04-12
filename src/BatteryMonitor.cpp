@@ -90,7 +90,7 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     if(voltage < warn_voltage) {
         if(millis() - lastBatWarn > 5000) {
           Logger::warning(LOG_TAG_BATMON, "WARN: Battery voltage out of range");
-          buzzer->beep(RTTTL_MELODIES::SIMPLE_BEEP_NEGATIVE); // play a warn tonen every 5 seconds
+          buzzer->warning(); // play a warn tonen every 5 seconds
           lastBatWarn = millis();
         }
     }
@@ -99,7 +99,7 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     if(getAverageCurrent() > max_current) {
         if(millis() - lastCurWarn > 5000) {
           Logger::warning(LOG_TAG_BATMON, "WARN: Average current too high");
-          buzzer->beep(RTTTL_MELODIES::SIMPLE_BEEP_NEGATIVE); // play a warn tonen every 5 seconds
+          buzzer->warning(); // play a warn tonen every 5 seconds
           lastCurWarn = millis();
         }
     }

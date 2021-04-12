@@ -163,11 +163,14 @@ void Ws28xxController::idleSequence() {
 
 void Ws28xxController::startSequence() {
   Logger::notice(LOG_TAG_WS28XX, "run startSequence");
-#if STARTSEQUENCE == 1
-  startSequenceChasing(0, 0, MAX_BRIGHTNESS, 100);
-#elif STARTSEQUENCE == 2
-  startSequenceCylon(4, 40, 4, 0xFF1000);
-#endif
+  switch (AppConfiguration::getInstance()->config.startLightIndex){
+  case 1:
+    startSequenceChasing(0, 0, MAX_BRIGHTNESS, 100);
+    break;
+  case 2:
+    startSequenceCylon(4, 40, 4, 0xFF1000);
+    break;
+  }
 }
 
 uint32_t Ws28xxController::dimColor(uint32_t color, uint8_t width) {
