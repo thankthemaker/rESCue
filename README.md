@@ -167,6 +167,7 @@ If you'd like to use our Blynk dashboard, simply download the Blynk app to your 
 To use this App with the official Blynk server, you'll might need to buy some energy as this App needs more than the 2000 `free energy` points. Therefore we offer you to use the `thank-the-maker.org` server, which gives you more than enough energy to run this app.
 
 ![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
+QR-Code: App-Version 0.9
 
 ## Configuration
 
@@ -194,7 +195,7 @@ platformio run --target upload
 
 If you'd like to donate for my work
 
-[![Donate with PayPal](https://github.com/thankthemaker/funwheel-controller/raw/master/donate-button.png) ](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
+[![Donate with PayPal](https://github.com/thankthemaker/funwheel-controller/raw/master/docs/images/donate-button.png) ](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
 
 ## Renaming from "funwheel-controller" to "rESCue"
 
