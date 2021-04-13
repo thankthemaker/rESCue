@@ -141,6 +141,7 @@ void Ws28xxController::startSequenceCylon(uint16_t cycles, uint16_t speed, uint8
 }
 
 void Ws28xxController::idleSequence() {
+/*
   if(millis() - lastPulse < 70) {
     for (int count = 0; count<NUMPIXELS; count++) {
       pixels.setPixelColor(count, pulse);
@@ -158,6 +159,7 @@ void Ws28xxController::idleSequence() {
     }
   }
   lastPulse = millis();
+*/
 }
 
 
