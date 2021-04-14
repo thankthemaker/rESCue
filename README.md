@@ -26,7 +26,7 @@ More documentation to come as soon as the PCB officially available.
 
 ### Hardware
 
-If your not interested in the Wheelbarrow PCB and want build it yourself or only want to use parts of this project, find the recommended hardware below. Other parts may also work, but the recommended parts are best tested.
+If your not interested in the rESCue PCB and want build it yourself or only want to use parts of this project, find the recommended hardware below. Other parts may also work, but the recommended parts are best tested.
 
 - [ESP32 D1 Mini](https://www.amazon.de/AZDelivery-Bluetooth-Internet-Development-Compatible/dp/B08BTRQNB3/), other ESP32 might also work but check if all needed GPIO are accessible
 
@@ -37,6 +37,7 @@ If your not interested in the Wheelbarrow PCB and want build it yourself or only
 For WS28xx Adafruit Neopixel are recommended
 
 - 4x [Adafruit Neopixel stick](https://www.adafruit.com/product/1426) or compatible. Solder 2 sticks together for front and back each.
+- waterproof & cool alternative [Adafruit NeoPixel Digital RGB LED Strip 144 LED](https://www.adafruit.com/product/1506). 
 
 If you want to use COB modules, tri-color 12V COB with two MOSFET modules are recommended
 
