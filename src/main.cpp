@@ -71,7 +71,7 @@ void loop() {
 #ifdef CANBUS_ENABLED
   new_forward  = canbus->vescData.erpm >= 0.0 ? 1 : 0;
   new_backward = canbus->vescData.erpm < 0.0 ? 1 : 0;
-  new_brake    = 0;
+  new_brake    = canbus->vescData.current < -4.0;
 #else
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);

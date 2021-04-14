@@ -62,6 +62,7 @@ class BleServer :
 
 #ifdef CANBUS_ENABLED
       void updateBlynk(CanBus::VescData *vescData);
+      void syncPreferencesWithApp();
 #endif
 
     private:

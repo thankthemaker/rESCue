@@ -79,6 +79,8 @@ class CanBus {
         double wattHoursCharged;
         double mosfetTemp;
         double motorTemp;
+        double totalCurrentIn;
+        double pidPosition;
         double inputVoltage;
         double tachometer;
       } vescData;

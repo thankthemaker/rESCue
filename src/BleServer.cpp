@@ -20,6 +20,8 @@ uint32_t value = 0;
 Stream *vescSerial;
 std::string bufferString;
 int lastLoop = 0;
+int lastNotification = 0;
+int lastBatteryValue = 0;
 std::map<int, int> blynkSoundMapping = {
   {1, 100}, {2, 101}, {3, 102}, {4, 103}, {5, 104}, {6, 105},
   {7, 106}, {8, 107}, {9, 108}, {10, 109}, {11, 110}, {12, 111},
@@ -273,6 +275,7 @@ bool BleServer::connect() {
   Logger::verbose(LOG_TAG_BLESERVER, "connect");
   mBuffRX.clear();
   return mConn = true;
+  syncPreferencesWithApp();
 }
 
 void BleServer::disconnect() {
@@ -371,6 +374,28 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
    Blynk.virtualWrite(VPIN_VESC_WATT_HOURS, vescData->wattHours);
    Blynk.virtualWrite(VPIN_VESC_WATT_HOURS_CHARGED, vescData->wattHoursCharged);
    Blynk.virtualWrite(VPIN_VESC_CURRENT, vescData->current);
+   if(AppConfiguration::getInstance()->config.isNotificationEnabled){
+     if(millis() - lastNotification > 180000) { // Notification only all 3 minutes
+       if(vescData->inputVoltage > AppConfiguration::getInstance()->config.maxBatteryVoltage) {
+         Blynk.notify("Battery too high: " + String(vescData->inputVoltage) + "V");
+       }
+       if(vescData->inputVoltage < AppConfiguration::getInstance()->config.minBatteryVoltage) {
+         Blynk.notify("Battery dropped below: " + String(vescData->inputVoltage) + "V");
+       }
+       lastBatteryValue = vescData->inputVoltage;
+       lastNotification = millis();
+     }
+   }
  }
+
+void BleServer::syncPreferencesWithApp() {
+  Blynk.virtualWrite(VPIN_APP_SOUND_INDEX, AppConfiguration::getInstance()->config.startSoundIndex);
+  Blynk.virtualWrite(VPIN_APP_LIGHT_INDEX, AppConfiguration::getInstance()->config.startLightIndex);
+  Blynk.virtualWrite(VPIN_APP_MAX_BAT_VOLTAGE, AppConfiguration::getInstance()->config.maxBatteryVoltage);
+  Blynk.virtualWrite(VPIN_APP_MIN_BAT_VOLTAGE, AppConfiguration::getInstance()->config.minBatteryVoltage);
+  Blynk.virtualWrite(VPIN_APP_BATTERY_WARN_INDEX, AppConfiguration::getInstance()->config.batteryWarningSoundIndex);
+  Blynk.virtualWrite(VPIN_APP_BATTERY_ALARM_INDEX, AppConfiguration::getInstance()->config.batteryAlarmSoundIndex);
+  Blynk.virtualWrite(VPIN_APP_NOTIFICATION, AppConfiguration::getInstance()->config.isNotificationEnabled);
+}
  #endif //CANBUS_ENABLED
 #endif //BLYNK_ENABLED

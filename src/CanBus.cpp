@@ -161,8 +161,8 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
     frametype = "status4";
     vescData.mosfetTemp = readInt16Value(rx_frame, 0) / 10.0;
     vescData.motorTemp =  readInt16Value(rx_frame, 2) / 10.0;
-    //ToDo total current in
-    //ToDO PID pos 
+    vescData.totalCurrentIn = readInt16Value(rx_frame, 4)  / 10.0;
+    vescData.pidPosition = readInt16Value(rx_frame, 6) / 50.0; 
   }
   if(STATUS_5 == ID) {
     frametype = "status5";

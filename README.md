@@ -146,6 +146,8 @@ Connection to the VESC via CANBUS is now also supported. The connection to the C
 - motorTemp - the temperature of the Motor, if supported by the motor
 - inputVoltage - the input voltage, which is the voltage of the battery
 - tachometer - the current speed calculated by the VESC
+- totalCurrentIn - total current input
+- pidPosition = current PID position
 
 Please check your CAN configuration in VESC. Make sure the VESC_ID matches the VESC_CAN_ID in `config.h` and doesn't collide with the ESP_CAN_ID.
 This application assumes you have enabled status messages 1-5, please update your CAN-settings in VESC appropriate to have full support of all features. It is also recommended to reduce the frequency for status updates from the VESC. The default setting is 50Hz, but it is sufficient for this application to reduce the frequency to somehow around 1-5Hz.
@@ -167,6 +169,7 @@ If you'd like to use our Blynk dashboard, simply download the Blynk app to your 
 To use this App with the official Blynk server, you'll might need to buy some energy as this App needs more than the 2000 `free energy` points. Therefore we offer you to use the `thank-the-maker.org` server, which gives you more than enough energy to run this app.
 
 ![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
+
 QR-Code: App-Version 0.9
 
 ## Configuration
