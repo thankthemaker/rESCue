@@ -8,13 +8,13 @@ The ESP32 D1 Mini is highly recommended, but other ESP32 also work.
 
 ## Hardware and wiring
 
-### Wheelbarrow PCB
+### rESCue PCB
 
-If you're interested in an almost plug-and-play solution, you might want to get the Wheelbarrow PCB. Jonas from the #Funwheel Discord-server did a great Job and designed a PCB.
+If you're interested in an almost plug-and-play solution, you might want to get the rESCue PCB. Jonas from the #Funwheel Discord-server did a great Job and designed a PCB.
 
 Here's what rev3 of it looks like.
 
-![Wheelbarrow PCB Rev. 3](docs/images/wheelbarrow-rev3.png)
+![rESCue PCB Rev. 3](docs/images/wheelbarrow-rev3.png)
 
 - sizing 95mm x 41mm
 - input voltage 7,5V - 76V
