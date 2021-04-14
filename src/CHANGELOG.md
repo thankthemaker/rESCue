@@ -5,3 +5,5 @@
 - read some more props from VESC ("totalCurrentIn" and "pidPosition")
 
 - updated Blynk QR-Code
+
+- updated outdated Adafruit Neopixel lib to 1.7.0
