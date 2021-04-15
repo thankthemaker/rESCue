@@ -99,7 +99,8 @@ void loop() {
   #ifdef FAKE_VESC_ENABLED
     if(millis() - lastFake > 3000) {
       canbus->vescData.inputVoltage = random(48, 50);
-      canbus->vescData.erpm = random(-1, 1);
+      canbus->vescData.erpm = random(1, 1000);
+      canbus->vescData.current = random(-20.0, 10);
       lastFake = millis();
     }
   #endif

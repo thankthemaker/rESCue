@@ -8,6 +8,7 @@ Ws28xxController::Ws28xxController() {}
 void Ws28xxController::init() {
   Logger::notice(LOG_TAG_WS28XX, "initializing ...");
   pixels.begin(); // This initializes the NeoPixel library.
+  pixels.show();
 }
 
 void Ws28xxController::setPixel(int pixel, byte red, byte green, byte blue) {
@@ -15,7 +16,7 @@ void Ws28xxController::setPixel(int pixel, byte red, byte green, byte blue) {
 }
 
 void Ws28xxController::showStrip() {
-   pixels.show();
+  pixels.show();
 }
 
 void Ws28xxController::stop() {
@@ -70,11 +71,11 @@ void Ws28xxController::fade(boolean isForward) {
   }
   for(int k = MAX_BRIGHTNESS; k >= 0; k--) {
     this->setLight(!isForward, k);
-    delay(5);
+    delay(15);
   }
   for(int k = 0; k < MAX_BRIGHTNESS+1; k++) {
     this->setLight(isForward, k);
-    delay(5);
+    delay(15);
   }
 }
 
@@ -87,13 +88,29 @@ void Ws28xxController::flash(boolean isForward) {
   for(int j=0; j<10; j++) {
     for(int i = 0; i < NUMPIXELS; i++ ) {
       if(i < NUMPIXELS/2)
-        isForward ? this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS): this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0);
+        if(isForward) {
+#ifdef LED_MODE_ODD_EVEN
+          if(i%2 == 0)
+#endif
+            this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
+        } else {
+          this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0);
+        } 
       else
-        isForward ? this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0) : this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
+        if(isForward) {
+          this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0);
+        } else {
+#ifdef LED_MODE_ODD_EVEN
+          if(i%2 == 0)
+#endif
+            this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
+        }
     }    
     this->showStrip();
     delay(80);
   }
+  this->setLight(isForward, MAX_BRIGHTNESS);
+  this->showStrip();
 }
 
 void Ws28xxController::startSequenceChasing(byte red, byte green, byte blue, int speedDelay) {
@@ -141,7 +158,6 @@ void Ws28xxController::startSequenceCylon(uint16_t cycles, uint16_t speed, uint8
 }
 
 void Ws28xxController::idleSequence() {
-/*
   if(millis() - lastPulse < 70) {
     for (int count = 0; count<NUMPIXELS; count++) {
       pixels.setPixelColor(count, pulse);
@@ -159,7 +175,6 @@ void Ws28xxController::idleSequence() {
     }
   }
   lastPulse = millis();
-*/
 }
 
 
