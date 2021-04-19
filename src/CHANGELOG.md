@@ -1,3 +1,10 @@
+# 19.04.2021
+
+- released version 1.0.0
+- added Over The Air (OTA) update
+- changed partition layout (min-spiff)
+- fixed blynk mapping
+
 # 15.04.2021
 
 - Fixed "braking lights"
