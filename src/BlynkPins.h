@@ -9,6 +9,8 @@
 #define VPIN_APP_NOTIFICATION        6
 #define VPIN_APP_BATTERY_WARN_INDEX  7
 #define VPIN_APP_BATTERY_ALARM_INDEX 8
+#define VPIN_APP_ACTIVATE_OTA        19
+
 
 // VESC params
 #define VPIN_VESC_DUTY_CYCLE         21

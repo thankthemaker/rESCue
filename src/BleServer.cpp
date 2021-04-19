@@ -36,6 +36,7 @@ std::map<int, int> blynkAlarmMapping = {
 
 #ifdef BLYNK_ENABLED
  BLYNK_WRITE_DEFAULT() {
+  boolean restartNeeded = false;
   int pin = request.pin;
   int val;
   char buf[128];
@@ -71,9 +72,17 @@ std::map<int, int> blynkAlarmMapping = {
       snprintf(buf, 128, "Updated param \"NotificationEnabled\" to %d", param.asInt());
       AppConfiguration::getInstance()->config.isNotificationEnabled = param.asInt();
       break;
+    case VPIN_APP_ACTIVATE_OTA:
+      snprintf(buf, 128, "Updated param \"otaUpdateActive\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.otaUpdateActive = param.asInt();
+      break;
   }
   AppConfiguration::getInstance()->savePreferences();
   Logger::notice(LOG_TAG_BLESERVER, buf);
+  if(restartNeeded) {
+      Logger::notice(LOG_TAG_BLESERVER, "restart needed, restarting rESCue");
+      ESP.restart();
+  }
  }
 
  class BlynkEsp32_BLE : public BlynkProtocol<BleServer> {
@@ -273,9 +282,9 @@ void BleServer::begin() {
 
 bool BleServer::connect() {
   Logger::verbose(LOG_TAG_BLESERVER, "connect");
+  syncPreferencesWithApp();
   mBuffRX.clear();
   return mConn = true;
-  syncPreferencesWithApp();
 }
 
 void BleServer::disconnect() {
@@ -389,13 +398,23 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
  }
 
 void BleServer::syncPreferencesWithApp() {
-  Blynk.virtualWrite(VPIN_APP_SOUND_INDEX, AppConfiguration::getInstance()->config.startSoundIndex);
+  for (std::map<int, int>::iterator it = blynkSoundMapping.begin(); it != blynkSoundMapping.end(); ++it) {
+    if(it->second == AppConfiguration::getInstance()->config.startSoundIndex)
+      Blynk.virtualWrite(VPIN_APP_SOUND_INDEX, it->first);
+  }
+  for (std::map<int, int>::iterator it = blynkAlarmMapping.begin(); it != blynkAlarmMapping.end(); ++it) {
+    if(it->second == AppConfiguration::getInstance()->config.batteryAlarmSoundIndex)
+      Blynk.virtualWrite(VPIN_APP_BATTERY_ALARM_INDEX, it->first);
+  }
+  for (std::map<int, int>::iterator it = blynkWarningMapping.begin(); it != blynkWarningMapping.end(); ++it) {
+    if(it->second == AppConfiguration::getInstance()->config.batteryWarningSoundIndex)
+      Blynk.virtualWrite(VPIN_APP_BATTERY_WARN_INDEX, it->first);
+  }
   Blynk.virtualWrite(VPIN_APP_LIGHT_INDEX, AppConfiguration::getInstance()->config.startLightIndex);
   Blynk.virtualWrite(VPIN_APP_MAX_BAT_VOLTAGE, AppConfiguration::getInstance()->config.maxBatteryVoltage);
   Blynk.virtualWrite(VPIN_APP_MIN_BAT_VOLTAGE, AppConfiguration::getInstance()->config.minBatteryVoltage);
-  Blynk.virtualWrite(VPIN_APP_BATTERY_WARN_INDEX, AppConfiguration::getInstance()->config.batteryWarningSoundIndex);
-  Blynk.virtualWrite(VPIN_APP_BATTERY_ALARM_INDEX, AppConfiguration::getInstance()->config.batteryAlarmSoundIndex);
   Blynk.virtualWrite(VPIN_APP_NOTIFICATION, AppConfiguration::getInstance()->config.isNotificationEnabled);
+  Blynk.virtualWrite(VPIN_APP_ACTIVATE_OTA, AppConfiguration::getInstance()->config.otaUpdateActive);
 }
  #endif //CANBUS_ENABLED
 #endif //BLYNK_ENABLED

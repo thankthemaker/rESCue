@@ -8,6 +8,7 @@
 #define LOG_TAG_APPCONFIGURATION "AppConfiguration"
 
 struct Config {
+  boolean otaUpdateActive = false;
   boolean isNotificationEnabled = false;
   double minBatteryVoltage = 41.0;
   double maxBatteryVoltage = 50.0;

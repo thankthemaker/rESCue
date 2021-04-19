@@ -16,6 +16,7 @@ void AppConfiguration::readPreferences() {
     deserializeJson(doc, json);
     Logger::verbose(LOG_TAG_APPCONFIGURATION, "readPreferences: ");
     Serial.println("readPreferences: " + json);
+    config.otaUpdateActive = doc["otaUpdateActive"] | false;
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
     config.minBatteryVoltage = doc["minBatteryVoltage"] | 40.0;
     config.maxBatteryVoltage = doc["maxBatteryVoltage"] | 50.4;
@@ -29,6 +30,7 @@ void AppConfiguration::readPreferences() {
 void AppConfiguration::savePreferences() {
     preferences.begin("rESCue", false);
     StaticJsonDocument<512> doc;
+    doc["otaUpdateActive"] = config.otaUpdateActive;
     doc["isNotificationEnabled"] = config.isNotificationEnabled;
     doc["minBatteryVoltage"] = config.minBatteryVoltage;
     doc["maxBatteryVoltage"] = config.maxBatteryVoltage;

@@ -5,6 +5,12 @@
 // ## For board specific GPIO-PIN definition please see platformio.ini ## //
 // ###################################################################### //
 
+#define SOFTWARE_VERSION_MAJOR 1
+#define SOFTWARE_VERSION_MINOR 0
+#define SOFTWARE_VERSION_PATCH 0
+#define HARDWARE_VERSION_MAJOR 3
+#define HARDWARE_VERSION_MINOR 0
+
 /**** Definition for control of front- and backlight ****/
 
 // Choose either WS28xx compatible stripe or COB-LED stripe

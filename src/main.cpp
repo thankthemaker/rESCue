@@ -3,12 +3,13 @@
 #include "config.h"
 #include "BatteryMonitor.h"
 #include "Buzzer.h"
-#include "SoundController.h"
+////#include "SoundController.h"
 #include "ILedController.h"
 #include "Ws28xxController.h"
 #include "BleServer.h"
 #include "CanBus.h"
 #include "AppConfiguration.h"
+#include "OTA.h"
 
 int old_forward  = LOW;
 int old_backward = LOW;
@@ -22,6 +23,7 @@ HardwareSerial vesc(2);
 
 Buzzer *buzzer = new Buzzer();
 ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
+OTAUpdater *updater = new OTAUpdater();
 
 #if defined(CANBUS_ENABLED)
  CanBus * canbus = new CanBus();
@@ -42,11 +44,17 @@ void setup() {
     Serial.begin(VESC_BAUD_RATE);
   }
 
+  AppConfiguration::getInstance()->readPreferences();
+
+  if(AppConfiguration::getInstance()->config.otaUpdateActive) {
+     updater->setup();
+     return;
+  }
+
+
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
   pinMode(PIN_BRAKE, INPUT);
-
-  AppConfiguration::getInstance()->readPreferences();
 
   vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);      
   delay(50);
@@ -65,9 +73,16 @@ void setup() {
   buzzer->startSequence();
   ledController->startSequence();
   ledController->stop();
+
+  char buf[128];
+  snprintf(buf, 128, " sw-version %d.%d.$d is happily running on hw-version %d.%d");
+  Logger::notice("rESCue", buf);
 }
 
 void loop() {
+  if(AppConfiguration::getInstance()->config.otaUpdateActive) {
+    return;
+  }
 #ifdef CANBUS_ENABLED
   new_forward  = canbus->vescData.erpm >= 0.0 ? 1 : 0;
   new_backward = canbus->vescData.erpm < 0.0 ? 1 : 0;
@@ -97,10 +112,14 @@ void loop() {
   // call the VESC UART-to-Bluetooth bridge
 #ifdef CANBUS_ENABLED
   #ifdef FAKE_VESC_ENABLED
-    if(millis() - lastFake > 3000) {
-      canbus->vescData.inputVoltage = random(48, 50);
-      canbus->vescData.erpm = random(1, 1000);
-      canbus->vescData.current = random(-20.0, 10);
+    if(millis() - lastFake > 1000) {
+      canbus->vescData.inputVoltage = random(40, 50);
+      canbus->vescData.dutyCycle = random(0, 100);
+      canbus->vescData.erpm = random(-100, 5000);
+      canbus->vescData.current = random(-5.0, 20);
+      canbus->vescData.ampHours = random(0, 100);
+      canbus->vescData.mosfetTemp = random(20, 60);
+      canbus->vescData.motorTemp = random(20, 40);
       lastFake = millis();
     }
   #endif
