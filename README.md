@@ -16,7 +16,7 @@ Here's what rev3 of it looks like.
 
 ![rESCue PCB Rev. 3](docs/images/wheelbarrow-rev3.png)
 
-- sizing 95mm x 41mm
+- sizing 94mm x 37,5mm
 - input voltage 7,5V - 76V
 - output 5V, 1A maximum
 - ESP32 D1 mini header

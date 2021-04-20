@@ -1,4 +1,8 @@
-# 19.04.2021
+# 20.04.2021
+
+- updated doc, PCB image and sizing
+
+# 19.04.2021 (v1.0.0)
 
 - released version 1.0.0
 - added Over The Air (OTA) update
