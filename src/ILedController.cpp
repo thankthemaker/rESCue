@@ -3,16 +3,18 @@
 #include <Logger.h>
 
 void ILedController::loop(int* new_forward, int* old_forward, int* new_backward, int* old_backward){
+  this->update();
    // is there a change detected
   if(*(old_forward) != *(new_forward) || *(old_backward) != *(new_backward)) { 
     if(Logger::getLogLevel() == Logger::VERBOSE) {
-      char buf[512];
-      snprintf(buf, 512, "change detected: forward is %d was %d, backward is %d was %d", 
+      char buf[128];
+      snprintf(buf, 128, "change detected: forward is %d was %d, backward is %d was %d", 
          *(new_forward),*(old_forward),*(new_backward),*(old_backward));
       Logger::verbose(LOG_TAG_LED, buf);
     }
 
-    this->fade((*new_forward) == HIGH);
+    ////this->fade((*new_forward) == HIGH);
+    this->changePattern(Pattern::FADE, (*new_forward) == HIGH);
       
     *(old_forward) = *(new_forward);
     *(old_backward) = *(new_backward);

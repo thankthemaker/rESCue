@@ -5,15 +5,20 @@
 
 #define LOG_TAG_LED "ILedController"
 
+// Pattern types supported:
+enum  Pattern { NONE, RAINBOW_CYCLE, THEATER_CHASE, COLOR_WIPE, SCANNER, FADE, RESCUE_FLASH_LIGHT };
+// Patern directions supported:
+enum  Direction { FORWARD, REVERSE };
+
 class ILedController {
     public:    
         // pure virtual (abstract) method definitions
         virtual void init() = 0;
-        virtual void fade(boolean isForward) = 0;
-        virtual void flash(boolean isForward) = 0;
         virtual void stop() = 0;
         virtual void idleSequence() = 0;
         virtual void startSequence() = 0;
+        virtual void changePattern(Pattern pattern, boolean isForward) = 0;
+        virtual void update() = 0;
         void loop(int* new_forward, int* old_forward, int* new_backward, int* old_backward);
 };
 

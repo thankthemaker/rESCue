@@ -1,130 +1,259 @@
 #include "Ws28xxController.h"
 #include <Logger.h>
 
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type) 
+  : Adafruit_NeoPixel(pixels, pin, type) {}
 
-Ws28xxController::Ws28xxController() {}
+    
+// Update the pattern
+void Ws28xxController::update() {
+  if(stopPattern)
+    return;
+
+  if((millis() - lastUpdate) > interval) { // time to update 
+    lastUpdate = millis();
+    switch(activePattern) {
+      case RAINBOW_CYCLE:
+        rainbowCycleUpdate();
+        break;
+      case THEATER_CHASE:
+        //TheaterChaseUpdate();
+        break;
+      case COLOR_WIPE:
+        //ColorWipeUpdate();
+        break;
+      case SCANNER:
+        //ScannerUpdate();
+        break;
+      case FADE:
+        fadeLightUpdate();
+        break;
+      case RESCUE_FLASH_LIGHT:
+        flashLightUpdate();
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+// Increment the Index and reset at the end
+void Ws28xxController::increment() {
+  if (direction == FORWARD) {
+    index++;
+    if (index >= totalSteps) {
+      index = 0;
+      onComplete(); // call the comlpetion callback
+    }
+  } else { // Direction == REVERSE
+    --index;
+    if (index <= 0) {
+      index = totalSteps-1;
+      onComplete(); // call the comlpetion callback
+    }
+  }
+}
+
+    // Reverse pattern direction
+void Ws28xxController::reverse() {
+  if (direction == FORWARD) {
+    direction = REVERSE;
+    index = totalSteps-1;
+  } else {
+    direction = FORWARD;
+    index = 0;
+  }
+}
+  
+void Ws28xxController::onComplete() {
+  stopPattern = true;
+  //changePattern(Pattern::NONE, true);
+}
+
+
+void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
+  if(activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
+    return;
+  }
+  stopPattern = false;
+  switch(pattern) {
+      case RAINBOW_CYCLE:
+        rainbowCycle(10, isForward ? Direction::FORWARD : Direction::REVERSE);
+        break;
+      case THEATER_CHASE:
+        break;
+      case COLOR_WIPE:
+        break;
+      case SCANNER:
+        break;
+      case FADE:
+        fadeLight(10, isForward ? Direction::FORWARD : Direction::REVERSE);
+        break;
+      case RESCUE_FLASH_LIGHT:
+        flashLight(80, isForward ? Direction::FORWARD : Direction::REVERSE);
+        break;
+      default:
+        break; 
+  }
+  //if(Logger::getLogLevel() == Logger::VERBOSE) {
+    char buf[64];
+    snprintf(buf, 64, "changed light pattern to %d", pattern);
+    Logger::notice(LOG_TAG_WS28XX, buf);
+  //}
+}
+
+    // Initialize for a RainbowCycle
+void Ws28xxController::rainbowCycle(uint8_t timeinterval, Direction dir) {
+  activePattern = RAINBOW_CYCLE;
+  interval = timeinterval;
+  totalSteps = 255;
+  index = 0;
+  direction = dir;
+}
+
+// Update the Rainbow Cycle Pattern
+void Ws28xxController::rainbowCycleUpdate() {
+  for(int i=0; i< numPixels(); i++) {
+    setPixelColor(i, wheel(((i * 256 / numPixels()) + index) & 255));
+  }
+  show();
+  increment();
+}
+
+void Ws28xxController::flashLight(uint8_t timeinterval, Direction dir) {
+  activePattern = RESCUE_FLASH_LIGHT;
+  interval = timeinterval;
+  totalSteps = 10;
+  index = 0;
+  direction = dir;
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
+    char buf[64];
+    snprintf(buf, 64, "flash %s", direction == FORWARD ? "forward" : "backward");
+    Logger::verbose(LOG_TAG_WS28XX, buf);
+  }
+}
+
+void Ws28xxController::flashLightUpdate() {
+  for(int i = 0; i < NUMPIXELS; i++ ) {
+    if(i < NUMPIXELS/2)
+      if(direction ==FORWARD) {
+#ifdef LED_MODE_ODD_EVEN
+        if(i%2 == 0)
+#endif
+          setPixelColor(i, Color(MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS));
+      } else {
+        setPixelColor(i, Color(index%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0));
+      } 
+    else
+      if(direction ==FORWARD) {
+        setPixelColor(i, Color(index%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0));
+      } else {
+#ifdef LED_MODE_ODD_EVEN
+          if(i%2 == 0)
+#endif
+          setPixelColor(i, Color(MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS));
+      }
+  }    
+  show();
+  increment();
+}
+
+void Ws28xxController::fadeLight(uint8_t timeinterval, Direction dir) {
+  activePattern = Pattern::FADE;
+  interval = timeinterval;
+  totalSteps = MAX_BRIGHTNESS;
+  direction = dir;
+  index = dir == Direction::FORWARD ? 0 :  totalSteps-1;
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
+    char buf[64];
+    snprintf(buf, 64, "fade %s", direction == FORWARD ? "forward" : "backward");
+    Logger::verbose(LOG_TAG_WS28XX, buf);
+  }
+}
+
+void Ws28xxController::fadeLightUpdate() {
+  setLight(direction == Direction::FORWARD, index);
+  show();
+  increment();
+}
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Ws28xxController::wheel(byte wheelPos) {
+  wheelPos = 255 - wheelPos;
+  if(wheelPos < 85) {
+    return Color(255 - wheelPos * 3, 0, wheelPos * 3);
+  } else if(wheelPos < 170) {
+    wheelPos -= 85;
+    return Color(0, wheelPos * 3, 255 - wheelPos * 3);
+  } else {
+    wheelPos -= 170;
+    return Color(wheelPos * 3, 255 - wheelPos * 3, 0);
+  }
+}
 
 void Ws28xxController::init() {
   Logger::notice(LOG_TAG_WS28XX, "initializing ...");
-  pixels.begin(); // This initializes the NeoPixel library.
-  pixels.show();
-}
-
-void Ws28xxController::setPixel(int pixel, byte red, byte green, byte blue) {
-   pixels.setPixelColor(pixel, pixels.Color(red, green, blue));
-}
-
-void Ws28xxController::showStrip() {
-  pixels.show();
+  begin(); // This initializes the NeoPixel library.
+  show();
 }
 
 void Ws28xxController::stop() {
   Logger::verbose("stop");
   for(int i = 0; i < NUMPIXELS; i++ ) {
-    this->setPixel(i, 0, 0, 0);
+    setPixelColor(i, Color(0, 0, 0));
   }
-  this->showStrip();
+  show();
 }
 
-void Ws28xxController::setLight(boolean forward, byte brightness) {
+void Ws28xxController::setLight(boolean forward, int brightness) {
 #ifdef LED_MODE_ODD_EVEN
   for(int i = 0; i < NUMPIXELS/2; i++ ) {
-    this->setPixel(i, 0, 0, 0);
-    if(i%2 == 0 && forward) {
-      this->setPixel(i, brightness, brightness, brightness);
-    } else if(i%2 != 0 && !forward) {
-      this->setPixel(i, brightness, 0, 0);
+    setPixelColor(i, Color(0, 0, 0));
+    if(i%2 == 0) {
+        setPixelColor(i, Color(brightness, brightness, brightness)); 
+    } else if(i%2 != 0) {
+        setPixelColor(i, Color(MAX_BRIGHTNESS - 1 - brightness, 0, 0));
     }
   }
   for(int i = NUMPIXELS/2; i < NUMPIXELS; i++ ) {
-    this->setPixel(i, 0, 0, 0);
-    if(i%2 == 0 && forward) {
-      this->setPixel(i, brightness, 0, 0);
-    } else if(i%2 != 0 && !forward) {
-      this->setPixel(i, brightness, brightness, brightness);
-    }
+    setPixelColor(i, Color(0, 0, 0));
+    if(i%2 == 0) {
+        setPixelColor(i, Color(brightness, 0, 0));
+    } else if(i%2 != 0) {
+        setPixelColor(i, Color(MAX_BRIGHTNESS - 1 - brightness, MAX_BRIGHTNESS - 1 - brightness, MAX_BRIGHTNESS - 1 - brightness));
+    }  
   }
 #else
   for(int i = 0; i < NUMPIXELS; i++ ) {
     if(i < NUMPIXELS/2){
       if(forward)
-        this->setPixel(i, brightness, brightness, brightness);
+        setPixelColor(i, Color(brightness, brightness, brightness));
       else
-        this->setPixel(i, brightness, 0, 0);
+        setPixelColor(i, Color(brightness, 0, 0));
     } else {
       if(forward) 
-        this->setPixel(i, brightness, 0, 0);
+        setPixelColor(i, Color(brightness, 0, 0));
       else
-        this->setPixel(i, brightness, brightness, brightness);
+        setPixelColor(i, Color(brightness, brightness, brightness));
     }
   }
 #endif
-  this->showStrip();
+  show();
 } 
-
-void Ws28xxController::fade(boolean isForward) {
-  if(Logger::getLogLevel() == Logger::VERBOSE) {
-    char buf[64];
-    snprintf(buf, 64, "fade %s", isForward ? "forward" : "backward");
-    Logger::verbose(LOG_TAG_WS28XX, buf);
-  }
-  for(int k = MAX_BRIGHTNESS; k >= 0; k--) {
-    this->setLight(!isForward, k);
-    delay(15);
-  }
-  for(int k = 0; k < MAX_BRIGHTNESS+1; k++) {
-    this->setLight(isForward, k);
-    delay(15);
-  }
-}
-
-void Ws28xxController::flash(boolean isForward) {
-  if(Logger::getLogLevel() == Logger::VERBOSE) {
-    char buf[64];
-    snprintf(buf, 64, "flash %s", isForward ? "forward" : "backward");
-    Logger::verbose(LOG_TAG_WS28XX, buf);
-  }
-  for(int j=0; j<10; j++) {
-    for(int i = 0; i < NUMPIXELS; i++ ) {
-      if(i < NUMPIXELS/2)
-        if(isForward) {
-#ifdef LED_MODE_ODD_EVEN
-          if(i%2 == 0)
-#endif
-            this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
-        } else {
-          this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0);
-        } 
-      else
-        if(isForward) {
-          this->setPixel(i, j%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0);
-        } else {
-#ifdef LED_MODE_ODD_EVEN
-          if(i%2 == 0)
-#endif
-            this->setPixel(i, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
-        }
-    }    
-    this->showStrip();
-    delay(80);
-  }
-  this->setLight(isForward, MAX_BRIGHTNESS);
-  this->showStrip();
-}
 
 void Ws28xxController::startSequenceChasing(byte red, byte green, byte blue, int speedDelay) {
   for (int j=0; j<10; j++) {  //do 10 cycles of chasing
     for (int q=0; q < 3; q++) {
       for (int i=0; i < NUMPIXELS; i=i+3) {
-        this->setPixel(i+q, red, green, blue);    //turn every third pixel on
+        setPixelColor(i+q, Color(red, green, blue));    //turn every third pixel on
       }
-      this->showStrip();
+      show();
      
       delay(speedDelay);
      
       for (int i=0; i < NUMPIXELS; i=i+3) {
-        this->setPixel(i+q, 0,0,0);        //turn every third pixel off
+        setPixelColor(i+q, Color(0,0,0));        //turn every third pixel off
       }
     }
   }
@@ -135,23 +264,23 @@ void Ws28xxController::startSequenceCylon(uint16_t cycles, uint16_t speed, uint8
   // Larson time baby!
   for(int i = 0; i < cycles; i++){
     for (int count = 1; count<NUMPIXELS; count++) {
-      pixels.setPixelColor(count, color);
+      setPixelColor(count, color);
       old_val[count] = color;
       for(int x = count; x>0; x--) {
         old_val[x-1] = dimColor(old_val[x-1], width);
-        pixels.setPixelColor(x-1, old_val[x-1]); 
+        setPixelColor(x-1, old_val[x-1]); 
       }
-      showStrip();
+      show();
       delay(speed);
     }
     for (int count = NUMPIXELS-1; count>=0; count--) {
-      pixels.setPixelColor(count, color);
+      setPixelColor(count, color);
       old_val[count] = color;
       for(int x = count; x<=NUMPIXELS ;x++) {
         old_val[x-1] = dimColor(old_val[x-1], width);
-        pixels.setPixelColor(x+1, old_val[x+1]);
+        setPixelColor(x+1, old_val[x+1]);
       }
-      showStrip();
+      show();
       delay(speed);
     }
   }
@@ -160,8 +289,8 @@ void Ws28xxController::startSequenceCylon(uint16_t cycles, uint16_t speed, uint8
 void Ws28xxController::idleSequence() {
   if(millis() - lastPulse < 70) {
     for (int count = 0; count<NUMPIXELS; count++) {
-      pixels.setPixelColor(count, pulse);
-      showStrip();
+      setPixelColor(count, pulse);
+      show();
     }
     if(pulse == 127) {
       up = false;

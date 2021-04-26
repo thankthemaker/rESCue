@@ -75,7 +75,9 @@ void setup() {
   ledController->stop();
 
   char buf[128];
-  snprintf(buf, 128, " sw-version %d.%d.$d is happily running on hw-version %d.%d");
+  snprintf(buf, 128, " sw-version %d.%d.%d is happily running on hw-version %d.%d", 
+    SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH, 
+    HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
   Logger::notice("rESCue", buf);
 }
 
@@ -100,7 +102,8 @@ void loop() {
   // is motor brake active?
   if(new_brake == HIGH) {
     // flash backlights
-    ledController->flash(new_forward == HIGH);
+    ////ledController->flash(new_forward == HIGH);
+    ledController->changePattern(Pattern::RESCUE_FLASH_LIGHT, new_forward == HIGH);
   } 
 
   // call the led controller loop
@@ -115,8 +118,8 @@ void loop() {
     if(millis() - lastFake > 1000) {
       canbus->vescData.inputVoltage = random(40, 50);
       canbus->vescData.dutyCycle = random(0, 100);
-      canbus->vescData.erpm = random(-100, 5000);
-      canbus->vescData.current = random(-5.0, 20);
+      canbus->vescData.erpm = random(-100, 500);
+      canbus->vescData.current = random(0, 20);
       canbus->vescData.ampHours = random(0, 100);
       canbus->vescData.mosfetTemp = random(20, 60);
       canbus->vescData.motorTemp = random(20, 40);

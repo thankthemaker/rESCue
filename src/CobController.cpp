@@ -19,6 +19,12 @@ void CobController::init() {
 #endif
 }
 
+void CobController::changePattern(Pattern pattern, boolean isForward) {
+}
+
+void CobController::update(){
+}
+
 void CobController::fade(boolean isForward){
 #ifdef DUAL_MOSFET
   for (int i=MAX_BRIGHTNESS; i>0; i=i-5) {

@@ -24,6 +24,9 @@ class CobController : public ILedController {
         void stop();
         void startSequence();
         void idleSequence();
+        void changePattern(Pattern pattern, boolean isForward);
+        void update();
+
     private:
       void writePWM(int channel, int dutyCycle);
 };
