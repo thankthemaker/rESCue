@@ -20,7 +20,7 @@ void AppConfiguration::readPreferences() {
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
     config.minBatteryVoltage = doc["minBatteryVoltage"] | 40.0;
     config.maxBatteryVoltage = doc["maxBatteryVoltage"] | 50.4;
-    config.startSoundIndex = doc["startSoundIndex"] | 111;
+    config.startSoundIndex = doc["startSoundIndex"] | 107;
     config.startLightIndex = doc["startLightIndex"] | 1;
     config.batteryWarningSoundIndex = doc["batteryWarningSoundIndex"] | 406;
     config.batteryAlarmSoundIndex = doc["batteryAlarmSoundIndex"] | 402;

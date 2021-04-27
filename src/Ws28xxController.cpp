@@ -58,7 +58,7 @@ void Ws28xxController::increment() {
 void Ws28xxController::reverse() {
   if (direction == FORWARD) {
     direction = REVERSE;
-    index = totalSteps-1;
+    index = totalSteps;
   } else {
     direction = FORWARD;
     index = 0;
@@ -87,7 +87,7 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
       case SCANNER:
         break;
       case FADE:
-        fadeLight(10, isForward ? Direction::FORWARD : Direction::REVERSE);
+        fadeLight(6, isForward ? Direction::FORWARD : Direction::REVERSE);
         break;
       case RESCUE_FLASH_LIGHT:
         flashLight(80, isForward ? Direction::FORWARD : Direction::REVERSE);
@@ -95,11 +95,11 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
       default:
         break; 
   }
-  //if(Logger::getLogLevel() == Logger::VERBOSE) {
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
     char buf[64];
     snprintf(buf, 64, "changed light pattern to %d", pattern);
-    Logger::notice(LOG_TAG_WS28XX, buf);
-  //}
+    Logger::verbose(LOG_TAG_WS28XX, buf);
+  }
 }
 
     // Initialize for a RainbowCycle
@@ -208,20 +208,22 @@ void Ws28xxController::stop() {
 
 void Ws28xxController::setLight(boolean forward, int brightness) {
 #ifdef LED_MODE_ODD_EVEN
+  int calc_even = forward ? brightness : brightness - 1;
+  int calc_odd  = totalSteps - brightness - 1;
   for(int i = 0; i < NUMPIXELS/2; i++ ) {
     setPixelColor(i, Color(0, 0, 0));
     if(i%2 == 0) {
-        setPixelColor(i, Color(brightness, brightness, brightness)); 
+        setPixelColor(i, Color(calc_even , calc_even, calc_even)); 
     } else if(i%2 != 0) {
-        setPixelColor(i, Color(MAX_BRIGHTNESS - 1 - brightness, 0, 0));
+        setPixelColor(i, Color(calc_odd, 0, 0));
     }
   }
   for(int i = NUMPIXELS/2; i < NUMPIXELS; i++ ) {
     setPixelColor(i, Color(0, 0, 0));
     if(i%2 == 0) {
-        setPixelColor(i, Color(brightness, 0, 0));
+        setPixelColor(i, Color(calc_even, 0, 0));
     } else if(i%2 != 0) {
-        setPixelColor(i, Color(MAX_BRIGHTNESS - 1 - brightness, MAX_BRIGHTNESS - 1 - brightness, MAX_BRIGHTNESS - 1 - brightness));
+        setPixelColor(i, Color(calc_odd, calc_odd, calc_odd));
     }  
   }
 #else
