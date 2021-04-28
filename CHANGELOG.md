@@ -1,3 +1,16 @@
+# 28.04.2021
+
+- sound can be turned off
+- added more sounds
+- sound "preview" when selected
+- Blynk app reads settings on connect
+- fixed the fading bugs and made it smoother
+
+# 27.04.2021
+
+- fixed some bugs in fading lights
+- smoother fading
+
 # 20.04.2021
 
 - updated doc, PCB image and sizing
