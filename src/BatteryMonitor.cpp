@@ -71,7 +71,7 @@ float BatteryMonitor::readValues() {
 }
 
 // check the voltage against the configured min and max values
-void BatteryMonitor::checkValues(Buzzer *buzzer) {
+void BatteryMonitor::checkValues() {
     if(millis() - lastCheck < 300) {
         // only check every 300ms
         return;
@@ -82,7 +82,7 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     // check if voltage is below absolute minimum or above absolute maximum (regen)
     if(voltage < min_voltage || voltage > max_voltage) {
       Logger::warning(LOG_TAG_BATMON, "ALARM: Battery voltage out of range");
-      buzzer->alarm();  // play an anoying alarm tone
+      Buzzer::getInstance()->alarm();  // play an anoying alarm tone
       return;
     } 
 
@@ -90,7 +90,7 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     if(voltage < warn_voltage) {
         if(millis() - lastBatWarn > 5000) {
           Logger::warning(LOG_TAG_BATMON, "WARN: Battery voltage out of range");
-          buzzer->warning(); // play a warn tonen every 5 seconds
+          Buzzer::getInstance()->warning(); // play a warn tonen every 5 seconds
           lastBatWarn = millis();
         }
     }
@@ -99,7 +99,7 @@ void BatteryMonitor::checkValues(Buzzer *buzzer) {
     if(getAverageCurrent() > max_current) {
         if(millis() - lastCurWarn > 5000) {
           Logger::warning(LOG_TAG_BATMON, "WARN: Average current too high");
-          buzzer->warning(); // play a warn tonen every 5 seconds
+          Buzzer::getInstance()->warning(); // play a warn tonen every 5 seconds
           lastCurWarn = millis();
         }
     }

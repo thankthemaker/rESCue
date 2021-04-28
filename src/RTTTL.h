@@ -42,6 +42,7 @@ extern const char *rtttl_beep_positive;
 extern const char *rtttl_beep_negative;
 
 enum class RTTTL_MELODIES {
+  NO_TONE = 0,
   SIMPSONS = 100,
   TOPGUN,
   A_TEAM,

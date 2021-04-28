@@ -21,7 +21,6 @@ int lastFake = 0;
 
 HardwareSerial vesc(2);
 
-Buzzer *buzzer = new Buzzer();
 ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
 OTAUpdater *updater = new OTAUpdater();
 
@@ -70,7 +69,7 @@ void setup() {
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 
-  buzzer->startSequence();
+  Buzzer::getInstance()->startSequence();
   ledController->startSequence();
   ledController->stop();
 
@@ -110,16 +109,16 @@ void loop() {
   ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
 
   // measure and check voltage
-  batMonitor->checkValues(buzzer);
+  batMonitor->checkValues();
 
   // call the VESC UART-to-Bluetooth bridge
 #ifdef CANBUS_ENABLED
   #ifdef FAKE_VESC_ENABLED
-    if(millis() - lastFake > 1000) {
-      canbus->vescData.inputVoltage = random(40, 50);
+    if(millis() - lastFake > 3000) {
+      canbus->vescData.inputVoltage = random(43, 50);
       canbus->vescData.dutyCycle = random(0, 100);
-      canbus->vescData.erpm = random(-100, 500);
-      canbus->vescData.current = random(0, 20);
+      canbus->vescData.erpm = random(-100, 200);
+      canbus->vescData.current = random(-20, 20);
       canbus->vescData.ampHours = random(0, 100);
       canbus->vescData.mosfetTemp = random(20, 60);
       canbus->vescData.motorTemp = random(20, 40);

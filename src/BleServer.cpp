@@ -23,18 +23,24 @@ int lastLoop = 0;
 int lastNotification = 0;
 int lastBatteryValue = 0;
 std::map<int, int> blynkSoundMapping = {
-  {1, 100}, {2, 101}, {3, 102}, {4, 103}, {5, 104}, {6, 105},
-  {7, 106}, {8, 107}, {9, 108}, {10, 109}, {11, 110}, {12, 111},
-  {12, 112},
+  {1, 0}, {2, 100}, {3, 101}, {4, 102}, {5, 103}, {6, 104}, {7, 105},
+  {8, 106}, {9, 107}, {10, 108}, {11, 109}, {12, 110}, {13, 111},
+  {14, 112}, {15, 113},
 };
 std::map<int, int> blynkWarningMapping = {
-  {1, 400}, {2, 402}, {3, 406},
+  {1, 0}, {2, 400}, {3, 402}, {4, 406},
 };
 std::map<int, int> blynkAlarmMapping = {
-    {1, 402}, {2, 300},
+  {1, 0}, {2, 402}, {3, 300},
 };
 
+void syncPreferencesWithApp();
+
 #ifdef BLYNK_ENABLED
+  // This function will run every time Blynk connection is established
+ BLYNK_CONNECTED() {
+    syncPreferencesWithApp();
+ }
  BLYNK_WRITE_DEFAULT() {
   boolean restartNeeded = false;
   int pin = request.pin;
@@ -49,16 +55,22 @@ std::map<int, int> blynkAlarmMapping = {
       snprintf(buf, 128, "Updated param \"StartSoundIndex\" to %d", param.asInt());
       val = blynkSoundMapping.find(param.asInt())->second;
       AppConfiguration::getInstance()->config.startSoundIndex = val;
+      Buzzer::getInstance()->stopSound();
+      Buzzer::getInstance()->playSound(RTTTL_MELODIES(val));
       break;    
     case VPIN_APP_BATTERY_WARN_INDEX:
       snprintf(buf, 128, "Updated param \"BatteryWarnIndex\" to %d", param.asInt());
       val = blynkWarningMapping.find(param.asInt())->second;
       AppConfiguration::getInstance()->config.batteryWarningSoundIndex = val;
+      Buzzer::getInstance()->stopSound();
+      Buzzer::getInstance()->playSound(RTTTL_MELODIES(val));
       break;
     case VPIN_APP_BATTERY_ALARM_INDEX:
       snprintf(buf, 128, "Updated param \"BatteryAlarmIndex\" to %d", param.asInt());
       val = blynkAlarmMapping.find(param.asInt())->second;
       AppConfiguration::getInstance()->config.batteryAlarmSoundIndex = val;
+      Buzzer::getInstance()->stopSound();
+      Buzzer::getInstance()->playSound(RTTTL_MELODIES(val));
       break;
     case VPIN_APP_MIN_BAT_VOLTAGE:
       snprintf(buf, 128, "Updated param \"MinBatVoltage\" to %f", param.asDouble());
@@ -75,6 +87,7 @@ std::map<int, int> blynkAlarmMapping = {
     case VPIN_APP_ACTIVATE_OTA:
       snprintf(buf, 128, "Updated param \"otaUpdateActive\" to %d", param.asInt());
       AppConfiguration::getInstance()->config.otaUpdateActive = param.asInt();
+      restartNeeded = true;
       break;
   }
   AppConfiguration::getInstance()->savePreferences();
@@ -282,7 +295,6 @@ void BleServer::begin() {
 
 bool BleServer::connect() {
   Logger::verbose(LOG_TAG_BLESERVER, "connect");
-  syncPreferencesWithApp();
   mBuffRX.clear();
   return mConn = true;
 }
@@ -397,7 +409,7 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
    }
  }
 
-void BleServer::syncPreferencesWithApp() {
+void syncPreferencesWithApp() {
   for (std::map<int, int>::iterator it = blynkSoundMapping.begin(); it != blynkSoundMapping.end(); ++it) {
     if(it->second == AppConfiguration::getInstance()->config.startSoundIndex)
       Blynk.virtualWrite(VPIN_APP_SOUND_INDEX, it->first);

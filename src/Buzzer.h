@@ -14,11 +14,16 @@
 
 class Buzzer {
     public:
-        Buzzer();
+        static Buzzer* getInstance();
         void startSequence();
         void warning();
         void alarm();
         void playSound(RTTTL_MELODIES selection);
+        void stopSound();
+
+    private:
+        Buzzer() {}
+        static Buzzer *instance; 
 };
 #endif //__BUZZER_H__
 

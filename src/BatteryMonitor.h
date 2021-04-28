@@ -24,7 +24,7 @@ class BatteryMonitor {
 #endif
         void init();
         float readValues();
-        void checkValues(Buzzer *buzzer);
+        void checkValues();
 
     private:
 #ifdef CANBUS_ENABLED

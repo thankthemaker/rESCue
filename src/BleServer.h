@@ -13,6 +13,7 @@
 #include "config.h"
 #include "CanBus.h"
 #include "AppConfiguration.h"
+#include "Buzzer.h"
 #include <NimBLEDevice.h>
 #include <BlynkApiArduino.h>
 #include <Blynk/BlynkProtocol.h>
