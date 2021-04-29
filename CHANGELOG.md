@@ -2,6 +2,7 @@
 
 - updated PIN configuration according to rev3 of the rESCue PCB
 - updated documentation
+- some more light magic
 
 # 28.04.2021
 

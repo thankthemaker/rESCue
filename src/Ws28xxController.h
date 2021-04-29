@@ -32,6 +32,7 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         unsigned long interval = 0;   // milliseconds between updates
         unsigned long lastUpdate = 0; // last update of position
         boolean stopPattern = false;
+        boolean blockChange = false;
     
         uint32_t color1, color2;  // What colors are in use
         uint16_t totalSteps;      // total number of steps in the pattern
@@ -45,13 +46,15 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         void flashLightUpdate();
         void fadeLight(uint8_t interval = 80, Direction dir = FORWARD);
         void fadeLightUpdate();
+        void theaterChase(uint32_t color1, uint32_t color2, uint8_t interval, Direction dir = FORWARD);
+        void theaterChaseUpdate();
+        void cylon(uint32_t col1, uint8_t interval);
+        void cylonUpdate();
         void onComplete();
+
     private:
         uint32_t wheel(byte wheelPos);
         void setLight(boolean forward, int brightness);
-        void showStrip();
-        void startSequenceChasing(byte red, byte green, byte blue, int speedDelay);
-        void startSequenceCylon(uint16_t cycles, uint16_t speed, uint8_t width, uint32_t color);
         uint32_t dimColor(uint32_t color, uint8_t width);
         uint8_t pulse = 0;
         uint32_t lastPulse = 0;

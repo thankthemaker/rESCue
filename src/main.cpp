@@ -71,7 +71,6 @@ void setup() {
 
   Buzzer::getInstance()->startSequence();
   ledController->startSequence();
-  ledController->stop();
 
   char buf[128];
   snprintf(buf, 128, " sw-version %d.%d.%d is happily running on hw-version %d.%d", 
@@ -85,8 +84,8 @@ void loop() {
     return;
   }
 #ifdef CANBUS_ENABLED
-  new_forward  = canbus->vescData.erpm >= 0.0 ? 1 : 0;
-  new_backward = canbus->vescData.erpm < 0.0 ? 1 : 0;
+  new_forward  = canbus->vescData.erpm >= 10.0 ? 1 : 0;
+  new_backward = canbus->vescData.erpm < 10.0 ? 1 : 0;
   new_brake    = canbus->vescData.current < -4.0;
 #else
   new_forward  = digitalRead(PIN_FORWARD);
@@ -101,7 +100,6 @@ void loop() {
   // is motor brake active?
   if(new_brake == HIGH) {
     // flash backlights
-    ////ledController->flash(new_forward == HIGH);
     ledController->changePattern(Pattern::RESCUE_FLASH_LIGHT, new_forward == HIGH);
   } 
 

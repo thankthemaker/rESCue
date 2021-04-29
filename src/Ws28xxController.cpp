@@ -17,13 +17,13 @@ void Ws28xxController::update() {
         rainbowCycleUpdate();
         break;
       case THEATER_CHASE:
-        //TheaterChaseUpdate();
+        theaterChaseUpdate();
         break;
       case COLOR_WIPE:
         //ColorWipeUpdate();
         break;
-      case SCANNER:
-        //ScannerUpdate();
+      case CYLON:
+        cylonUpdate();
         break;
       case FADE:
         fadeLightUpdate();
@@ -34,6 +34,8 @@ void Ws28xxController::update() {
       default:
         break;
     }
+    show();
+    increment();
   }
 }
 
@@ -67,6 +69,7 @@ void Ws28xxController::reverse() {
   
 void Ws28xxController::onComplete() {
   stopPattern = true;
+  blockChange = false;
   //changePattern(Pattern::NONE, true);
 }
 
@@ -75,16 +78,21 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
   if(activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
     return;
   }
+  if(blockChange) {
+    return;
+  }
   stopPattern = false;
   switch(pattern) {
       case RAINBOW_CYCLE:
         rainbowCycle(10, isForward ? Direction::FORWARD : Direction::REVERSE);
         break;
       case THEATER_CHASE:
+        theaterChase(Color(255,255,0), Color(0,0,50), 100);
         break;
       case COLOR_WIPE:
         break;
-      case SCANNER:
+      case CYLON:
+        cylon(Color(255,0,0), 55);
         break;
       case FADE:
         fadeLight(6, isForward ? Direction::FORWARD : Direction::REVERSE);
@@ -104,7 +112,7 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
 
     // Initialize for a RainbowCycle
 void Ws28xxController::rainbowCycle(uint8_t timeinterval, Direction dir) {
-  activePattern = RAINBOW_CYCLE;
+  activePattern = Pattern::RAINBOW_CYCLE;
   interval = timeinterval;
   totalSteps = 255;
   index = 0;
@@ -116,12 +124,10 @@ void Ws28xxController::rainbowCycleUpdate() {
   for(int i=0; i< numPixels(); i++) {
     setPixelColor(i, wheel(((i * 256 / numPixels()) + index) & 255));
   }
-  show();
-  increment();
 }
 
 void Ws28xxController::flashLight(uint8_t timeinterval, Direction dir) {
-  activePattern = RESCUE_FLASH_LIGHT;
+  activePattern = Pattern::RESCUE_FLASH_LIGHT;
   interval = timeinterval;
   totalSteps = 10;
   index = 0;
@@ -154,8 +160,6 @@ void Ws28xxController::flashLightUpdate() {
           setPixelColor(i, Color(MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS));
       }
   }    
-  show();
-  increment();
 }
 
 void Ws28xxController::fadeLight(uint8_t timeinterval, Direction dir) {
@@ -173,8 +177,51 @@ void Ws28xxController::fadeLight(uint8_t timeinterval, Direction dir) {
 
 void Ws28xxController::fadeLightUpdate() {
   setLight(direction == Direction::FORWARD, index);
-  show();
-  increment();
+}
+
+// Initialize for a Theater Chase
+void Ws28xxController::theaterChase(uint32_t col1, uint32_t col2, uint8_t timeinterval, Direction dir) {
+  activePattern = Pattern::THEATER_CHASE;
+  interval = timeinterval;
+  totalSteps = numPixels();
+  color1 = col1;
+  color2 = col2;
+  index = 0;
+  direction = dir;
+}
+    
+    // Update the Theater Chase Pattern
+void Ws28xxController::theaterChaseUpdate(){
+  for(int i=0; i< numPixels(); i++) {
+    if ((i + index) % 3 == 0) {
+      setPixelColor(i, color1);
+    } else {
+      setPixelColor(i, color2);
+    }
+  }
+}
+
+// Initialize for a cylon
+void Ws28xxController::cylon(uint32_t col1, uint8_t timeinterval) {
+  activePattern = Pattern::CYLON;
+  interval = timeinterval;
+  totalSteps = (numPixels() - 1) * 2;
+  color1 = col1;
+  index = 0;
+  direction = Direction::FORWARD;
+}
+
+// Update the cylon Pattern
+void Ws28xxController::cylonUpdate() { 
+  for (int i = 0; i < numPixels(); i++) {
+    if (i == index) { // Scan Pixel to the right
+      setPixelColor(i, color1);
+    } else if (i == totalSteps - index) { // Scan Pixel to the left
+      setPixelColor(i, color1);
+    } else { // Fading tail
+      setPixelColor(i, dimColor(getPixelColor(i), 4));
+    }
+  }
 }
 
 // Input a value 0 to 255 to get a color value.
@@ -232,93 +279,36 @@ void Ws28xxController::setLight(boolean forward, int brightness) {
       if(forward)
         setPixelColor(i, Color(brightness, brightness, brightness));
       else
-        setPixelColor(i, Color(brightness, 0, 0));
+        setPixelColor(i, Color(MAX_BRIGHTNESS-brightness, 0, 0));
     } else {
       if(forward) 
         setPixelColor(i, Color(brightness, 0, 0));
       else
-        setPixelColor(i, Color(brightness, brightness, brightness));
+        setPixelColor(i, Color(MAX_BRIGHTNESS-brightness, MAX_BRIGHTNESS-brightness, MAX_BRIGHTNESS-brightness));
     }
   }
 #endif
   show();
 } 
 
-void Ws28xxController::startSequenceChasing(byte red, byte green, byte blue, int speedDelay) {
-  for (int j=0; j<10; j++) {  //do 10 cycles of chasing
-    for (int q=0; q < 3; q++) {
-      for (int i=0; i < NUMPIXELS; i=i+3) {
-        setPixelColor(i+q, Color(red, green, blue));    //turn every third pixel on
-      }
-      show();
-     
-      delay(speedDelay);
-     
-      for (int i=0; i < NUMPIXELS; i=i+3) {
-        setPixelColor(i+q, Color(0,0,0));        //turn every third pixel off
-      }
-    }
-  }
-}
-
-void Ws28xxController::startSequenceCylon(uint16_t cycles, uint16_t speed, uint8_t width, uint32_t color) {
-  uint32_t old_val[NUMPIXELS]; // up to 256 lights!
-  // Larson time baby!
-  for(int i = 0; i < cycles; i++){
-    for (int count = 1; count<NUMPIXELS; count++) {
-      setPixelColor(count, color);
-      old_val[count] = color;
-      for(int x = count; x>0; x--) {
-        old_val[x-1] = dimColor(old_val[x-1], width);
-        setPixelColor(x-1, old_val[x-1]); 
-      }
-      show();
-      delay(speed);
-    }
-    for (int count = NUMPIXELS-1; count>=0; count--) {
-      setPixelColor(count, color);
-      old_val[count] = color;
-      for(int x = count; x<=NUMPIXELS ;x++) {
-        old_val[x-1] = dimColor(old_val[x-1], width);
-        setPixelColor(x+1, old_val[x+1]);
-      }
-      show();
-      delay(speed);
-    }
-  }
-}
-
 void Ws28xxController::idleSequence() {
-  if(millis() - lastPulse < 70) {
-    for (int count = 0; count<NUMPIXELS; count++) {
-      setPixelColor(count, pulse);
-      show();
-    }
-    if(pulse == 127) {
-      up = false;
-    } else if(pulse == 0) {
-      up = true;
-    }
-    if(up) {
-      pulse++;
-    } else {
-      pulse--;
-    }
-  }
-  lastPulse = millis();
+  changePattern(Pattern::RAINBOW_CYCLE, true);
 }
-
 
 void Ws28xxController::startSequence() {
   Logger::notice(LOG_TAG_WS28XX, "run startSequence");
   switch (AppConfiguration::getInstance()->config.startLightIndex){
   case 1:
-    startSequenceChasing(0, 0, MAX_BRIGHTNESS, 100);
+    theaterChase(Color(255,255,255), Color(255,0,0), 150);
     break;
   case 2:
-    startSequenceCylon(4, 40, 4, 0xFF1000);
+    cylon(Color(255,0,0),  55);
+    break;
+  case 3:
+    rainbowCycle(10, Direction::FORWARD);
     break;
   }
+  blockChange = true;
 }
 
 uint32_t Ws28xxController::dimColor(uint32_t color, uint8_t width) {
