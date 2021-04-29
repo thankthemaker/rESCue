@@ -18,7 +18,7 @@
 //#define LED_COB    // enables the light controller for tri-color COB-stripes
 
 #ifdef LED_WS28xx
- #define NUMPIXELS    16  // the number of LEDs if WS28xx is used
+ #define NUMPIXELS    32  // the number of LEDs if WS28xx is used
  #define LED_MODE_ODD_EVEN
 #endif //LED_WS28xx
 #ifdef LED_COB
@@ -61,7 +61,7 @@
   #define BLYNK_AUTH_TOKEN "bb48a7193d764ea7a90dbffb54ffcb76"
 #endif
 
-////#define FAKE_VESC_ENABLED
+///#define FAKE_VESC_ENABLED
 
 #endif //__CONFIG_H__
 

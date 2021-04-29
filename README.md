@@ -54,8 +54,8 @@ Connect your Cheap FOCer to GPIOs of the ESP32 as follows:
 |:---:|:---:|:---:|
 |GPIO 16 | RX| UART (if used)|
 |GPIO 17 | TX| UART (if used)|
-|GPIO 26 | CANBUS-RX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
-|GPIO 27 | CANBUS-TX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
+|GPIO 26 | CANBUS-TX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
+|GPIO 27 | CANBUS-RX | the GPIO is connected to the CAN-tranceiver, not directly to the CF2|
 |GPIO 18 | PC13 | forward|
 |GPIO 19 | PC14 | backward|
 |GPIO 21 | PA15 | brake |
@@ -74,7 +74,7 @@ This table shows the PIN mapping:
 |GPIO 22 | MOSFET1 |COB white front / red back (if COB is used)|
 |GPIO 23 | MOSFET2 |COB red front / white back (if COB is used)|
 |GPIO 34 | Voltage divider |Battery input (if voltage divider is used)|
-|GPIO ?? | DIN battery |Battery indicator|
+|GPIO 2 | DIN battery |Battery indicator|
 
 
 ## Features
