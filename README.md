@@ -134,6 +134,8 @@ The desktop and mobile version of the [VESC tool app](https://vesc-project.com/v
 
 ___Attention___: this feature is only available using an ESP32 and a separate CAN-tranceiver, e.g. the SN65HVD230.
 
+![CANBUS wiring](docs/images/can-wiring.png)
+
 Connection to the VESC via CANBUS is now also supported. The connection to the CANBUS will bring you status updates of your VESC. These information include
 
 - dutyCycle - the current duty cycle

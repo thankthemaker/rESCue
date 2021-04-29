@@ -1,3 +1,7 @@
+# 29.04.2021
+
+- updated documentation
+
 # 28.04.2021
 
 - sound can be turned off
