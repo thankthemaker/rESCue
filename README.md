@@ -76,7 +76,6 @@ This table shows the PIN mapping:
 |GPIO 34 | Voltage divider |Battery input (if voltage divider is used)|
 |GPIO 2 | DIN battery |Battery indicator|
 
-
 ## Features
 
 - Support for Front- and Backlight
@@ -173,7 +172,7 @@ To use this App with the official Blynk server, you'll might need to buy some en
 
 ![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
 
-QR-Code: App-Version 0.9
+QR-Code: App-Version 1.1
 
 ## Configuration
 

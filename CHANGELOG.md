@@ -1,3 +1,8 @@
+# 30.04.2021
+
+- Updated Blynk App to v1.1
+- Updated QR code
+
 # 29.04.2021
 
 - updated PIN configuration according to rev3 of the rESCue PCB
