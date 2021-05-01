@@ -8,8 +8,8 @@
 #define SOFTWARE_VERSION_MAJOR 1
 #define SOFTWARE_VERSION_MINOR 1
 #define SOFTWARE_VERSION_PATCH 0
-#define HARDWARE_VERSION_MAJOR 0
-#define HARDWARE_VERSION_MINOR 3
+#define HARDWARE_VERSION_MAJOR 3
+#define HARDWARE_VERSION_MINOR 1
 
 /**** Definition for control of front- and backlight ****/
 
@@ -84,7 +84,7 @@ Do the same at the lower edge of your battery voltage, e.g. 40V
 
 40V / 1.445V = 27.68
 
-Now you have to values for the typical range of your battery. In this example it's 
+Now you have two values for the typical range of your battery. In this example it's 
 a value of 27.69 as VOLTAGE_DIVIDER_CONSTANT is pretty ok.
 
 You always have to do the calibration when changing the resistors or the ESP32.

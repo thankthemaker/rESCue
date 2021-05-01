@@ -1,3 +1,7 @@
+# 01.05.2021
+
+- more configuration options
+
 # 30.04.2021
 
 - Updated Blynk App to v1.1

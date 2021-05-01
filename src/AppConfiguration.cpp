@@ -24,6 +24,21 @@ void AppConfiguration::readPreferences() {
     config.startLightIndex = doc["startLightIndex"] | 1;
     config.batteryWarningSoundIndex = doc["batteryWarningSoundIndex"] | 406;
     config.batteryAlarmSoundIndex = doc["batteryAlarmSoundIndex"] | 402;
+    config.startLightDuration = doc["startLightDuration"] | 1000;
+    config.lightColorPrimary = doc["lightColorPrimary"] | 0xFFFFFF;
+    config.lightColorSecondary = doc["lightColorSecondary"] | 0xFF0000;
+    config.idleLightIndex = doc["idleLightIndex"] | 0;
+    config.lightFadingDuration = doc["lightFadingDuration"] | 0;
+    config.lightMaxBrightness = doc["lightMaxBrightness"] | 0;
+    config.brakeLightEnabled = doc["brakeLightEnabled"] | true;
+    config.brakeLightMinAmp = doc["brakeLightMinAmp"] | 4;
+    // calculate RGB values for primary and secondary color
+    config.lightColorPrimaryRed = (config.lightColorPrimary >> 16) & 0x0ff;
+    config.lightColorPrimaryGreen = (config.lightColorPrimary >> 8) & 0x0ff;
+    config.lightColorPrimaryBlue =  config.lightColorPrimary & 0x0ff;
+    config.lightColorSecondaryRed = (config.lightColorSecondary >> 16) & 0x0ff;
+    config.lightColorSecondaryGreen = (config.lightColorSecondary >> 8) & 0x0ff;
+    config.lightColorSecondaryBlue = config.lightColorSecondary & 0x0ff;
     preferences.end();
 }
 
@@ -38,6 +53,14 @@ void AppConfiguration::savePreferences() {
     doc["startLightIndex"] = config.startLightIndex;
     doc["batteryWarningSoundIndex"] = config.batteryWarningSoundIndex;
     doc["batteryAlarmSoundIndex"] = config.batteryAlarmSoundIndex;
+    doc["startLightDuration"] = config.startLightDuration;
+    doc["lightColorPrimary"] = config.lightColorPrimary;
+    doc["lightColorSecondary"] = config.lightColorSecondary;
+    doc["idleLightIndex"] = config.idleLightIndex;
+    doc["lightFadingDuration"] = config.lightFadingDuration;
+    doc["lightMaxBrightness"] = config.lightMaxBrightness;
+    doc["brakeLightEnabled"] = config.brakeLightEnabled;
+    doc["brakeLightMinAmp"] = config.brakeLightMinAmp;
     String json = "";
     serializeJson(doc, json);
     preferences.putString("config", json);

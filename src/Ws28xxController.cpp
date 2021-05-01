@@ -87,12 +87,21 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
         rainbowCycle(10, isForward ? Direction::FORWARD : Direction::REVERSE);
         break;
       case THEATER_CHASE:
-        theaterChase(Color(255,255,0), Color(0,0,50), 100);
+        theaterChase(
+          Color(AppConfiguration::getInstance()->config.lightColorPrimaryRed,
+           AppConfiguration::getInstance()->config.lightColorPrimaryGreen,
+           AppConfiguration::getInstance()->config.lightColorPrimaryBlue), 
+          Color(AppConfiguration::getInstance()->config.lightColorSecondaryRed,
+           AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
+           AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 100);
         break;
       case COLOR_WIPE:
         break;
       case CYLON:
-        cylon(Color(255,0,0), 55);
+        cylon(Color(
+          AppConfiguration::getInstance()->config.lightColorSecondaryRed,
+          AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
+          AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 55);
         break;
       case FADE:
         fadeLight(6, isForward ? Direction::FORWARD : Direction::REVERSE);
@@ -190,7 +199,7 @@ void Ws28xxController::theaterChase(uint32_t col1, uint32_t col2, uint8_t timein
   direction = dir;
 }
     
-    // Update the Theater Chase Pattern
+// Update the Theater Chase Pattern
 void Ws28xxController::theaterChaseUpdate(){
   for(int i=0; i< numPixels(); i++) {
     if ((i + index) % 3 == 0) {
@@ -299,10 +308,19 @@ void Ws28xxController::startSequence() {
   Logger::notice(LOG_TAG_WS28XX, "run startSequence");
   switch (AppConfiguration::getInstance()->config.startLightIndex){
   case 1:
-    theaterChase(Color(255,255,255), Color(255,0,0), 150);
+    theaterChase(
+      Color(AppConfiguration::getInstance()->config.lightColorPrimaryRed,
+        AppConfiguration::getInstance()->config.lightColorPrimaryGreen,
+        AppConfiguration::getInstance()->config.lightColorPrimaryBlue), 
+      Color(AppConfiguration::getInstance()->config.lightColorSecondaryRed,
+        AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
+        AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 100);
     break;
   case 2:
-    cylon(Color(255,0,0),  55);
+    cylon(
+      Color(AppConfiguration::getInstance()->config.lightColorSecondaryRed,
+        AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
+        AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 55);
     break;
   case 3:
     rainbowCycle(10, Direction::FORWARD);

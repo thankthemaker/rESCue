@@ -84,16 +84,63 @@ void syncPreferencesWithApp();
       snprintf(buf, 128, "Updated param \"NotificationEnabled\" to %d", param.asInt());
       AppConfiguration::getInstance()->config.isNotificationEnabled = param.asInt();
       break;
+    case VPIN_APP_STARTLIGHT_DURATION:
+      snprintf(buf, 128, "Updated param \"StartLightDuration\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.startLightDuration = param.asInt();
+      break;
+    case VPIN_APP_LIGHT_COLOR_1:
+      snprintf(buf, 128, "Updated param \"LightColorPrimary\" to R=%d, G=%d, B=%d", 
+         param[0].asInt(), param[1].asInt(), param[2].asInt());
+      AppConfiguration::getInstance()->config.lightColorPrimaryRed   = param[0].asInt();
+      AppConfiguration::getInstance()->config.lightColorPrimaryGreen = param[1].asInt();
+      AppConfiguration::getInstance()->config.lightColorPrimaryBlue  = param[2].asInt();
+      AppConfiguration::getInstance()->config.lightColorPrimary = 
+        ((AppConfiguration::getInstance()->config.lightColorPrimaryRed & 0x0ff)<<16) | 
+        ((AppConfiguration::getInstance()->config.lightColorPrimaryGreen & 0x0ff)<<8) | 
+        (AppConfiguration::getInstance()->config.lightColorPrimaryBlue & 0x0ff);
+      break;
+    case VPIN_APP_LIGHT_COLOR_2:
+      snprintf(buf, 128, "Updated param \"LightColorSecondary\" to R=%d, G=%d, B=%d", 
+         param[0].asInt(), param[1].asInt(), param[2].asInt());
+      AppConfiguration::getInstance()->config.lightColorSecondaryRed   = param[0].asInt();
+      AppConfiguration::getInstance()->config.lightColorSecondaryGreen = param[1].asInt();
+      AppConfiguration::getInstance()->config.lightColorSecondaryBlue  = param[2].asInt();
+      AppConfiguration::getInstance()->config.lightColorSecondary = 
+        ((AppConfiguration::getInstance()->config.lightColorSecondaryRed & 0x0ff)<<16) | 
+        ((AppConfiguration::getInstance()->config.lightColorSecondaryGreen & 0x0ff)<<8) | 
+        (AppConfiguration::getInstance()->config.lightColorSecondaryBlue & 0x0ff);
+      break;
+    case VPIN_APP_IDLE_LIGHT_INDEX:
+      snprintf(buf, 128, "Updated param \"IdleLightIndex\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.idleLightIndex = param.asInt();
+      break;
+    case VPIN_APP_LIGHT_FADING_DURATION:
+      snprintf(buf, 128, "Updated param \"LightFadingDuration\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.lightFadingDuration = param.asInt();
+      break;
+    case VPIN_APP_LIGHT_MAX_BRIGHTNESS:
+      snprintf(buf, 128, "Updated param \"LightMaxBrightness\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.lightMaxBrightness = param.asInt();
+      break;
     case VPIN_APP_ACTIVATE_OTA:
-      snprintf(buf, 128, "Updated param \"otaUpdateActive\" to %d", param.asInt());
+      snprintf(buf, 128, "Updated param \"OtaUpdateActive\" to %d", param.asInt());
       AppConfiguration::getInstance()->config.otaUpdateActive = param.asInt();
       restartNeeded = true;
+      break;
+    case VPIN_APP_ACTIVATE_BRAKE_LIGHT:
+      snprintf(buf, 128, "Updated param \"BrakeLightEnabled\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.brakeLightEnabled = param.asInt();
+      break;
+    case VPIN_APP_BRAKE_LIGHT_MIN_AMP:
+      snprintf(buf, 128, "Updated param \"BrakeLightMinAmp\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.brakeLightMinAmp = param.asInt();
       break;
   }
   AppConfiguration::getInstance()->savePreferences();
   Logger::notice(LOG_TAG_BLESERVER, buf);
   if(restartNeeded) {
       Logger::notice(LOG_TAG_BLESERVER, "restart needed, restarting rESCue");
+      delay(100);
       ESP.restart();
   }
  }
@@ -427,6 +474,20 @@ void syncPreferencesWithApp() {
   Blynk.virtualWrite(VPIN_APP_MIN_BAT_VOLTAGE, AppConfiguration::getInstance()->config.minBatteryVoltage);
   Blynk.virtualWrite(VPIN_APP_NOTIFICATION, AppConfiguration::getInstance()->config.isNotificationEnabled);
   Blynk.virtualWrite(VPIN_APP_ACTIVATE_OTA, AppConfiguration::getInstance()->config.otaUpdateActive);
+  Blynk.virtualWrite(VPIN_APP_STARTLIGHT_DURATION, AppConfiguration::getInstance()->config.startLightDuration);
+  Blynk.virtualWrite(VPIN_APP_IDLE_LIGHT_INDEX, AppConfiguration::getInstance()->config.idleLightIndex);
+  Blynk.virtualWrite(VPIN_APP_LIGHT_FADING_DURATION, AppConfiguration::getInstance()->config.lightFadingDuration);
+  Blynk.virtualWrite(VPIN_APP_LIGHT_MAX_BRIGHTNESS, AppConfiguration::getInstance()->config.lightMaxBrightness);
+  Blynk.virtualWrite(VPIN_APP_ACTIVATE_BRAKE_LIGHT, AppConfiguration::getInstance()->config.brakeLightEnabled);
+  Blynk.virtualWrite(VPIN_APP_BRAKE_LIGHT_MIN_AMP, AppConfiguration::getInstance()->config.brakeLightMinAmp);
+  Blynk.virtualWrite(VPIN_APP_LIGHT_COLOR_1, 
+    AppConfiguration::getInstance()->config.lightColorPrimaryRed,
+    AppConfiguration::getInstance()->config.lightColorPrimaryGreen,
+    AppConfiguration::getInstance()->config.lightColorPrimaryBlue);
+  Blynk.virtualWrite(VPIN_APP_LIGHT_COLOR_2, 
+    AppConfiguration::getInstance()->config.lightColorSecondaryRed,
+    AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
+    AppConfiguration::getInstance()->config.lightColorSecondaryBlue);
 }
  #endif //CANBUS_ENABLED
 #endif //BLYNK_ENABLED
