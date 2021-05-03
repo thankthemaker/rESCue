@@ -6,12 +6,12 @@
 #include "AppConfiguration.h"
 #include "esp_ota_ops.h"
 
-#define SERVICE_UUID_ESPOTA        "d804b643-6ce7-4e81-9f8a-ce0f699085eb"
-#define CHARACTERISTIC_UUID_ID           "d804b644-6ce7-4e81-9f8a-ce0f699085eb"
+#define SERVICE_UUID_ESPOTA             "d804b643-6ce7-4e81-9f8a-ce0f699085eb"
+#define CHARACTERISTIC_UUID_ID          "d804b644-6ce7-4e81-9f8a-ce0f699085eb"
 
-#define SERVICE_UUID_OTA                    "c8659210-af91-4ad3-a995-a58d6fd26145" // UART service UUID
-#define CHARACTERISTIC_UUID_FW              "c8659211-af91-4ad3-a995-a58d6fd26145"
-#define CHARACTERISTIC_UUID_HW_VERSION      "c8659212-af91-4ad3-a995-a58d6fd26145"
+#define SERVICE_UUID_OTA                "c8659210-af91-4ad3-a995-a58d6fd26145" // UART service UUID
+#define CHARACTERISTIC_UUID_FW          "c8659211-af91-4ad3-a995-a58d6fd26145"
+#define CHARACTERISTIC_UUID_HW_VERSION  "c8659212-af91-4ad3-a995-a58d6fd26145"
 
 #define FULL_PACKET 512
 #define CHARPOS_UPDATE_FLAG 5

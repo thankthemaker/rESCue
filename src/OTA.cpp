@@ -1,10 +1,6 @@
 #include "OTA.h"
 #include "config.h"
 
-const char* host = "rESCue";
-const char* ssid = "rESCue";
-const char* password = "thankthemaker";
-
 esp_ota_handle_t otaHandler = 0;
 
 bool updateFlag = false;

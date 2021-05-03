@@ -1,3 +1,7 @@
+# 03.05.2021
+
+- added OTA documentation
+
 # 01.05.2021
 
 - more configuration options

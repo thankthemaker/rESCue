@@ -83,6 +83,7 @@ This table shows the PIN mapping:
 - transparent BLE-UART bridge for VESC-App
 - CANBUS and VESC-Status
 - Blynk-App (Monitoring & Configuration)
+- Over-The-Air updates (OTA)
 
 ### Front- and backlight control
 
@@ -173,6 +174,16 @@ To use this App with the official Blynk server, you'll might need to buy some en
 ![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
 
 QR-Code: App-Version 1.1
+
+### Over-The-Air (OTA) Updates
+
+rESCue includes an mechanism to do over-the-air updates which can be activated in the Blynk-App.
+If enabled the ESP32 will reboot and a BLE-Service with the UUID `d804b643-6ce7-4e81-9f8a-ce0f699085eb` which offers the OTA update mechanism. Point you browser - at the moment only Google Chrome is supported - to the [Update URL](https://thank-the-maker.org/rescue/) and hit `Connect to Bluetooth` to connect your browser to the rESCue-ESP32.
+The browser will check if a newer firmware version, that is compatible with your hardware revision, is available and offer the opportunity to update the ESP32.
+
+![rESCue-OTA](docs/images/rESCue-OTA.png)
+
+Please be patient, the update via BLE may take several minutes.
 
 ## Configuration
 
