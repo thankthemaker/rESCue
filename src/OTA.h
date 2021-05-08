@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include <NimBLEDevice.h>
 #include "AppConfiguration.h"
+#include "Buzzer.h"
 #include "esp_ota_ops.h"
 
 #define SERVICE_UUID_ESPOTA             "d804b643-6ce7-4e81-9f8a-ce0f699085eb"
@@ -44,7 +45,11 @@ class BLECustomServerCallbacks: public BLEServerCallbacks {
 
     void onDisconnect(BLEServer* pServer) {
       // deviceConnected = false;
-      // // code here for when device disconnects
+      AppConfiguration::getInstance()->config.otaUpdateActive = 0;
+      AppConfiguration::getInstance()->savePreferences();
+      Buzzer::getInstance()->playSound(RTTTL_MELODIES::SIMPLE_BEEP_POSITIVE);
+      delay(100);
+      ESP.restart();
     }
 };
 

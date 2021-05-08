@@ -15,8 +15,7 @@ void OTAUpdater::setup() {
   begin("rESCue OTA Updates");
 }
 
-void OTACallback::onWrite(BLECharacteristic *pCharacteristic)
-{
+void OTACallback::onWrite(BLECharacteristic *pCharacteristic) {
   std::string rxData = pCharacteristic->getValue();
   if (!updateFlag) { //If it's the first packet of OTA since bootup, begin OTA
     AppConfiguration::getInstance()->config.otaUpdateActive = 0;
@@ -26,13 +25,10 @@ void OTACallback::onWrite(BLECharacteristic *pCharacteristic)
     esp_ota_begin(esp_ota_get_next_update_partition(NULL), OTA_SIZE_UNKNOWN, &otaHandler);
     updateFlag = true;
   }
-  if (_p_ble != NULL)
-  {
-    if (rxData.length() > 0)
-    {
+  if (_p_ble != NULL) {
+    if (rxData.length() > 0) {
       esp_ota_write(otaHandler, rxData.c_str(), rxData.length());
-      if (rxData.length() != FULL_PACKET)
-      {
+      if (rxData.length() != FULL_PACKET) {
         esp_ota_end(otaHandler);
         Serial.println("EndOTA");
         if (ESP_OK == esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL))) {
