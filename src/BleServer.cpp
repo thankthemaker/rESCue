@@ -455,6 +455,8 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
      }
    }
  }
+ 
+ #endif //CANBUS_ENABLED
 
 void syncPreferencesWithApp() {
   for (std::map<int, int>::iterator it = blynkSoundMapping.begin(); it != blynkSoundMapping.end(); ++it) {
@@ -489,5 +491,4 @@ void syncPreferencesWithApp() {
     AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
     AppConfiguration::getInstance()->config.lightColorSecondaryBlue);
 }
- #endif //CANBUS_ENABLED
 #endif //BLYNK_ENABLED

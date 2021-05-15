@@ -1,3 +1,7 @@
+# 15.05.2021
+
+- fixed wron macro definition
+
 # 03.05.2021
 
 - added OTA documentation
