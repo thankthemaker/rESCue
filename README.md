@@ -178,7 +178,7 @@ QR-Code: App-Version 1.1
 ### Over-The-Air (OTA) Updates
 
 rESCue includes an mechanism to do over-the-air updates which can be activated in the Blynk-App.
-If enabled the ESP32 will reboot and a BLE-Service with the UUID `d804b643-6ce7-4e81-9f8a-ce0f699085eb` which offers the OTA update mechanism. Point you browser - at the moment only Google Chrome is supported - to the [Update URL](https://thank-the-maker.org/rescue/) and hit `Connect to Bluetooth` to connect your browser to the rESCue-ESP32.
+If enabled the ESP32 will reboot and a BLE-Service with the UUID `d804b643-6ce7-4e81-9f8a-ce0f699085eb` which offers the OTA update mechanism. Point you browser - at the moment only Google Chrome is supported - to the [Update URL](https://rescue.thank-the-maker.org/) and hit `Scan` to connect your browser to the rESCue-ESP32.
 The browser will check if a newer firmware version, that is compatible with your hardware revision, is available and offer the opportunity to update the ESP32.
 
 ![rESCue-OTA](docs/images/rESCue-OTA.png)

@@ -1,5 +1,6 @@
 # 15.05.2021
 
+- updated README
 - fixed wron macro definition
 
 # 03.05.2021
