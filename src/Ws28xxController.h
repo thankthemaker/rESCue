@@ -10,10 +10,6 @@
  #define PIN_NEOPIXEL   5
 #endif //PIN_NEOPIXEL
 
-#ifndef NUMPIXELS
- #define NUMPIXELS    16  
-#endif //NUMPIXELS
-
 #define LOG_TAG_WS28XX "Ws28xxController"
 
 class Ws28xxController : public ILedController, Adafruit_NeoPixel {

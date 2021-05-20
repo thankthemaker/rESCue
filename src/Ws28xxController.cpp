@@ -149,8 +149,8 @@ void Ws28xxController::flashLight(uint8_t timeinterval, Direction dir) {
 }
 
 void Ws28xxController::flashLightUpdate() {
-  for(int i = 0; i < NUMPIXELS; i++ ) {
-    if(i < NUMPIXELS/2)
+  for(int i = 0; i < numPixels(); i++ ) {
+    if(i < numPixels()/2)
       if(direction ==FORWARD) {
 #ifdef LED_MODE_ODD_EVEN
         if(i%2 == 0)
@@ -256,7 +256,7 @@ void Ws28xxController::init() {
 
 void Ws28xxController::stop() {
   Logger::verbose("stop");
-  for(int i = 0; i < NUMPIXELS; i++ ) {
+  for(int i = 0; i < numPixels(); i++ ) {
     setPixelColor(i, Color(0, 0, 0));
   }
   show();
@@ -266,7 +266,7 @@ void Ws28xxController::setLight(boolean forward, int brightness) {
 #ifdef LED_MODE_ODD_EVEN
   int calc_even = forward ? brightness : brightness - 1;
   int calc_odd  = totalSteps - brightness - 1;
-  for(int i = 0; i < NUMPIXELS/2; i++ ) {
+  for(int i = 0; i < numPixels()/2; i++ ) {
     setPixelColor(i, Color(0, 0, 0));
     if(i%2 == 0) {
         setPixelColor(i, Color(calc_even , calc_even, calc_even)); 
@@ -274,7 +274,7 @@ void Ws28xxController::setLight(boolean forward, int brightness) {
         setPixelColor(i, Color(calc_odd, 0, 0));
     }
   }
-  for(int i = NUMPIXELS/2; i < NUMPIXELS; i++ ) {
+  for(int i = numPixels()/2; i < numPixels(); i++ ) {
     setPixelColor(i, Color(0, 0, 0));
     if(i%2 == 0) {
         setPixelColor(i, Color(calc_even, 0, 0));
@@ -283,8 +283,8 @@ void Ws28xxController::setLight(boolean forward, int brightness) {
     }  
   }
 #else
-  for(int i = 0; i < NUMPIXELS; i++ ) {
-    if(i < NUMPIXELS/2){
+  for(int i = 0; i < numPixels(); i++ ) {
+    if(i < numPixels()/2){
       if(forward)
         setPixelColor(i, Color(brightness, brightness, brightness));
       else

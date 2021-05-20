@@ -20,6 +20,7 @@ class Buzzer {
         void alarm();
         void playSound(RTTTL_MELODIES selection);
         void stopSound();
+        boolean isPlayingSound();
 
     private:
         Buzzer() {}

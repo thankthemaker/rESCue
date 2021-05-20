@@ -1,3 +1,9 @@
+# 20.05.2021
+- improved OTA and enrollment
+- initial Lightbar
+- startsound for OTA
+- prepared release 1.1.0
+
 # 15.05.2021
 
 - updated README

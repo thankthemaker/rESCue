@@ -9,6 +9,7 @@
 
 #define SERVICE_UUID_ESPOTA             "d804b643-6ce7-4e81-9f8a-ce0f699085eb"
 #define CHARACTERISTIC_UUID_ID          "d804b644-6ce7-4e81-9f8a-ce0f699085eb"
+#define CHARACTERISTIC_UUID_CONF        "d804b645-6ce7-4e81-9f8a-ce0f699085eb"
 
 #define SERVICE_UUID_OTA                "c8659210-af91-4ad3-a995-a58d6fd26145" // UART service UUID
 #define CHARACTERISTIC_UUID_FW          "c8659211-af91-4ad3-a995-a58d6fd26145"
@@ -23,6 +24,7 @@ class OTAUpdater {
       OTAUpdater();
       void setup();
       bool begin(const char* localName);
+      NimBLEUUID getConfCharacteristicsUuid();
     
     private:
       String local_name;
@@ -31,6 +33,7 @@ class OTAUpdater {
 
       BLEService *pESPOTAService = NULL;
       BLECharacteristic * pESPOTAIdCharacteristic = NULL;
+      BLECharacteristic * pESPOTAConfCharacteristic = NULL;
 
       BLEService *pService = NULL;
       BLECharacteristic * pVersionCharacteristic = NULL;
@@ -45,10 +48,12 @@ class BLECustomServerCallbacks: public BLEServerCallbacks {
 
     void onDisconnect(BLEServer* pServer) {
       // deviceConnected = false;
-      AppConfiguration::getInstance()->config.otaUpdateActive = 0;
-      AppConfiguration::getInstance()->savePreferences();
-      Buzzer::getInstance()->playSound(RTTTL_MELODIES::SIMPLE_BEEP_POSITIVE);
-      delay(100);
+      ////AppConfiguration::getInstance()->config.otaUpdateActive = 0;
+      ////AppConfiguration::getInstance()->savePreferences();
+      Buzzer::getInstance()->playSound(RTTTL_MELODIES::SIMPLE_BEEP_SCALE_DOWN);
+      while (Buzzer::getInstance()->isPlayingSound()) {
+        Serial.print(".");
+      }
       ESP.restart();
     }
 };

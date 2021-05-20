@@ -83,7 +83,18 @@ class CanBus {
         double pidPosition;
         double inputVoltage;
         double tachometer;
-      } vescData;
+
+        double pidOutput;
+        double pitch;
+        double roll;
+        uint32_t loopTime;
+        double motorCurrent;
+        double motorPosition;
+        uint16_t balanceState;
+        uint16_t switchState;
+        double adc1;
+        double adc2;
+    } vescData;
 
       CanBus();
       void init();
