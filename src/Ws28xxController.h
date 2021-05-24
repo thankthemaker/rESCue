@@ -19,7 +19,7 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         void stop();
         void startSequence();
         void idleSequence();
-        void changePattern(Pattern pattern, boolean isForward);
+        void changePattern(Pattern pattern, boolean isForward, boolean repeatPattern);
         void update();
 
         // Member Variables:  
@@ -27,8 +27,9 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         Direction direction;      // direction to run the pattern
         unsigned long interval = 0;   // milliseconds between updates
         unsigned long lastUpdate = 0; // last update of position
-        boolean stopPattern = false;
-        boolean blockChange = false;
+        boolean stopPattern = false; // is pattern stopped
+        boolean blockChange = false; // block changes of pattern (e.g. start-sequence)
+        boolean repeat      = false; // repeat the pattern infinitly
     
         uint32_t color1, color2;  // What colors are in use
         uint16_t totalSteps;      // total number of steps in the pattern
@@ -55,5 +56,7 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         uint8_t pulse = 0;
         uint32_t lastPulse = 0;
         boolean up = false;
+        int maxBrightness = MAX_BRIGHTNESS;
+        Config config = AppConfiguration::getInstance()->config;
 };
 #endif //__LED_CONTROLLER_H__

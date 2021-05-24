@@ -68,43 +68,51 @@ void Ws28xxController::reverse() {
 }
   
 void Ws28xxController::onComplete() {
+  Logger::notice(LOG_TAG_WS28XX, "Pattern completed ");
   stopPattern = true;
   blockChange = false;
-  //changePattern(Pattern::NONE, true);
+  if(repeat) {
+    changePattern(activePattern, true, repeat);
+  } else {
+    //changePattern(Pattern::NONE, true);
+  }
 }
 
 
-void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
-  if(activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
+void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) {
+  if(!repeatPattern && activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
     return;
   }
   if(blockChange) {
     return;
   }
+  maxBrightness = config.lightMaxBrightness;
   stopPattern = false;
+  repeat = repeatPattern;
   switch(pattern) {
       case RAINBOW_CYCLE:
         rainbowCycle(10, isForward ? Direction::FORWARD : Direction::REVERSE);
         break;
       case THEATER_CHASE:
         theaterChase(
-          Color(AppConfiguration::getInstance()->config.lightColorPrimaryRed,
-           AppConfiguration::getInstance()->config.lightColorPrimaryGreen,
-           AppConfiguration::getInstance()->config.lightColorPrimaryBlue), 
-          Color(AppConfiguration::getInstance()->config.lightColorSecondaryRed,
-           AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
-           AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 100);
+          Color(config.lightColorPrimaryRed,
+           config.lightColorPrimaryGreen,
+           config.lightColorPrimaryBlue), 
+          Color(config.lightColorSecondaryRed,
+           config.lightColorSecondaryGreen,
+           config.lightColorSecondaryBlue), 100);
         break;
       case COLOR_WIPE:
         break;
       case CYLON:
         cylon(Color(
-          AppConfiguration::getInstance()->config.lightColorSecondaryRed,
-          AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
-          AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 55);
+          config.lightColorSecondaryRed,
+          config.lightColorSecondaryGreen,
+          config.lightColorSecondaryBlue), 55);
         break;
       case FADE:
-        fadeLight(6, isForward ? Direction::FORWARD : Direction::REVERSE);
+        fadeLight(map( config.lightFadingDuration , 0, 500, 1, 15), 
+           isForward ? Direction::FORWARD : Direction::REVERSE);
         break;
       case RESCUE_FLASH_LIGHT:
         flashLight(80, isForward ? Direction::FORWARD : Direction::REVERSE);
@@ -112,10 +120,10 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward) {
       default:
         break; 
   }
-  if(Logger::getLogLevel() == Logger::VERBOSE) {
+  if(Logger::getLogLevel() == Logger::NOTICE) {
     char buf[64];
     snprintf(buf, 64, "changed light pattern to %d", pattern);
-    Logger::verbose(LOG_TAG_WS28XX, buf);
+    Logger::notice(LOG_TAG_WS28XX, buf);
   }
 }
 
@@ -153,20 +161,30 @@ void Ws28xxController::flashLightUpdate() {
     if(i < numPixels()/2)
       if(direction ==FORWARD) {
 #ifdef LED_MODE_ODD_EVEN
-        if(i%2 == 0)
+        if(i%2 == 0) {
 #endif
-          setPixelColor(i, Color(MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS));
+          setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness));
+#ifdef LED_MODE_ODD_EVEN
+        } else {
+          setPixelColor(i, Color(0, 0, 0));
+        }
+#endif
       } else {
-        setPixelColor(i, Color(index%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0));
+        setPixelColor(i, Color(index%2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0));
       } 
     else
       if(direction ==FORWARD) {
-        setPixelColor(i, Color(index%2 == 0 ? MAX_BRIGHTNESS_BRAKE : MAX_BRIGHTNESS, 0, 0));
+        setPixelColor(i, Color(index%2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0));
       } else {
 #ifdef LED_MODE_ODD_EVEN
-          if(i%2 == 0)
+          if(i%2 == 0) {
 #endif
-          setPixelColor(i, Color(MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS));
+          setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness));
+#ifdef LED_MODE_ODD_EVEN
+          } else {
+            setPixelColor(i, Color(0, 0, 0));
+          }
+#endif
       }
   }    
 }
@@ -174,7 +192,7 @@ void Ws28xxController::flashLightUpdate() {
 void Ws28xxController::fadeLight(uint8_t timeinterval, Direction dir) {
   activePattern = Pattern::FADE;
   interval = timeinterval;
-  totalSteps = MAX_BRIGHTNESS;
+  totalSteps = maxBrightness;
   direction = dir;
   index = dir == Direction::FORWARD ? 0 :  totalSteps-1;
   if(Logger::getLogLevel() == Logger::VERBOSE) {
@@ -251,6 +269,7 @@ uint32_t Ws28xxController::wheel(byte wheelPos) {
 void Ws28xxController::init() {
   Logger::notice(LOG_TAG_WS28XX, "initializing ...");
   begin(); // This initializes the NeoPixel library.
+  maxBrightness = config.lightMaxBrightness;
   show();
 }
 
@@ -288,12 +307,12 @@ void Ws28xxController::setLight(boolean forward, int brightness) {
       if(forward)
         setPixelColor(i, Color(brightness, brightness, brightness));
       else
-        setPixelColor(i, Color(MAX_BRIGHTNESS-brightness, 0, 0));
+        setPixelColor(i, Color(maxBrightness-brightness, 0, 0));
     } else {
       if(forward) 
         setPixelColor(i, Color(brightness, 0, 0));
       else
-        setPixelColor(i, Color(MAX_BRIGHTNESS-brightness, MAX_BRIGHTNESS-brightness, MAX_BRIGHTNESS-brightness));
+        setPixelColor(i, Color(maxBrightness-brightness, maxBrightness-brightness, maxBrightness-brightness));
     }
   }
 #endif
@@ -301,26 +320,26 @@ void Ws28xxController::setLight(boolean forward, int brightness) {
 } 
 
 void Ws28xxController::idleSequence() {
-  changePattern(Pattern::RAINBOW_CYCLE, true);
+  changePattern(Pattern::THEATER_CHASE, true, true);
 }
 
 void Ws28xxController::startSequence() {
   Logger::notice(LOG_TAG_WS28XX, "run startSequence");
-  switch (AppConfiguration::getInstance()->config.startLightIndex){
+  switch (config.startLightIndex){
   case 1:
     theaterChase(
-      Color(AppConfiguration::getInstance()->config.lightColorPrimaryRed,
-        AppConfiguration::getInstance()->config.lightColorPrimaryGreen,
-        AppConfiguration::getInstance()->config.lightColorPrimaryBlue), 
-      Color(AppConfiguration::getInstance()->config.lightColorSecondaryRed,
-        AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
-        AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 100);
+      Color(config.lightColorPrimaryRed,
+        config.lightColorPrimaryGreen,
+        config.lightColorPrimaryBlue), 
+      Color(config.lightColorSecondaryRed,
+        config.lightColorSecondaryGreen,
+        config.lightColorSecondaryBlue), 100);
     break;
   case 2:
     cylon(
-      Color(AppConfiguration::getInstance()->config.lightColorSecondaryRed,
-        AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
-        AppConfiguration::getInstance()->config.lightColorSecondaryBlue), 55);
+      Color(config.lightColorSecondaryRed,
+        config.lightColorSecondaryGreen,
+        config.lightColorSecondaryBlue), 55);
     break;
   case 3:
     rainbowCycle(10, Direction::FORWARD);

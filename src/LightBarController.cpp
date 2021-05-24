@@ -20,18 +20,19 @@ LightBarController* LightBarController::getInstance() {
         instance = new LightBarController();
         lightPixels.begin(); // This initializes the NeoPixel library.
     }
-
     return instance;
 }
 
 // updates the light bar, depending on the LED count
 void LightBarController::updateLightBar(float voltage, AdcState adcState, double erpm) {
+    /*
     if(abs(erpm) > 10000) {
         for(int i=0; i<pixel_count; i++) 
           lightPixels.setPixelColor(i, 0, 0, 0);
         lightPixels.show();
         return;
     }
+    */
     int used = max_voltage - voltage * 100; // calculate how much the voltage has dropped
     int value = voltage_range - used; // calculate the remaining value to lowest voltage
     float diffPerPixel = voltage_range / 100.0 / pixel_count; // calculate how much voltage a single pixel shall represent

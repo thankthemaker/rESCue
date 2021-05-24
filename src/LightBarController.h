@@ -11,7 +11,7 @@
 #ifdef LIGHT_BAR_ENABLED
  #include <Adafruit_NeoPixel.h>
  #ifndef LIGHT_BAR_PIN
-  #define LIGHT_BAR_PIN 5 // default PIN
+  #define LIGHT_BAR_PIN 2 // default PIN
  #endif //LIGHT_BAR_PIN
  extern Adafruit_NeoPixel lightPixels;
 #endif //LIGHT_BAR_ENABLED

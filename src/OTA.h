@@ -48,11 +48,9 @@ class BLECustomServerCallbacks: public BLEServerCallbacks {
 
     void onDisconnect(BLEServer* pServer) {
       // deviceConnected = false;
-      ////AppConfiguration::getInstance()->config.otaUpdateActive = 0;
-      ////AppConfiguration::getInstance()->savePreferences();
       Buzzer::getInstance()->playSound(RTTTL_MELODIES::SIMPLE_BEEP_SCALE_DOWN);
       while (Buzzer::getInstance()->isPlayingSound()) {
-        Serial.print(".");
+        ;
       }
       ESP.restart();
     }

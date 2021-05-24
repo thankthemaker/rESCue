@@ -29,8 +29,8 @@ void AppConfiguration::readPreferences() {
     config.lightColorPrimary = doc["lightColorPrimary"] | 0xFFFFFF;
     config.lightColorSecondary = doc["lightColorSecondary"] | 0xFF0000;
     config.idleLightIndex = doc["idleLightIndex"] | 0;
-    config.lightFadingDuration = doc["lightFadingDuration"] | 0;
-    config.lightMaxBrightness = doc["lightMaxBrightness"] | 0;
+    config.lightFadingDuration = doc["lightFadingDuration"] | 220;
+    config.lightMaxBrightness = doc["lightMaxBrightness"] | MAX_BRIGHTNESS;
     config.brakeLightEnabled = doc["brakeLightEnabled"] | true;
     config.brakeLightMinAmp = doc["brakeLightMinAmp"] | 4;
     config.authToken = doc["authToken"] | BLYNK_AUTH_TOKEN;

@@ -7,6 +7,7 @@ bool updateFlag = false;
 bool readyFlag = false;
 int bytesReceived = 0;
 int timesWritten = 0;
+uint32_t frameNumber = 0;
 
 OTAUpdater::OTAUpdater() {
 }
@@ -15,8 +16,28 @@ void OTAUpdater::setup() {
   begin("rESCue OTA Updates");
   Buzzer::getInstance()->playSound(RTTTL_MELODIES::SIMPLE_BEEP_SCALE_UP);
   while (Buzzer::getInstance()->isPlayingSound()) {
-    Serial.print(".");
+    ;
   }
+
+	// Get Partitionsizes
+	size_t ul;
+	esp_partition_iterator_t _mypartiterator;
+	const esp_partition_t *_mypart;
+	ul = spi_flash_get_chip_size();
+	Serial.print("\nFlash chip size: ");
+	Serial.println(ul);
+	Serial.println("Partition table:");
+	_mypartiterator = esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
+
+  while (_mypartiterator != NULL) {
+		_mypart = esp_partition_get(_mypartiterator);
+		printf("Type: %02x SubType %02x Address 0x%06X Size 0x%06X Encryption %i Label %s\r\n", _mypart->type, _mypart->subtype, _mypart->address, _mypart->size, _mypart->encrypted, _mypart->label);
+		_mypartiterator = esp_partition_next(_mypartiterator);
+	}
+
+  _mypart = esp_ota_get_boot_partition();
+  printf("Current active partition is %s\r\n", _mypart->label);
+
 }
 
 NimBLEUUID OTAUpdater::getConfCharacteristicsUuid() {
@@ -61,8 +82,9 @@ void OTACallback::onWrite(BLECharacteristic *pCharacteristic) {
     }
   } else {
     if (!updateFlag) { //If it's the first packet of OTA since bootup, begin OTA
-      Serial.println("BeginOTA");
+      Serial.println("\nBeginOTA");
       const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+      Serial.println("Selected OTA partiton:");
       Serial.println("partition label:" + String(partition->label));
       Serial.println("partition size:" + String(partition->size));
       esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &otaHandler);
@@ -70,14 +92,18 @@ void OTACallback::onWrite(BLECharacteristic *pCharacteristic) {
     }
     if (_p_ble != NULL) {
       if (rxData.length() > 0) {
-        Serial.print(".");
+        Serial.print("Got frame " + String(frameNumber));
         esp_ota_write(otaHandler, rxData.c_str(), rxData.length());
         if (rxData.length() != FULL_PACKET) {
           esp_ota_end(otaHandler);
-          Serial.println("EndOTA");
-          AppConfiguration::getInstance()->config.otaUpdateActive = 0;
-          AppConfiguration::getInstance()->savePreferences();
-          if (ESP_OK == esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL))) {
+          Serial.println("\nEndOTA");
+          const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+          if (ESP_OK == esp_ota_set_boot_partition(partition)) {
+            Serial.println("Activate partiton:");
+            Serial.println("partition label:" + String(partition->label));
+            Serial.println("partition size:" + String(partition->size));
+            AppConfiguration::getInstance()->config.otaUpdateActive = 0;
+            AppConfiguration::getInstance()->savePreferences();
             delay(2000);
             esp_restart();
           } else {
@@ -87,10 +113,11 @@ void OTACallback::onWrite(BLECharacteristic *pCharacteristic) {
       }
     }
 
-    uint8_t txData[5] = {1, 2, 3, 4, 5};
-    //delay(1000);
-    pCharacteristic->setValue((uint8_t*)txData, 5);
+    delay(5); // needed to give BLE stack some time
+    uint8_t txdata[4] = { (uint8_t)(frameNumber >> 24), (uint8_t)(frameNumber >> 16), (uint8_t)(frameNumber >> 8), (uint8_t)frameNumber};
+    pCharacteristic->setValue((uint8_t *) txdata, 4);
     pCharacteristic->notify();
+    Serial.println(", Ack. frame no. " + String(frameNumber++));
   }
 }
 

@@ -1,3 +1,11 @@
+# 24.05.2021
+- prepared release 1.1.1
+
+# 24.05.2021
+- improved OTA update, package resend and delay to give BLE stack time
+- LightBar fixed
+- bugfixing idle light
+
 # 20.05.2021
 - improved OTA and enrollment
 - initial Lightbar
