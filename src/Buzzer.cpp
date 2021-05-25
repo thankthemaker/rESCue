@@ -37,6 +37,10 @@ void Buzzer::stopSound() {
   }
 }
 
+boolean Buzzer::isPlayingSound() {
+  return player.isPlaying();
+}
+
 void Buzzer::startSequence() {
   RTTTL_MELODIES val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.startSoundIndex);
   playSound(val);

@@ -17,9 +17,14 @@ class ILedController {
         virtual void stop() = 0;
         virtual void idleSequence() = 0;
         virtual void startSequence() = 0;
-        virtual void changePattern(Pattern pattern, boolean isForward) = 0;
+        virtual void changePattern(Pattern pattern, boolean isForward, boolean repeatPattern ) = 0;
         virtual void update() = 0;
-        void loop(int* new_forward, int* old_forward, int* new_backward, int* old_backward);
+        void loop(int* new_forward, int* new_backward, int* idle);
+
+    private:
+      int old_forward  = LOW;
+      int old_backward = LOW;
+      int old_idle     = LOW;
 };
 
 class LedControllerFactory {

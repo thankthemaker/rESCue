@@ -9,7 +9,7 @@
 #define LOG_TAG_APPCONFIGURATION "AppConfiguration"
 
 struct Config {
-  boolean otaUpdateActive = false;
+  boolean otaUpdateActive = true;
   boolean isNotificationEnabled = false;
   double minBatteryVoltage = 41.0;
   double maxBatteryVoltage = MAX_BATTARY_VOLTAGE;
@@ -31,6 +31,10 @@ struct Config {
   int lightColorSecondaryBlue = 0;
   boolean brakeLightEnabled = true;
   int brakeLightMinAmp = 4;
+  int numberPixelLight = 32;
+  int numberPixelBatMon = 5;
+  int vescId = 25;
+  String authToken;
 };
 
 class AppConfiguration {

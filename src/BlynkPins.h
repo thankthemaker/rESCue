@@ -16,7 +16,7 @@
 #define VPIN_APP_LIGHT_FADING_DURATION 13   // INPUT: The duration of fading effect when changing drive direction
 #define VPIN_APP_LIGHT_MAX_BRIGHTNESS  14   // INPUT: The maximum brightness of the LEDs (except brake light, which are always max.)
 #define VPIN_APP_ACTIVATE_BRAKE_LIGHT  15   // INPUT: Enable brake lights
- #define VPIN_APP_BRAKE_LIGHT_MIN_AMP  16   // INPUT: Minumum (negative) ampere to enable brake lights
+#define VPIN_APP_BRAKE_LIGHT_MIN_AMP   16   // INPUT: Minumum (negative) ampere to enable brake lights
 #define VPIN_APP_ACTIVATE_OTA          19   // INPUT: Activate OTA, ESP will reboot in OTA mode. Reset automatically after update
 
 

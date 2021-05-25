@@ -1,4 +1,5 @@
 #include "AppConfiguration.h"
+#include "config.h"
 
 AppConfiguration* AppConfiguration::instance = 0;
 
@@ -12,11 +13,11 @@ AppConfiguration* AppConfiguration::getInstance() {
 void AppConfiguration::readPreferences() {
     preferences.begin("rESCue", true);
     String json = preferences.getString("config", "");
-    StaticJsonDocument<512> doc;
+    StaticJsonDocument<1024> doc;
     deserializeJson(doc, json);
     Logger::verbose(LOG_TAG_APPCONFIGURATION, "readPreferences: ");
     Serial.println("readPreferences: " + json);
-    config.otaUpdateActive = doc["otaUpdateActive"] | false;
+    config.otaUpdateActive = doc["otaUpdateActive"] | true;
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
     config.minBatteryVoltage = doc["minBatteryVoltage"] | 40.0;
     config.maxBatteryVoltage = doc["maxBatteryVoltage"] | 50.4;
@@ -28,10 +29,14 @@ void AppConfiguration::readPreferences() {
     config.lightColorPrimary = doc["lightColorPrimary"] | 0xFFFFFF;
     config.lightColorSecondary = doc["lightColorSecondary"] | 0xFF0000;
     config.idleLightIndex = doc["idleLightIndex"] | 0;
-    config.lightFadingDuration = doc["lightFadingDuration"] | 0;
-    config.lightMaxBrightness = doc["lightMaxBrightness"] | 0;
+    config.lightFadingDuration = doc["lightFadingDuration"] | 220;
+    config.lightMaxBrightness = doc["lightMaxBrightness"] | MAX_BRIGHTNESS;
     config.brakeLightEnabled = doc["brakeLightEnabled"] | true;
     config.brakeLightMinAmp = doc["brakeLightMinAmp"] | 4;
+    config.authToken = doc["authToken"] | BLYNK_AUTH_TOKEN;
+    config.vescId = doc["vescId"] | VESC_CAN_ID;
+    config.numberPixelLight = doc["numberPixelLight"] | NUMPIXELS;
+    config.numberPixelBatMon = doc["numberPixelBatMon"] | LIGHT_BAR_NUMPIXELS;
     // calculate RGB values for primary and secondary color
     config.lightColorPrimaryRed = (config.lightColorPrimary >> 16) & 0x0ff;
     config.lightColorPrimaryGreen = (config.lightColorPrimary >> 8) & 0x0ff;
@@ -44,7 +49,7 @@ void AppConfiguration::readPreferences() {
 
 void AppConfiguration::savePreferences() {
     preferences.begin("rESCue", false);
-    StaticJsonDocument<512> doc;
+    StaticJsonDocument<1024> doc;
     doc["otaUpdateActive"] = config.otaUpdateActive;
     doc["isNotificationEnabled"] = config.isNotificationEnabled;
     doc["minBatteryVoltage"] = config.minBatteryVoltage;
@@ -61,12 +66,15 @@ void AppConfiguration::savePreferences() {
     doc["lightMaxBrightness"] = config.lightMaxBrightness;
     doc["brakeLightEnabled"] = config.brakeLightEnabled;
     doc["brakeLightMinAmp"] = config.brakeLightMinAmp;
+    doc["authToken"] = config.authToken;
+    doc["vescId"] = config.vescId;
+    doc["numberPixelLight"] = config.numberPixelLight;
+    doc["numberPixelBatMon"] = config.numberPixelBatMon;
     String json = "";
     serializeJson(doc, json);
+    Logger::verbose(LOG_TAG_APPCONFIGURATION, "savePreferences: ");
+    Serial.println("savePreferences: " + json);
     preferences.putString("config", json);
     preferences.end();
-    Logger::verbose(LOG_TAG_APPCONFIGURATION, "savePreferences: ");
-        Serial.println("savePreferences: " + json);
-
 }
 

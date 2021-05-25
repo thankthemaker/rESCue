@@ -13,12 +13,12 @@
 int lastDump = 0;
 int lastRealtimeData = 0;
 int lastBalanceData = 0;
-uint32_t STATUS_1 = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS) << 8) + VESC_CAN_ID;
-uint32_t STATUS_2 = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_2) << 8) + VESC_CAN_ID;
-uint32_t STATUS_3 = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_3) << 8) + VESC_CAN_ID;
-uint32_t STATUS_4 = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_4) << 8) + VESC_CAN_ID;
-uint32_t STATUS_5 = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_5) << 8) + VESC_CAN_ID;
-uint32_t FILL_RX_BUFFER = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_FILL_RX_BUFFER) << 8) + VESC_CAN_ID;
+uint32_t STATUS_1          = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS) << 8) + VESC_CAN_ID;
+uint32_t STATUS_2          = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_2) << 8) + VESC_CAN_ID;
+uint32_t STATUS_3          = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_3) << 8) + VESC_CAN_ID;
+uint32_t STATUS_4          = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_4) << 8) + VESC_CAN_ID;
+uint32_t STATUS_5          = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_STATUS_5) << 8) + VESC_CAN_ID;
+uint32_t FILL_RX_BUFFER    = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_FILL_RX_BUFFER) << 8) + VESC_CAN_ID;
 uint32_t PROCESS_RX_BUFFER = (uint32_t (0x0000) << 16) + (uint16_t (CAN_PACKET_PROCESS_RX_BUFFER) << 8) + VESC_CAN_ID;
 
 CAN_device_t CAN_cfg;
@@ -167,6 +167,22 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
     vescData.tachometer = readInt32Value(rx_frame, 0);
     vescData.inputVoltage = readInt16Value(rx_frame, 4) / 10.0;
   }
+  /*
+  if(BALANCE_DATA == ID) {
+    frametype = "balancedata";
+    int offset = 0; // =1
+    vescData.pidOutput = readInt32Value(rx_frame, 0 + offset) / 1000000.0;
+    vescData.pitch = readInt32Value(rx_frame, 4 + offset) / 1000000.0;
+    vescData.roll = readInt32Value(rx_frame, 8 + offset) / 1000000.0;
+    vescData.loopTime = readInt32Value(rx_frame, 12 + offset);
+    vescData.motorCurrent = readInt32Value(rx_frame, 16 + offset) / 1000000.0;
+    vescData.motorPosition = readInt32Value(rx_frame, 20 + offset) / 1000000.0;
+    vescData.balanceState = readInt16Value(rx_frame, 22 + offset);
+    vescData.switchState = readInt16Value(rx_frame, 24 + offset);
+    vescData.adc1 = readInt32Value(rx_frame, 26 + offset)  / 1000000.0;
+    vescData.adc2 = readInt32Value(rx_frame, 30 + offset)  / 1000000.0
+  }
+  */
   if(FILL_RX_BUFFER == ID) {
     frametype = "fill rx buffer";
   }

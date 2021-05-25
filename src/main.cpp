@@ -11,17 +11,17 @@
 #include "AppConfiguration.h"
 #include "OTA.h"
 
-int old_forward  = LOW;
-int old_backward = LOW;
 int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
+int idle         = LOW;
+double idle_erpm = 10.0; 
 
 int lastFake = 0;
 
 HardwareSerial vesc(2);
 
-ILedController *ledController = LedControllerFactory::getInstance()->createLedController();
+ILedController *ledController;
 OTAUpdater *updater = new OTAUpdater();
 
 #if defined(CANBUS_ENABLED)
@@ -44,6 +44,7 @@ void setup() {
   }
 
   AppConfiguration::getInstance()->readPreferences();
+  ledController = LedControllerFactory::getInstance()->createLedController();
 
   if(AppConfiguration::getInstance()->config.otaUpdateActive) {
      updater->setup();
@@ -84,13 +85,15 @@ void loop() {
     return;
   }
 #ifdef CANBUS_ENABLED
-  new_forward  = canbus->vescData.erpm >= 10.0 ? 1 : 0;
-  new_backward = canbus->vescData.erpm < 10.0 ? 1 : 0;
-  new_brake    = canbus->vescData.current < -4.0;
+  new_forward  = canbus->vescData.erpm > idle_erpm ? HIGH : LOW;
+  new_backward = canbus->vescData.erpm < idle_erpm ? HIGH : LOW;
+  idle         = abs(canbus->vescData.erpm) < idle_erpm ? HIGH : LOW;
+  new_brake    = (abs(canbus->vescData.erpm) > idle_erpm && canbus->vescData.current < -4.0) ? HIGH : LOW;
 #else
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
+  idle         = *(new_forward) == LOW && *(new_backward) == LOW;
 #endif
 
 #ifdef CANBUS_ENABLED
@@ -100,11 +103,11 @@ void loop() {
   // is motor brake active?
   if(new_brake == HIGH) {
     // flash backlights
-    ledController->changePattern(Pattern::RESCUE_FLASH_LIGHT, new_forward == HIGH);
+    ledController->changePattern(Pattern::RESCUE_FLASH_LIGHT, new_forward == HIGH, false);
   } 
 
   // call the led controller loop
-  ledController->loop(&new_forward, &old_forward, &new_backward,&old_backward);    
+  ledController->loop(&new_forward, &new_backward, &idle);    
 
   // measure and check voltage
   batMonitor->checkValues();

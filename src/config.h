@@ -7,7 +7,7 @@
 
 #define SOFTWARE_VERSION_MAJOR 1
 #define SOFTWARE_VERSION_MINOR 1
-#define SOFTWARE_VERSION_PATCH 0
+#define SOFTWARE_VERSION_PATCH 1
 #define HARDWARE_VERSION_MAJOR 3
 #define HARDWARE_VERSION_MINOR 1
 
@@ -36,9 +36,12 @@
 
 #define MAX_AVG_CURRENT          40.00
 
-// optional WS28xx battery bar params
-#define BATTERY_BAR                    // activates a visual WS28xx battery bar, if connected
-#define BATTERY_BAR_NUMPIXELS    5     // the number of LEDS of the battery bar
+// optional WS28xx lightbar & battery-monitor params
+#define LIGHT_BAR_ENABLED            // activates a visual WS28xx battery bar, if connected
+#define LIGHT_BAR_NUMPIXELS    5     // the number of LEDS of the battery bar
+
+#define LIGHT_BAR_ADC_ENABLED        // Enables the lightbar support for ADC-Footpad
+
 #define VOLTAGE_DIVIDER_CONSTANT 24.527 // for calculation see at bottom
 
 /**** Definition of the UART connection to the Cheap Focer 2 ****/
