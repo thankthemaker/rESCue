@@ -38,7 +38,7 @@ void localLogger(Logger::Level level, const char* module, const char* message);
 
 void setup() {
   Logger::setOutputFunction(localLogger);
-  Logger::setLogLevel(Logger::NOTICE);
+  Logger::setLogLevel(Logger::WARNING);
   if(Logger::getLogLevel() != Logger::SILENT) {
     Serial.begin(VESC_BAUD_RATE);
   }
@@ -66,7 +66,11 @@ void setup() {
   // initializes the battery monitor
   batMonitor->init();
   // initialize the UART bridge from VESC to BLE and the BLE support for Blynk (https://blynk.io)
-  bleServer->init(&vesc);
+#ifdef CANBUS_ONLY
+  bleServer->init(canbus->stream, canbus);
+#else
+  bleServer->init(&vesc, canbus);
+#endif
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 

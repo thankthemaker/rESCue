@@ -4,6 +4,7 @@
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 
+const int BLE_PACKET_SIZE = 128;
 NimBLEServer* pServer = NULL;
 #ifdef BLYNK_ENABLED
  NimBLEService* pServiceBlynk = NULL;
@@ -197,11 +198,13 @@ void BleServer::onDisconnect(NimBLEServer* pServer) {
   NimBLEDevice::startAdvertising();
 }
 
-void BleServer::init(Stream *vesc) {
+void BleServer::init(Stream *vesc, CanBus *canbus) {
   vescSerial = vesc;
    
   // Create the BLE Device
   NimBLEDevice::init(BT_NAME);
+
+  this->canbus = canbus;
 
   // Create the BLE Server
   pServer = NimBLEDevice::createServer();
@@ -290,20 +293,23 @@ void BleServer::loop() {
       oneByte = vescSerial->read();
       bufferString.push_back(oneByte);
     }
-    if(Logger::getLogLevel() == Logger::VERBOSE) {
-      Logger::verbose(LOG_TAG_BLESERVER, "BLE from VESC: ");
-      Logger::verbose(LOG_TAG_BLESERVER, bufferString.c_str());
-    }
+    //if(Logger::getLogLevel() == Logger::VERBOSE) {
+      Logger::notice(LOG_TAG_BLESERVER, "BLE from VESC: ");
+      Logger::notice(LOG_TAG_BLESERVER, bufferString.c_str());
+    //}
 
     if (deviceConnected) {
-//      while(bufferString.length() > 600) {
-        pCharacteristicVescTx->setValue(bufferString.substr(0, 600));
+      while(bufferString.length() > 0) {
+        if(bufferString.length() > BLE_PACKET_SIZE) {
+          pCharacteristicVescTx->setValue(bufferString.substr(0, BLE_PACKET_SIZE));
+          bufferString = bufferString.substr(BLE_PACKET_SIZE);        
+        } else {
+          pCharacteristicVescTx->setValue(bufferString);
+          bufferString.clear();
+        }
         pCharacteristicVescTx->notify();
-//        delay(10);
-//        bufferString = bufferString.substr(600);
-//      }
-      bufferString.clear();
-		  delay(10); // bluetooth stack will go into congestion, if too many packets are sent
+		    delay(10); // bluetooth stack will go into congestion, if too many packets are sent
+      }
 	  }
   }
 
@@ -393,13 +399,23 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
   Logger::notice(LOG_TAG_BLESERVER, buffer);
   std::string rxValue = pCharacteristic->getValue();
   size_t len = rxValue.length();
-  snprintf(buffer, 128, "onWrite - value: %s", rxValue.data());
+  snprintf(buffer, 128, "onWrite - value: %s\n", rxValue.data());
   Logger::notice(LOG_TAG_BLESERVER, buffer);
   if (rxValue.length() > 0) {
     if(pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
+//      for (int i = 0; i < rxValue.length(); i++) {
+//        Serial.print(rxValue[i], DEC);
+//        Serial.print(" ");
+//      }
+//      Serial.println();
+
+#ifdef CANBUS_ONLY
+      canbus->proxyIn(rxValue);
+#else
       for (int i = 0; i < rxValue.length(); i++) {
         vescSerial->write(rxValue[i]);
       }
+#endif
     } 
 #ifdef BLYNK_ENABLED
     else if (pCharacteristic->getUUID().equals(pCharacteristicBlynkRx->getUUID())) {

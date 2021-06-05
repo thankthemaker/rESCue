@@ -56,6 +56,8 @@
 #ifdef CANBUS_ENABLED
  #define VESC_CAN_ID 25
  #define ESP_CAN_ID 3
+ #define BLE_CAN_PROXY_ID 4
+ #define CANBUS_ONLY
 #endif //CANBUS_ENABLED
 
 #ifdef BLYNK_ENABLED

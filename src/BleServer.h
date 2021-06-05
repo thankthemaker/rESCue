@@ -35,7 +35,7 @@ class BleServer :
   public BLECharacteristicCallbacks  {
     public:
       BleServer();
-      void init(Stream *vesc);
+      void init(Stream *vesc, CanBus *canbus);
 #ifdef CANBUS_ENABLED
       void loop(CanBus::VescData *vescData);
 #else
@@ -69,6 +69,7 @@ class BleServer :
     private:
       bool mConn;
       const char* mName;
+      CanBus *canbus;
 };
 
 #endif
