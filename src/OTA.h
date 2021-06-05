@@ -6,6 +6,10 @@
 #include "AppConfiguration.h"
 #include "Buzzer.h"
 #include "esp_ota_ops.h"
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiAP.h>
+#include <ESP32WebServer.h>
 
 #define SERVICE_UUID_ESPOTA             "d804b643-6ce7-4e81-9f8a-ce0f699085eb"
 #define CHARACTERISTIC_UUID_ID          "d804b644-6ce7-4e81-9f8a-ce0f699085eb"
@@ -23,6 +27,7 @@ class OTAUpdater {
     public:
       OTAUpdater();
       void setup();
+      void loop();
       bool begin(const char* localName);
       NimBLEUUID getConfCharacteristicsUuid();
     

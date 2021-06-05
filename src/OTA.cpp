@@ -2,6 +2,7 @@
 #include "config.h"
 
 esp_ota_handle_t otaHandler = 0;
+WiFiServer server(80);
 
 bool updateFlag = false;
 bool readyFlag = false;
@@ -18,6 +19,12 @@ void OTAUpdater::setup() {
   while (Buzzer::getInstance()->isPlayingSound()) {
     ;
   }
+
+  WiFi.softAP("rESCue OTA Updates", "thankthemaker");
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+  server.begin();
 
 	// Get Partitionsizes
 	size_t ul;
@@ -37,7 +44,21 @@ void OTAUpdater::setup() {
 
   _mypart = esp_ota_get_boot_partition();
   printf("Current active partition is %s\r\n", _mypart->label);
+}
 
+void OTAUpdater::loop() {
+  WiFiClient client = server.available();   // listen for incoming clients
+
+  if (client) {                             // if you get a client,
+    Serial.println("New Client.");           // print a message out the serial port
+    String currentLine = "";                // make a String to hold incoming data from the client
+    while (client.connected()) {            // loop while the client's connected
+      if (client.available()) {             // if there's bytes to read from the client,
+        char c = client.read();             // read a byte, then
+      }
+    }
+    client.stop();
+  }
 }
 
 NimBLEUUID OTAUpdater::getConfCharacteristicsUuid() {

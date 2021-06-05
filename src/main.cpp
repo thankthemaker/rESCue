@@ -82,6 +82,7 @@ void setup() {
 
 void loop() {
   if(AppConfiguration::getInstance()->config.otaUpdateActive) {
+    updater->loop();
     return;
   }
 #ifdef CANBUS_ENABLED
