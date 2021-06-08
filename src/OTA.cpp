@@ -2,13 +2,85 @@
 #include "config.h"
 
 esp_ota_handle_t otaHandler = 0;
-WiFiServer server(80);
+AsyncWebServer server(80);
 
+boolean wifiActive = false;
+const char *wifiPassword;
 bool updateFlag = false;
 bool readyFlag = false;
 int bytesReceived = 0;
 int timesWritten = 0;
 uint32_t frameNumber = 0;
+
+void startUpdate() {
+  Serial.println("\nBeginOTA");
+  const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+  Serial.println("Selected OTA partiton:");
+  Serial.println("partition label:" + String(partition->label));
+  Serial.println("partition size:" + String(partition->size));
+  esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &otaHandler);
+  updateFlag = true;
+}
+
+void handleUpdate(std::string data) {
+/*
+  Serial.printf("\nhandleUpdate incoming data (size %d):\n", data.length());
+  for(int i=0; i<data.length();i++) {
+    Serial.print(data[i], HEX);
+    Serial.print(" ");
+  }
+*/
+  esp_ota_write(otaHandler, data.c_str(), data.length());
+  if (data.length() != FULL_PACKET) {
+    esp_ota_end(otaHandler);
+    Serial.println("\nEndOTA");
+    const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+    if (ESP_OK == esp_ota_set_boot_partition(partition)) {
+      Serial.println("Activate partiton:");
+      Serial.println("partition label:" + String(partition->label));
+      Serial.println("partition size:" + String(partition->size));
+      AppConfiguration::getInstance()->config.otaUpdateActive = 0;
+      AppConfiguration::getInstance()->savePreferences();
+      delay(2000);
+      esp_restart();
+    } else {
+      Serial.println("Upload Error");
+    }
+  }
+}
+
+void activateWiFiAp(const char *password) {
+  WiFi.softAP("rESCue OTA Updates", password);
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+  server.on("/ping", HTTP_GET, [](AsyncWebServerRequest *request){
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "alive");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+  });
+  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+    int params = request->params();
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost() && p->name().compareTo("data") != -1) {
+        const char *value =p->value().c_str();
+        Serial.printf("\nPOST[%s]: bytes %d\n", p->name().c_str(), p->value().length());
+        if(!updateFlag) {
+          startUpdate();
+        } 
+        if(p->value().length() > 0) {
+          handleUpdate(base64_decode(value, false));
+        }
+      } 
+    }
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "ok");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+  });
+  server.begin();
+  wifiActive = true;
+}
 
 OTAUpdater::OTAUpdater() {
 }
@@ -19,12 +91,6 @@ void OTAUpdater::setup() {
   while (Buzzer::getInstance()->isPlayingSound()) {
     ;
   }
-
-  WiFi.softAP("rESCue OTA Updates", "thankthemaker");
-  IPAddress myIP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(myIP);
-  server.begin();
 
 	// Get Partitionsizes
 	size_t ul;
@@ -44,21 +110,6 @@ void OTAUpdater::setup() {
 
   _mypart = esp_ota_get_boot_partition();
   printf("Current active partition is %s\r\n", _mypart->label);
-}
-
-void OTAUpdater::loop() {
-  WiFiClient client = server.available();   // listen for incoming clients
-
-  if (client) {                             // if you get a client,
-    Serial.println("New Client.");           // print a message out the serial port
-    String currentLine = "";                // make a String to hold incoming data from the client
-    while (client.connected()) {            // loop while the client's connected
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-      }
-    }
-    client.stop();
-  }
 }
 
 NimBLEUUID OTAUpdater::getConfCharacteristicsUuid() {
@@ -96,6 +147,14 @@ void OTACallback::onWrite(BLECharacteristic *pCharacteristic) {
       if(key == "authToken") {
         AppConfiguration::getInstance()->config.authToken = value.c_str();
       }
+      if(key == "wifiPassword") {
+        wifiPassword = value.c_str();
+      }
+      if(key == "wifiActive") {
+        if(value.compare("true") != -1) {
+          activateWiFiAp(wifiPassword);
+        }
+      }
       if(key == "save") {
         AppConfiguration::getInstance()->config.otaUpdateActive = false;
         AppConfiguration::getInstance()->savePreferences();
@@ -103,34 +162,12 @@ void OTACallback::onWrite(BLECharacteristic *pCharacteristic) {
     }
   } else {
     if (!updateFlag) { //If it's the first packet of OTA since bootup, begin OTA
-      Serial.println("\nBeginOTA");
-      const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
-      Serial.println("Selected OTA partiton:");
-      Serial.println("partition label:" + String(partition->label));
-      Serial.println("partition size:" + String(partition->size));
-      esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &otaHandler);
-      updateFlag = true;
+      startUpdate();
     }
     if (_p_ble != NULL) {
       if (rxData.length() > 0) {
-        Serial.print("Got frame " + String(frameNumber));
-        esp_ota_write(otaHandler, rxData.c_str(), rxData.length());
-        if (rxData.length() != FULL_PACKET) {
-          esp_ota_end(otaHandler);
-          Serial.println("\nEndOTA");
-          const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
-          if (ESP_OK == esp_ota_set_boot_partition(partition)) {
-            Serial.println("Activate partiton:");
-            Serial.println("partition label:" + String(partition->label));
-            Serial.println("partition size:" + String(partition->size));
-            AppConfiguration::getInstance()->config.otaUpdateActive = 0;
-            AppConfiguration::getInstance()->savePreferences();
-            delay(2000);
-            esp_restart();
-          } else {
-            Serial.println("Upload Error");
-          }
-        }
+        Serial.print("Got frame " + String(frameNumber) + ", Bytes " + String(rxData.length()));
+        handleUpdate(rxData);    
       }
     }
 
