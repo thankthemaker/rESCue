@@ -270,7 +270,7 @@ void BleServer::init(Stream *vesc) {
 #ifdef BLYNK_ENABLED
   Logger::notice(LOG_TAG_BLESERVER, "Blynk is starting...");
   Blynk.setDeviceName(BT_NAME);
-  Blynk.begin(BLYNK_AUTH_TOKEN);
+  Blynk.begin(AppConfiguration::getInstance()->config.authToken.c_str());
 #else
   Logger::notice(LOG_TAG_BLESERVER, "Blynk is DEACTIVATED");
 #endif
