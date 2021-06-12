@@ -14,6 +14,9 @@ NimBLEServer* pServer = NULL;
 NimBLEService* pServiceVesc = NULL;
 NimBLECharacteristic* pCharacteristicVescTx = NULL;
 NimBLECharacteristic* pCharacteristicVescRx = NULL;
+NimBLEService* pServiceEspConf = NULL;
+NimBLECharacteristic* pCharacteristicEspId = NULL;
+NimBLECharacteristic* pCharacteristicEspConf = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t value = 0;
@@ -257,12 +260,36 @@ void BleServer::init(Stream *vesc) {
   // Start the VESC service
   pServiceVesc->start();
 
+  // Create the VESC BLE Service
+  pServiceEspConf = pServer->createService(SERVICE_UUID_ESPCONF);
+
+  // Create a BLE Characteristic for VESC TX
+  pCharacteristicEspId = pServiceVesc->createCharacteristic(
+                      CHARACTERISTIC_UUID_ID,  
+                      NIMBLE_PROPERTY::NOTIFY   |
+                      NIMBLE_PROPERTY::READ
+                    );
+  //pCharacteristicVescTx->setValue("VESC TX");
+  pCharacteristicEspId->setCallbacks(this);
+
+  // Create a BLE Characteristic for VESC RX
+  pCharacteristicEspConf = pServiceVesc->createCharacteristic(
+                      CHARACTERISTIC_UUID_CONF,  
+                      NIMBLE_PROPERTY::READ   |
+                      NIMBLE_PROPERTY::WRITE
+                    );
+  pCharacteristicEspConf->setCallbacks(this);
+
+  // Start the VESC service
+  pServiceEspConf->start();
+
   // Start advertising
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
 #ifdef BLYNK_ENABLED
   pAdvertising->addServiceUUID(BLYNK_SERVICE_UUID);
 #endif
+  pAdvertising->addServiceUUID(SERVICE_UUID_ESPCONF);
   pAdvertising->setAppearance(0x00);
   pAdvertising->setScanResponse(true);
   pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
@@ -408,6 +435,36 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
       mBuffRX.put(data, len);
     }
 #endif //BLYNK_ENABLED
+    else if(pCharacteristic->getUUID().equals(pCharacteristicEspConf->getUUID())) {
+      std::string str(rxValue.c_str());
+      std::string::size_type middle = str.find('='); // Find position of ','
+      std::string key = "";
+      std::string value = "";      
+      if(middle != std::string::npos) {
+        key = str.substr(0, middle);
+        value = str.substr(middle + 1, str.size() - (middle + 1));
+      }
+
+      Serial.println(String(key.c_str()) + String("=") + String(value.c_str()));
+
+      if(key == "numberPixelLight") {
+        AppConfiguration::getInstance()->config.numberPixelLight = atoi(value.c_str());
+      }
+      if(key == "numberPixelBatMon") {
+        AppConfiguration::getInstance()->config.numberPixelBatMon = atoi(value.c_str());
+      }
+      if(key == "vescId") {
+        AppConfiguration::getInstance()->config.vescId = atoi(value.c_str());
+      } 
+      if(key == "authToken") {
+        AppConfiguration::getInstance()->config.authToken = value.c_str();
+      }
+      if(key == "save") {
+        AppConfiguration::getInstance()->config.otaUpdateActive = false;
+        AppConfiguration::getInstance()->savePreferences();
+        delay(100);
+      }
+    }
   }
 }
 
