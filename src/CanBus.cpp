@@ -559,7 +559,7 @@ std::string CanBus::readStringValueFromBuffer(int startbyte, int length) {
 }
 
 void CanBus::sendCanFrame(const CAN_frame_t* p_frame) {
-  //if(Logger::getLogLevel() == Logger::VERBOSE) {
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
     char buf[64];
     snprintf(buf, 64, "Sending CAN frame %" PRIu32 ", [%d, %d, %d, %d, %d, %d, %d, %d]\n", 
       p_frame->MsgID, 
@@ -571,8 +571,8 @@ void CanBus::sendCanFrame(const CAN_frame_t* p_frame) {
       p_frame->data.u8[5],
       p_frame->data.u8[6],
       p_frame->data.u8[7]);
-    Logger::warning(LOG_TAG_CANBUS, buf);
-  //}
+    Logger::verbose(LOG_TAG_CANBUS, buf);
+  }
   ESP32Can.CANWriteFrame(p_frame);
 }
 
