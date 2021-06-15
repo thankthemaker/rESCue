@@ -1,3 +1,6 @@
+# 08.06.2021
+ - Working WiFI OTA
+
 # 24.05.2021
 - prepared release 1.1.1
 
