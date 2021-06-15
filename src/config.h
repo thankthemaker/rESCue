@@ -6,8 +6,8 @@
 // ###################################################################### //
 
 #define SOFTWARE_VERSION_MAJOR 1
-#define SOFTWARE_VERSION_MINOR 1
-#define SOFTWARE_VERSION_PATCH 2
+#define SOFTWARE_VERSION_MINOR 2
+#define SOFTWARE_VERSION_PATCH 0
 #define HARDWARE_VERSION_MAJOR 3
 #define HARDWARE_VERSION_MINOR 1
 
@@ -56,6 +56,8 @@
 #ifdef CANBUS_ENABLED
  #define VESC_CAN_ID 25
  #define ESP_CAN_ID 3
+ #define BLE_CAN_PROXY_ID 4
+ #define CANBUS_ONLY
 #endif //CANBUS_ENABLED
 
 #ifdef BLYNK_ENABLED

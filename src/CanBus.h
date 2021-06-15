@@ -4,6 +4,7 @@
 
 #include "Arduino.h"
 #include "config.h"
+#include <LoopbackStream.h>
 
 #ifdef CANBUS_ENABLED
 
@@ -70,6 +71,11 @@ class CanBus {
 
     public:
       struct VescData {
+        uint8_t majorVersion;
+        uint8_t minorVersion;
+        std::string name;
+        std::string uuid;
+
         double dutyCycle;
         double erpm;
         double current;
@@ -94,20 +100,30 @@ class CanBus {
         uint16_t switchState;
         double adc1;
         double adc2;
+        uint8_t fault;
     } vescData;
 
       CanBus();
+      LoopbackStream *stream;
       void init();
       void loop();
       void dumpVescValues();
+      void proxyIn(std::string in);
+      void proxyOut(uint8_t *data, int size, uint8_t crc1, uint8_t crc2);
     private:
+      void requestFirmwareVersion();
       void requestRealtimeData();
       void requestBalanceData();
       void ping();
-      void printFrame(CAN_frame_t rx_frame);
+      void printFrame(CAN_frame_t rx_frame, int frameCount);
       void processFrame(CAN_frame_t rx_frame);
+      void sendCanFrame(const CAN_frame_t* p_frame);
       int32_t readInt32Value(CAN_frame_t rx_frame, int startbyte);
       int16_t readInt16Value(CAN_frame_t rx_frame, int startbyte);
+      int32_t readInt32ValueFromBuffer(int startbyte);
+      int16_t readInt16ValueFromBuffer(int startbyte);
+      int8_t readInt8ValueFromBuffer(int startbyte);
+      std::string readStringValueFromBuffer(int startbyte, int length);
 };
 
 #endif //CANBUS_ENABLED
