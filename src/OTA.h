@@ -6,6 +6,11 @@
 #include "AppConfiguration.h"
 #include "Buzzer.h"
 #include "esp_ota_ops.h"
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiAP.h>
+#include <ESPAsyncWebServer.h>
+#include "base64.h"
 
 #define SERVICE_UUID_ESPOTA             "d804b643-6ce7-4e81-9f8a-ce0f699085eb"
 #define CHARACTERISTIC_UUID_ID          "d804b644-6ce7-4e81-9f8a-ce0f699085eb"
@@ -32,12 +37,12 @@ class OTAUpdater {
       BLEServer *pServer = NULL;
 
       BLEService *pESPOTAService = NULL;
-      BLECharacteristic * pESPOTAIdCharacteristic = NULL;
-      BLECharacteristic * pESPOTAConfCharacteristic = NULL;
+      BLECharacteristic *pESPOTAIdCharacteristic = NULL;
+      BLECharacteristic *pESPOTAConfCharacteristic = NULL;
 
       BLEService *pService = NULL;
-      BLECharacteristic * pVersionCharacteristic = NULL;
-      BLECharacteristic * pOtaCharacteristic = NULL;
+      BLECharacteristic *pVersionCharacteristic = NULL;
+      BLECharacteristic *pOtaCharacteristic = NULL;
 };
 
 class BLECustomServerCallbacks: public BLEServerCallbacks {
