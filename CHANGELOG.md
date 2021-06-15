@@ -1,5 +1,7 @@
 # Changelog for rESCue firmware
 
+## Release 1.2.0
+
 ### 15.06.2021
 
 - implemented CANBUS-only read and write mode
