@@ -12,6 +12,13 @@
 
 #define BUFFER_SIZE 1024
 
+int interval = 1000;
+
+uint16_t length = 0;
+uint8_t command = 0;
+boolean longPacket = false;
+std::string longPackBuffer;
+
 int lastDump = 0;
 int lastStatus = 0;
 int lastRealtimeData = 0;
@@ -69,19 +76,15 @@ void CanBus::init() {
   interval from 50Hz to something around 1-5Hz, which is absolutely sufficient for this application.
 */
 void CanBus::loop() {
-/*
-     request realtimedata every second 
-    if(millis() - lastRealtimeData > 1000) {
-      requestRealtimeData();
-      lastRealtimeData = millis();
+
+    if(millis() - lastRealtimeData > interval) {
+      //requestRealtimeData();
     }
-*/
-/*
-    if(millis() - lastBalanceData > 10000) {
-      requestBalanceData();
-      lastBalanceData = millis();
+
+    if(millis() - lastBalanceData > interval) {
+      //requestBalanceData();
     }
-*/
+
     int frameCount = 0;
     CAN_frame_t rx_frame;
     //receive next CAN frame from queue
@@ -250,6 +253,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
       vescData.switchState = readInt16ValueFromBuffer(26 + offset);
       vescData.adc1 = readInt32ValueFromBuffer(28 + offset)  / 1000000.0;
       vescData.adc2 = readInt32ValueFromBuffer(32 + offset)  / 1000000.0;
+      lastBalanceData = millis();
     }
 
     if(buffer.at(1) == 0x32) {
@@ -261,6 +265,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
       vescData.erpm = readInt16ValueFromBuffer(10);
       vescData.inputVoltage = readInt16ValueFromBuffer(14) / 10.0;
       vescData.fault = readInt8ValueFromBuffer(16);
+      lastRealtimeData = millis();
     }
     proxyOut(buffer.data(), buffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
     buffer.clear();
@@ -274,30 +279,105 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
 }
 
 void CanBus::proxyIn(std::string in) {
-  uint8_t length = (uint8_t) in.substr(1, 1).at(0);
-  uint8_t command = (uint8_t) in.substr(2, 1).at(0);
-  if(Logger::getLogLevel() == Logger::VERBOSE) {
-    char buf[64];
-    snprintf(buf, 64, "Proxy in, command %d, length %d\n", command, length);
-    Logger::verbose(LOG_TAG_CANBUS, buf);
-  }
-  
-  if(length > 6) {
-    Logger::warning(LOG_TAG_CANBUS, "Packets bigger 6 byte are not supported yet, aborting.");
-  } 
+  uint8_t packet_type = (uint8_t) in.at(0);
 
-  CAN_frame_t tx_frame = {};
-
-  tx_frame.FIR.B.FF = CAN_frame_ext;
-  tx_frame.MsgID = (uint32_t (0x8000) << 16) + (uint16_t (CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + VESC_CAN_ID;
-  tx_frame.FIR.B.DLC = 0x02 + length;
-  tx_frame.data.u8[0] = BLE_CAN_PROXY_ID;
-  tx_frame.data.u8[1] = 0x00;
-  tx_frame.data.u8[2] = command;
-  for(int i=3; i<length+2;i++) {
-    tx_frame.data.u8[i] = (uint8_t) in.substr(i, 1).at(0);
+  if(!longPacket) {
+    switch (packet_type) {
+      case 2:
+         length = (uint8_t) in.at(1);
+         command = (uint8_t) in.at(2);
+         break;
+      case 3:
+         length = ((uint8_t) in.at(1) << 8) + (uint8_t) in.at(2);
+         command = (uint8_t) in.at(3);
+         longPacket = true;
+        break;
+      default:
+        return;
+    }
+    if(Logger::getLogLevel() == Logger::VERBOSE) {
+      char buf[64];
+      snprintf(buf, 64, "Proxy in, command %d, length %d\n", command, length);
+      Logger::verbose(LOG_TAG_CANBUS, buf);
+    }
   }
-  sendCanFrame(&tx_frame);
+
+  if(longPacket) { 
+    longPackBuffer += in;
+    // 7 bytes overhead
+    if(length > (longPackBuffer.size() - 6)) {
+      //Serial.printf("Buffer not full, needed %d, is %d\n", length, longPackBuffer.size()-6);
+      return;
+    }
+
+    //Serial.printf("Buffer full now processing, needed %d, is %d\n", length, longPackBuffer.size()-6);
+
+    unsigned int end_a = 0;
+    int offset = 2;
+    // skip first two bytes CRC here
+    for (unsigned int byteNum=offset; byteNum < length; byteNum += 7) {
+			if (byteNum > 255+offset) {
+				break;
+			}
+
+      end_a = byteNum + 7;
+
+      CAN_frame_t tx_frame = {};
+      tx_frame.FIR.B.FF = CAN_frame_ext;
+      tx_frame.MsgID = (uint32_t (0x8000) << 16) + (uint16_t (CAN_PACKET_FILL_RX_BUFFER) << 8) + VESC_CAN_ID;
+      tx_frame.FIR.B.DLC = 8;
+      tx_frame.data.u8[0] = byteNum - offset; //startbyte counter of frame
+      for(int i=1; i<8;i++) {
+        //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
+        tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
+      }
+      sendCanFrame(&tx_frame);  
+    }
+
+    for (unsigned int byteNum = end_a-1; byteNum < length; byteNum += 6) {
+      CAN_frame_t tx_frame = {};
+      tx_frame.FIR.B.FF = CAN_frame_ext;
+      tx_frame.MsgID = (uint32_t (0x8000) << 16) + (uint16_t (CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + VESC_CAN_ID;
+      tx_frame.FIR.B.DLC = 8;
+      tx_frame.data.u8[0] = (byteNum-1) >> 8;
+      tx_frame.data.u8[1] = (byteNum-1) & 0xFF;
+      for(int i=2; i<8;i++) {
+      //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
+        tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
+      }
+      sendCanFrame(&tx_frame);  
+		}
+
+    CAN_frame_t tx_frame = {};
+    tx_frame.FIR.B.FF = CAN_frame_ext;
+    tx_frame.MsgID = (uint32_t (0x8000) << 16) + (uint16_t (CAN_PACKET_PROCESS_RX_BUFFER) << 8) + VESC_CAN_ID;
+    tx_frame.FIR.B.DLC = 6;
+    tx_frame.data.u8[0] = BLE_CAN_PROXY_ID;
+    tx_frame.data.u8[1] = 0; // IS THIS CORRECT?????
+    tx_frame.data.u8[2] = length >> 8;
+    tx_frame.data.u8[3] = length & 0xFF;
+    tx_frame.data.u8[4] = longPackBuffer.at(longPackBuffer.size()-3);
+    tx_frame.data.u8[5] = longPackBuffer.at(longPackBuffer.size()-2);
+    sendCanFrame(&tx_frame);  
+ 
+  } else {
+    CAN_frame_t tx_frame = {};
+    tx_frame.FIR.B.FF = CAN_frame_ext;
+    tx_frame.MsgID = (uint32_t (0x8000) << 16) + (uint16_t (CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + VESC_CAN_ID;
+    tx_frame.FIR.B.DLC = 0x02 + length;
+    tx_frame.data.u8[0] = BLE_CAN_PROXY_ID;
+    tx_frame.data.u8[1] = 0x00;
+    tx_frame.data.u8[2] = command;
+    for(int i=3; i<length+2;i++) {
+      tx_frame.data.u8[i] = (uint8_t) in.at(i);
+    }
+    sendCanFrame(&tx_frame);
+  }
+
+  length = 0;
+  command = 0;
+  longPacket = false;
+  longPackBuffer = "";
 }
 
 void CanBus::proxyOut(uint8_t *data, int size, uint8_t crc1, uint8_t crc2) {
@@ -479,7 +559,7 @@ std::string CanBus::readStringValueFromBuffer(int startbyte, int length) {
 }
 
 void CanBus::sendCanFrame(const CAN_frame_t* p_frame) {
-  if(Logger::getLogLevel() == Logger::VERBOSE) {
+  //if(Logger::getLogLevel() == Logger::VERBOSE) {
     char buf[64];
     snprintf(buf, 64, "Sending CAN frame %" PRIu32 ", [%d, %d, %d, %d, %d, %d, %d, %d]\n", 
       p_frame->MsgID, 
@@ -491,8 +571,8 @@ void CanBus::sendCanFrame(const CAN_frame_t* p_frame) {
       p_frame->data.u8[5],
       p_frame->data.u8[6],
       p_frame->data.u8[7]);
-    Logger::verbose(LOG_TAG_CANBUS, buf);
-  }
+    Logger::warning(LOG_TAG_CANBUS, buf);
+  //}
   ESP32Can.CANWriteFrame(p_frame);
 }
 

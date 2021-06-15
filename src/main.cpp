@@ -15,7 +15,7 @@ int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
 int idle         = LOW;
-double idle_erpm = 10.0; 
+double idle_erpm = 40.0; 
 
 int lastFake = 0;
 

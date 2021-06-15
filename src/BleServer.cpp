@@ -403,11 +403,13 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
   Logger::notice(LOG_TAG_BLESERVER, buffer);
   if (rxValue.length() > 0) {
     if(pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
-//      for (int i = 0; i < rxValue.length(); i++) {
-//        Serial.print(rxValue[i], DEC);
-//        Serial.print(" ");
-//      }
-//      Serial.println();
+/*
+      for (int i = 0; i < rxValue.length(); i++) {
+        Serial.print(rxValue[i], DEC);
+        Serial.print(" ");
+      }
+      Serial.println();
+*/
 
 #ifdef CANBUS_ONLY
       canbus->proxyIn(rxValue);
