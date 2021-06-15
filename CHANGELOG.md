@@ -5,10 +5,13 @@
 - implemented CANBUS-only read and write mode
 - prepared release 1.2.0
 
-# 08.06.2021
+## 08.06.2021
+
  - Working WiFI OTA
 
-# 24.05.2021
+## 24.05.2021
+
+- **Release 1.1.1**
 - prepared release 1.1.1
 
 ## 24.05.2021
@@ -20,6 +23,7 @@
 
 ## 20.05.2021
 
+- **Release 1.1.0**
 - improved OTA and enrollment
 - initial Lightbar
 - startsound for OTA
@@ -66,9 +70,9 @@
 
 - updated doc, PCB image and sizing
 
-## 19.04.2021 (v1.0.0)
+## 19.04.2021
 
-- released version 1.0.0
+- **Release 1.0.0**
 - added Over The Air (OTA) update
 - changed partition layout (min-spiff)
 - fixed blynk mapping
