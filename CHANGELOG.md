@@ -1,5 +1,9 @@
 # Changelog for rESCue firmware
 
+### 22.06.2021
+
+- Updated Readme (CANBUS only)
+
 ## Release 1.2.0
 
 ### 15.06.2021
