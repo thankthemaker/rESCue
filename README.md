@@ -1,3 +1,7 @@
+[![PlatformIO CI](https://github.com/thankthemaker/rESCue/actions/workflows/main.yml/badge.svg)](https://github.com/thankthemaker/rESCue/actions/workflows/main.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
+
 # rESCue - add more safety and control to your VESC based vehicle
 
 *2021-04-09: Renamed from "funwheel-controller" to rESCue.*
