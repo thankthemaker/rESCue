@@ -1,6 +1,12 @@
+[![PlatformIO CI](https://github.com/thankthemaker/rESCue/actions/workflows/main.yml/badge.svg)](https://github.com/thankthemaker/rESCue/actions/workflows/main.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NDZFGUZC6RJCQ)
+
 # rESCue - add more safety and control to your VESC based vehicle
 
 *2021-04-09: Renamed from "funwheel-controller" to rESCue.*
+
+***2021-06-22: CANBUS-only is now supported, see CANBUS***
 
 This repository contains code to add some additional features to the [VESC](https://vesc-project.com)-based vehicles by enhancing it with a separate ESP32-controller to control front- and back-lights, monitor the battery and add Bluetooth VESC-UART-bridge. It was originally created for the [Funwheel](https://www.youtube.com/watch?v=K8beIoe0NuM)
 
@@ -124,6 +130,8 @@ For further information on measuring voltages with the ESP32, check this [great 
 
 ### Transparent BLE-UART proxy for VESC app
 
+***Use UART if not connected via CANBUS, otherwise it's not needed anymore!***
+
 The VESC applications for desktop and mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
 
 The desktop and mobile version of the [VESC tool app](https://vesc-project.com/vesc_tool) (Linux, Windows, Android) and also [Yours Truly](https://apps.apple.com/gb/app/yours-truly/id1523671235) are well tested and should just work fine.
@@ -133,6 +141,8 @@ The desktop and mobile version of the [VESC tool app](https://vesc-project.com/v
 ### CANBUS and VESC-Status (new)
 
 ___Attention___: this feature is only available using an ESP32 and a separate CAN-tranceiver, e.g. the SN65HVD230.
+
+If CANBUS is used, an additional UART connection isn't needed for rESCue.
 
 ![CANBUS wiring](docs/images/can-wiring.png)
 
