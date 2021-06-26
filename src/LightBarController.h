@@ -17,7 +17,7 @@
 #endif //LIGHT_BAR_ENABLED
 
 enum  ErrorCode { ERR_NONE };
-enum  AdcState { ACD_NONE, ADC_HALF, ADC_FULL };
+enum  AdcState { ADC_NONE, ADC_HALF_ADC1, ADC_HALF_ADC2, ADC_FULL };
 
 class LightBarController {
     public:

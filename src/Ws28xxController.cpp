@@ -101,6 +101,7 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
     maxBrightness = config.lightMaxBrightness;
     stopPattern = false;
     repeat = repeatPattern;
+    reverseOnComplete = false;
     switch (pattern) {
         case RAINBOW_CYCLE:
             rainbowCycle(10, isForward ? Direction::FORWARD : Direction::REVERSE);

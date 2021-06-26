@@ -52,7 +52,9 @@ float BatteryMonitor::readValues() {
 #endif //CANBUS_ENABLED
 
 #ifdef LIGHT_BAR_ENABLED
-    LightBarController::getInstance()->updateLightBar(voltage, AdcState::ADC_FULL, vescData->erpm);  // update the WS28xx battery bar
+    LightBarController::getInstance()->updateLightBar(
+            voltage,mapSwitchState(vescData->switchState, vescData->adc1 > vescData->adc2),
+            vescData->erpm);  // update the WS28xx battery bar
 #endif
   if(Logger::getLogLevel() == Logger::VERBOSE) {
 #ifndef CANBUS_ENABLED
@@ -133,4 +135,19 @@ double BatteryMonitor::getAverageCurrent() {
       avg += currentReadings[i];
     }
     return avg/numCurReadings;
+}
+
+AdcState BatteryMonitor::mapSwitchState(uint16_t intState, boolean isAdc1Enabled) {
+    Serial.printf("Map Switchstate: %d %d\n", intState, isAdc1Enabled);
+    switch (intState) {
+        case 0:
+            return AdcState::ADC_NONE;
+        case 1:
+            return isAdc1Enabled ? AdcState::ADC_HALF_ADC1 : AdcState::ADC_HALF_ADC2;
+        case 2:
+            return AdcState::ADC_FULL;
+        default:
+            Logger::error(LOG_TAG_BATMON, "Unknown switch state");
+    }
+    return AdcState::ADC_NONE;
 }
