@@ -90,7 +90,7 @@ void loop() {
   }
 #ifdef CANBUS_ENABLED
   new_forward  = canbus->vescData.erpm > idle_erpm ? HIGH : LOW;
-  new_backward = canbus->vescData.erpm < idle_erpm ? HIGH : LOW;
+  new_backward = canbus->vescData.erpm < -idle_erpm ? HIGH : LOW;
   idle         = abs(canbus->vescData.erpm) < idle_erpm ? HIGH : LOW;
   new_brake    = (abs(canbus->vescData.erpm) > idle_erpm && canbus->vescData.current < -4.0) ? HIGH : LOW;
 #else

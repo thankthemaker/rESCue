@@ -28,6 +28,7 @@ class BatteryMonitor {
         int smoothAnalogReading();
         void updateCurrentArray(double value);
         double getAverageCurrent();
+        AdcState mapSwitchState(uint16_t intState, boolean isAdc1Enabled);
 };
 
 #endif //__BATTERY_CONTROLLER_H__

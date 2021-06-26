@@ -12,7 +12,7 @@
 
 #define BUFFER_SIZE 1024
 
-int interval = 1000;
+int interval = 500;
 
 uint16_t length = 0;
 uint8_t command = 0;
@@ -77,12 +77,12 @@ void CanBus::init() {
 */
 void CanBus::loop() {
 
-    if(millis() - lastRealtimeData > interval) {
-      //requestRealtimeData();
+    if(millis() - lastRealtimeData > 2*interval) {
+      requestRealtimeData();
     }
 
     if(millis() - lastBalanceData > interval) {
-      //requestBalanceData();
+      requestBalanceData();
     }
 
     int frameCount = 0;
@@ -109,7 +109,7 @@ void CanBus::requestFirmwareVersion() {
     tx_frame.FIR.B.FF = CAN_frame_ext;
     tx_frame.MsgID = (uint32_t (0x8000) << 16) + (uint16_t (CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + VESC_CAN_ID;
     tx_frame.FIR.B.DLC = 0x03;
-    tx_frame.data.u8[0] = BLE_CAN_PROXY_ID;
+    tx_frame.data.u8[0] = ESP_CAN_ID;
     tx_frame.data.u8[1] = 0x00;
     tx_frame.data.u8[2] = 0x00;
     sendCanFrame(&tx_frame);
@@ -212,8 +212,8 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
   }
 
   if(RECV_FILL_RX_BUFFER == ID || RECV_FILL_RX_BUFFER_PROXY == ID || RECV_FILL_RX_BUFFER_LONG_PROXY == ID) {
-    frametype = "fill rx buffer";
     boolean longBuffer = RECV_FILL_RX_BUFFER_LONG_PROXY == ID;
+    frametype = longBuffer ? "fill rx long buffer" : "fill rx buffer";
     for(int i=(longBuffer ? 2 : 1); i<rx_frame.FIR.B.DLC; i++) {
       buffer.push_back(rx_frame.data.u8[i]);
     }
@@ -227,22 +227,23 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
 
   if(RECV_PROCESS_RX_BUFFER == ID) {
     frametype = "process rx buffer for ";
-    Serial.printf("bytes %d\n", buffer.size());
+    //Serial.printf("bytes %d\n", buffer.size());
 
     if(buffer.size() <= 0) {
       Serial.printf("buffer empty, abort");
       return;
     }
-    if(buffer.at(1) == 0x00) {
+    uint8_t command = buffer.at(0);
+    if(command == 0x00) {
       frametype += "firmwareversion";
-      int offset = 2;
+      int offset = 1;
       vescData.majorVersion = readInt8ValueFromBuffer(0);
       vescData.minorVersion = readInt8ValueFromBuffer(1);
       vescData.name = readStringValueFromBuffer(2 + offset, 12);
     }
-    if(buffer.at(1) == 0x4F) {
+    if(command == 0x4F) {
       frametype += "balancedata";
-      int offset = 2;
+      int offset = 1;
       vescData.pidOutput = readInt32ValueFromBuffer(0 + offset) / 1000000.0;
       vescData.pitch = readInt32ValueFromBuffer(4 + offset) / 1000000.0;
       vescData.roll = readInt32ValueFromBuffer(8 + offset) / 1000000.0;
@@ -256,15 +257,15 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
       lastBalanceData = millis();
     }
 
-    if(buffer.at(1) == 0x32) {
+    if(command == 0x32) {
       frametype += "realtimeData";
-      int offset = 2;
+      int offset = 1;
       vescData.mosfetTemp = readInt16ValueFromBuffer(4 + offset) / 10.0;
-      vescData.motorTemp = readInt16ValueFromBuffer(6) / 10.0;
-      vescData.dutyCycle = readInt16ValueFromBuffer(8) / 1000.0;
-      vescData.erpm = readInt16ValueFromBuffer(10);
-      vescData.inputVoltage = readInt16ValueFromBuffer(14) / 10.0;
-      vescData.fault = readInt8ValueFromBuffer(16);
+      vescData.motorTemp = readInt16ValueFromBuffer(6 + offset) / 10.0;
+      vescData.dutyCycle = readInt16ValueFromBuffer(8 + offset) / 1000.0;
+      vescData.erpm = readInt16ValueFromBuffer(10 + offset);
+      vescData.inputVoltage = readInt16ValueFromBuffer(14 + offset) / 10.0;
+      vescData.fault = readInt8ValueFromBuffer(16 + offset);
       lastRealtimeData = millis();
     }
     proxyOut(buffer.data(), buffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
@@ -559,7 +560,7 @@ std::string CanBus::readStringValueFromBuffer(int startbyte, int length) {
 }
 
 void CanBus::sendCanFrame(const CAN_frame_t* p_frame) {
-  //if(Logger::getLogLevel() == Logger::VERBOSE) {
+  if(Logger::getLogLevel() == Logger::VERBOSE) {
     char buf[64];
     snprintf(buf, 64, "Sending CAN frame %" PRIu32 ", [%d, %d, %d, %d, %d, %d, %d, %d]\n", 
       p_frame->MsgID, 
@@ -571,8 +572,8 @@ void CanBus::sendCanFrame(const CAN_frame_t* p_frame) {
       p_frame->data.u8[5],
       p_frame->data.u8[6],
       p_frame->data.u8[7]);
-    Logger::warning(LOG_TAG_CANBUS, buf);
-  //}
+    Logger::verbose(LOG_TAG_CANBUS, buf);
+  }
   ESP32Can.CANWriteFrame(p_frame);
 }
 

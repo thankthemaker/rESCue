@@ -1,5 +1,16 @@
 # Changelog for rESCue firmware
 
+### 25.06.2021
+
+- added Footpad sensor state to lightbar
+- some small fixes
+
+### 24.06.2021
+
+- New light pattern pulse
+- small bugfix, pattern change when start-sequence finished
+- small bugfix, brightness ignored in start sequence
+
 ### 22.06.2021
 
 - Updated Readme (CANBUS only)
