@@ -68,7 +68,7 @@ void CanBus::init() {
   */
     //start CAN Module
     ESP32Can.CANInit();
-    requestFirmwareVersion();
+    //requestFirmwareVersion();
 }
 
 /*
