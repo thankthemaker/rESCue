@@ -64,6 +64,11 @@ void Ws28xxController::increment() {
 
 // Reverse pattern direction
 void Ws28xxController::reverse() {
+    if (Logger::getLogLevel() == Logger::VERBOSE) {
+      char buf[128];
+      snprintf(buf, 128, "reversing pattern %d, direction %d", activePattern, direction);
+      Logger::warning(LOG_TAG_WS28XX, buf);
+    }
     if (direction == FORWARD) {
         direction = REVERSE;
         index = totalSteps;
@@ -74,7 +79,13 @@ void Ws28xxController::reverse() {
 }
 
 void Ws28xxController::onComplete() {
-    stopPattern = !reverseOnComplete;
+    if (Logger::getLogLevel() == Logger::VERBOSE) {
+      char buf[128];
+      snprintf(buf, 128, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
+             activePattern, isStartSequence, reverseOnComplete, repeat);
+      Logger::warning(LOG_TAG_WS28XX, buf);
+    }
+    stopPattern = true;
     blockChange = false;
     if(isStartSequence) {
         isStartSequence = false;
@@ -83,6 +94,7 @@ void Ws28xxController::onComplete() {
     }
     if(reverseOnComplete){
         reverse();
+        stopPattern = false;
         return;
     }
     if(repeat) {
@@ -92,7 +104,13 @@ void Ws28xxController::onComplete() {
 }
 
 void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) {
-    if (!repeatPattern && activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
+    if (Logger::getLogLevel() == Logger::VERBOSE) {
+      char buf[128];
+      snprintf(buf, 128, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
+      Logger::verbose(LOG_TAG_WS28XX, buf);
+    }
+
+    if (activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
         return;
     }
     if (blockChange) {
@@ -139,11 +157,6 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
             break;
         default:
             break;
-    }
-    if (Logger::getLogLevel() == Logger::NOTICE) {
-        char buf[64];
-        snprintf(buf, 64, "changed light pattern to %d", pattern);
-        Logger::notice(LOG_TAG_WS28XX, buf);
     }
 }
 

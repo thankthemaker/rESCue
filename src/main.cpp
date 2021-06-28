@@ -15,9 +15,9 @@ int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
 int idle         = LOW;
-double idle_erpm = 40.0; 
+double idle_erpm = 10.0;
 
-int lastFake = 0;
+int lastFake = 4000;
 
 HardwareSerial vesc(2);
 
@@ -36,6 +36,22 @@ BleServer *bleServer = new BleServer();
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char* module, const char* message);
 
+void fakeCanbusValues() {
+    if(millis() - lastFake > 3000) {
+        canbus->vescData.inputVoltage = random(43, 50);
+        canbus->vescData.dutyCycle = random(0, 100);
+        canbus->vescData.erpm = random(-100, 200);
+        canbus->vescData.current = random(0, 10);
+        canbus->vescData.ampHours = random(0, 100);
+        canbus->vescData.mosfetTemp = random(20, 60);
+        canbus->vescData.motorTemp = random(20, 40);
+        canbus->vescData.adc1 = 0.5;
+        canbus->vescData.adc2 = 0.5;
+        canbus->vescData.switchState = 0;
+        lastFake = millis();
+    }
+}
+
 void setup() {
   Logger::setOutputFunction(localLogger);
   Logger::setLogLevel(Logger::WARNING);
@@ -50,7 +66,6 @@ void setup() {
      updater->setup();
      return;
   }
-
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
@@ -89,9 +104,13 @@ void loop() {
     return;
   }
 #ifdef CANBUS_ENABLED
+  #ifdef FAKE_VESC_ENABLED
+    fakeCanbusValues();
+  #endif
+
   new_forward  = canbus->vescData.erpm > idle_erpm ? HIGH : LOW;
   new_backward = canbus->vescData.erpm < -idle_erpm ? HIGH : LOW;
-  idle         = abs(canbus->vescData.erpm) < idle_erpm ? HIGH : LOW;
+  idle         = (abs(canbus->vescData.erpm) < idle_erpm && canbus->vescData.switchState == 0) ? HIGH : LOW;
   new_brake    = (abs(canbus->vescData.erpm) > idle_erpm && canbus->vescData.current < -4.0) ? HIGH : LOW;
 #else
   new_forward  = digitalRead(PIN_FORWARD);
@@ -118,18 +137,6 @@ void loop() {
 
   // call the VESC UART-to-Bluetooth bridge
 #ifdef CANBUS_ENABLED
-  #ifdef FAKE_VESC_ENABLED
-    if(millis() - lastFake > 3000) {
-      canbus->vescData.inputVoltage = random(43, 50);
-      canbus->vescData.dutyCycle = random(0, 100);
-      canbus->vescData.erpm = random(-100, 200);
-      canbus->vescData.current = random(-20, 20);
-      canbus->vescData.ampHours = random(0, 100);
-      canbus->vescData.mosfetTemp = random(20, 60);
-      canbus->vescData.motorTemp = random(20, 40);
-      lastFake = millis();
-    }
-  #endif
   bleServer->loop(&canbus->vescData);
 #else 
   bleServer->loop();

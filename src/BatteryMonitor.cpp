@@ -138,7 +138,7 @@ double BatteryMonitor::getAverageCurrent() {
 }
 
 AdcState BatteryMonitor::mapSwitchState(uint16_t intState, boolean isAdc1Enabled) {
-    Serial.printf("Map Switchstate: %d %d\n", intState, isAdc1Enabled);
+    //Serial.printf("Map Switchstate: %d %d\n", intState, isAdc1Enabled);
     switch (intState) {
         case 0:
             return AdcState::ADC_NONE;

@@ -263,7 +263,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame) {
       vescData.mosfetTemp = readInt16ValueFromBuffer(4 + offset) / 10.0;
       vescData.motorTemp = readInt16ValueFromBuffer(6 + offset) / 10.0;
       vescData.dutyCycle = readInt16ValueFromBuffer(8 + offset) / 1000.0;
-      vescData.erpm = readInt16ValueFromBuffer(10 + offset);
+      vescData.erpm = readInt32ValueFromBuffer(10 + offset);
       vescData.inputVoltage = readInt16ValueFromBuffer(14 + offset) / 10.0;
       vescData.fault = readInt8ValueFromBuffer(16 + offset);
       lastRealtimeData = millis();

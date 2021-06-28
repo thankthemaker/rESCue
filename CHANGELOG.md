@@ -1,5 +1,15 @@
 # Changelog for rESCue firmware
 
+## Release 1.3.1
+
+- bugfix lights, erpm was read wrong sometimes
+
+## Release 1.3.0
+
+### 27.06.2021 
+
+ - prepared release 1.3.0
+
 ### 25.06.2021
 
 - added Footpad sensor state to lightbar
