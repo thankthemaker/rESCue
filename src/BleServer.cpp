@@ -293,10 +293,10 @@ void BleServer::loop() {
       oneByte = vescSerial->read();
       bufferString.push_back(oneByte);
     }
-    //if(Logger::getLogLevel() == Logger::VERBOSE) {
-      Logger::notice(LOG_TAG_BLESERVER, "BLE from VESC: ");
-      Logger::notice(LOG_TAG_BLESERVER, bufferString.c_str());
-    //}
+    if(Logger::getLogLevel() == Logger::VERBOSE) {
+      Logger::verbose(LOG_TAG_BLESERVER, "BLE from VESC: ");
+      Logger::verbose(LOG_TAG_BLESERVER, bufferString.c_str());
+    }
 
     if (deviceConnected) {
       while(bufferString.length() > 0) {
@@ -453,21 +453,22 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
    Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color", 
      vescData->dutyCycle > 0 ? BLINK_COLOR_GREEN : BLINK_COLOR_RED);
    Blynk.virtualWrite(VPIN_VESC_MOSFET_TEMP, vescData->mosfetTemp);
-   Blynk.virtualWrite(VPIN_VESC_TACHOMETER, vescData->tachometer);   
    Blynk.virtualWrite(VPIN_VESC_MOTOR_TEMP, vescData->motorTemp);
    Blynk.virtualWrite(VPIN_VESC_AMP_HOURS, vescData->ampHours);
    Blynk.virtualWrite(VPIN_VESC_AMP_HOURS_CHARGED, vescData->ampHoursCharged);
    Blynk.virtualWrite(VPIN_VESC_WATT_HOURS, vescData->wattHours);
    Blynk.virtualWrite(VPIN_VESC_WATT_HOURS_CHARGED, vescData->wattHoursCharged);
    Blynk.virtualWrite(VPIN_VESC_CURRENT, vescData->current);
+   Blynk.virtualWrite(VPIN_VESC_TACHOMETER, vescData->tachometer);
+   Blynk.virtualWrite(VPIN_VESC_TACHOMETER_ABS, vescData->tachometerAbsolut);
    if(AppConfiguration::getInstance()->config.isNotificationEnabled){
-     if(millis() - lastNotification > 180000) { // Notification only all 3 minutes
+     if(millis() - lastNotification > 60000) { // Notification only all once a minutes
        if(vescData->inputVoltage > AppConfiguration::getInstance()->config.maxBatteryVoltage) {
          Blynk.notify("Battery too high: " + String(vescData->inputVoltage) + "V");
        }
        if(vescData->inputVoltage < AppConfiguration::getInstance()->config.minBatteryVoltage) {
          Blynk.notify("Battery dropped below: " + String(vescData->inputVoltage) + "V");
-       }
+       }  
        lastBatteryValue = vescData->inputVoltage;
        lastNotification = millis();
      }

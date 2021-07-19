@@ -56,20 +56,20 @@ void LightBarController::updateLightBar(float voltage, AdcState adcState, double
             lightPixels.setPixelColor(i, 0, 0, 0);
             switch (adcState) {
                 case ADC_NONE:
-                    lightPixels.setPixelColor(i, 153, 0, 153); // purple
+                    lightPixels.setPixelColor(i, 153, 0, 153); // full purple
                     break;
                 case ADC_HALF_ADC1:
                     if(i>(pixel_count/2)) {
-                        lightPixels.setPixelColor(i, 153, 0, 153); // purple
+                        lightPixels.setPixelColor(i, 153, 0, 153); // half purple
                     }
                     break;
                 case ADC_HALF_ADC2:
                     if(i<(pixel_count/2)) {
-                        lightPixels.setPixelColor(i, 153, 0, 153); // purple
+                        lightPixels.setPixelColor(i, 153, 0, 153); // half purple
                     }
                     break;
                 case ADC_FULL:
-                    lightPixels.setPixelColor(i, 0, 0, 153); // blue
+                    lightPixels.setPixelColor(i, 0, 0, 153); // full blue
                     break;
             }
         }

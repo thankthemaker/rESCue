@@ -89,6 +89,7 @@ class CanBus {
         double pidPosition;
         double inputVoltage;
         double tachometer;
+        double tachometerAbsolut;
 
         double pidOutput;
         double pitch;
@@ -116,14 +117,14 @@ class CanBus {
       void requestBalanceData();
       void ping();
       void printFrame(CAN_frame_t rx_frame, int frameCount);
-      void processFrame(CAN_frame_t rx_frame);
+      void processFrame(CAN_frame_t rx_frame, int frameCount);
       void sendCanFrame(const CAN_frame_t* p_frame);
       int32_t readInt32Value(CAN_frame_t rx_frame, int startbyte);
       int16_t readInt16Value(CAN_frame_t rx_frame, int startbyte);
-      int32_t readInt32ValueFromBuffer(int startbyte);
-      int16_t readInt16ValueFromBuffer(int startbyte);
-      int8_t readInt8ValueFromBuffer(int startbyte);
-      std::string readStringValueFromBuffer(int startbyte, int length);
+      int32_t readInt32ValueFromBuffer(int startbyte, boolean isProxyRequest);
+      int16_t readInt16ValueFromBuffer(int startbyte, boolean isProxyRequest);
+      int8_t readInt8ValueFromBuffer(int startbyte, boolean isProxyRequest);
+      std::string readStringValueFromBuffer(int startbyte, int length, boolean isProxyRequest);
 };
 
 #endif //CANBUS_ENABLED

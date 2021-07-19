@@ -31,4 +31,5 @@
 #define VPIN_VESC_MOSFET_TEMP        28  // OUTPUT: The actual mosfet-temp reading from VESC (if CANBUS enabled)
 #define VPIN_VESC_MOTOR_TEMP         29  // OUTPUT: The actual motor-temp reading from VESC (if CANBUS enabled)
 #define VPIN_VESC_INPUT_VOLTAGE      30  // OUTPUT: The actual voltage from VESC (from CANBUS or voltage divider)
-#define VPIN_VESC_TACHOMETER         31  // OUTPUT: The actual tochometer reading from VESC (if CANBUS enabled)
+#define VPIN_VESC_TACHOMETER         31  // OUTPUT: The actual tachometer reading from VESC (if CANBUS enabled)
+#define VPIN_VESC_TACHOMETER_ABS     32  // OUTPUT: The absolute tachometer reading from VESC (if CANBUS enabled)

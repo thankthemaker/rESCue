@@ -125,7 +125,7 @@ void OTACallback::onWrite(BLECharacteristic *pCharacteristic) {
       //Serial.println("Length " + String(rxData.length()));
       
       std::string str(rxData.c_str());
-      std::string::size_type middle = str.find('='); // Find position of ','
+      std::string::size_type middle = str.find('='); // Find position of '='
       std::string key = "";
       std::string value = "";      
       if(middle != std::string::npos) {
