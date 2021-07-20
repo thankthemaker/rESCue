@@ -1,14 +1,29 @@
 # Changelog for rESCue firmware
 
+## Release 1.3.4 (not released yet)
+
+### 20.07.2021
+
+- fixed WiFi OTA update by changing partition schema to default
+- fixed "Guru Meditation Error: Core 1 panic'ed (Cache disabled but cached memory region accessed)" while OTA
+- fixed app crash when App-Configuration is written and not dividable by 6 byte
+
+## Release 1.3.3
+
+### 19.07.2021
+
+- improved CANBUS communication
+- Fixed bug that CANBUS freezes when sending multiple frames at the same time
+
 ## Release 1.3.1
 
 - bugfix lights, erpm was read wrong sometimes
 
 ## Release 1.3.0
 
-### 27.06.2021 
+### 27.06.2021
 
- - prepared release 1.3.0
+- prepared release 1.3.0
 
 ### 25.06.2021
 

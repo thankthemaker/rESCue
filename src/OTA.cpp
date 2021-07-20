@@ -20,6 +20,7 @@ void startUpdate() {
   Serial.println("partition size:" + String(partition->size));
   esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &otaHandler);
   updateFlag = true;
+  Serial.println("Update started");
 }
 
 void handleUpdate(std::string data) {
@@ -65,7 +66,7 @@ void activateWiFiAp(const char *password) {
       AsyncWebParameter* p = request->getParam(i);
       if(p->isPost() && p->name().compareTo("data") != -1) {
         const char *value =p->value().c_str();
-        Serial.printf("\nPOST[%s]: bytes %d\n", p->name().c_str(), p->value().length());
+        //Serial.printf("\nPOST[%s]: bytes %d\n", p->name().c_str(), p->value().length());
         if(!updateFlag) {
           startUpdate();
         } 
@@ -107,7 +108,6 @@ void OTAUpdater::setup() {
 		printf("Type: %02x SubType %02x Address 0x%06X Size 0x%06X Encryption %i Label %s\r\n", _mypart->type, _mypart->subtype, _mypart->address, _mypart->size, _mypart->encrypted, _mypart->label);
 		_mypartiterator = esp_partition_next(_mypartiterator);
 	}
-
   _mypart = esp_ota_get_boot_partition();
   printf("Current active partition is %s\r\n", _mypart->label);
 }

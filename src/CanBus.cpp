@@ -361,7 +361,9 @@ void CanBus::proxyIn(std::string in) {
             tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + VESC_CAN_ID;
             tx_frame.FIR.B.DLC = 8;
             tx_frame.data.u8[0] = byteNum - offset; //startbyte counter of frame
-            for (int i = 1; i < 8; i++) {
+
+            int sendLen = (longPackBuffer.length() >= byteNum + 7) ? 7 : longPackBuffer.length() - byteNum;
+            for (int i = 1; i<sendLen+1; i++) {
                 //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
                 tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
             }
@@ -375,10 +377,13 @@ void CanBus::proxyIn(std::string in) {
             tx_frame.FIR.B.DLC = 8;
             tx_frame.data.u8[0] = (byteNum - 1) >> 8;
             tx_frame.data.u8[1] = (byteNum - 1) & 0xFF;
-            for (int i=2; i<8; i++) {
+
+            int sendLen = (longPackBuffer.length() >= byteNum + 6) ? 6 : longPackBuffer.length() - byteNum;
+            for (int i=2; i<sendLen+2; i++) {
                 //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
                 tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
             }
+
             sendCanFrame(&tx_frame);
         }
 

@@ -60,12 +60,14 @@ void setup() {
   }
 
   AppConfiguration::getInstance()->readPreferences();
-  ledController = LedControllerFactory::getInstance()->createLedController();
 
   if(AppConfiguration::getInstance()->config.otaUpdateActive) {
      updater->setup();
      return;
   }
+
+  ledController = LedControllerFactory::getInstance()->createLedController();
+
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
