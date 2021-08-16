@@ -2,6 +2,10 @@
 
 ## Release 1.3.5 (not yet released)
 
+### 16.08.2021
+
+- eliminated hard coded VESC-ID
+
 ## Release 1.3.4
 
 ### 16.08.2021

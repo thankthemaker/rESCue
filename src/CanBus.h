@@ -4,6 +4,7 @@
 
 #include "Arduino.h"
 #include "config.h"
+#include "AppConfiguration.h"
 #include <LoopbackStream.h>
 
 #ifdef CANBUS_ENABLED
@@ -125,6 +126,20 @@ class CanBus {
       int16_t readInt16ValueFromBuffer(int startbyte, boolean isProxyRequest);
       int8_t readInt8ValueFromBuffer(int startbyte, boolean isProxyRequest);
       std::string readStringValueFromBuffer(int startbyte, int length, boolean isProxyRequest);
+      uint8_t vesc_id;
+      uint8_t esp_can_id;
+      uint8_t ble_proxy_can_id;
+      int32_t RECV_STATUS_1;
+      int32_t RECV_STATUS_2;
+      int32_t RECV_STATUS_3;
+      int32_t RECV_STATUS_4;
+      int32_t RECV_STATUS_5;
+      uint32_t RECV_FILL_RX_BUFFER;
+      uint32_t RECV_PROCESS_RX_BUFFER;
+      uint32_t RECV_PROCESS_SHORT_BUFFER_PROXY;
+      uint32_t RECV_FILL_RX_BUFFER_PROXY;
+      uint32_t RECV_FILL_RX_BUFFER_LONG_PROXY;
+      uint32_t RECV_PROCESS_RX_BUFFER_PROXY;
 };
 
 #endif //CANBUS_ENABLED

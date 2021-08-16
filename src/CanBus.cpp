@@ -9,11 +9,6 @@ int interval = 500;
 
 SemaphoreHandle_t mutex_v = xSemaphoreCreateMutex();
 
-
-uint8_t vesc_id = VESC_CAN_ID & 0x0ff;
-uint8_t esp_can_id = vesc_id + 1;
-uint8_t ble_proxy_can_id = vesc_id + 2;
-
 uint16_t length = 0;
 uint8_t command = 0;
 boolean longPacket = false;
@@ -25,28 +20,11 @@ int lastRealtimeData = 0;
 int lastBalanceData = 0;
 std::vector<uint8_t> buffer = {};
 std::vector<uint8_t> proxybuffer = {};
-uint32_t RECV_STATUS_1 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS) << 8) + vesc_id;
-uint32_t RECV_STATUS_2 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_2) << 8) + vesc_id;
-uint32_t RECV_STATUS_3 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_3) << 8) + vesc_id;
-uint32_t RECV_STATUS_4 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_4) << 8) + vesc_id;
-uint32_t RECV_STATUS_5 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_5) << 8) + vesc_id;
-
-uint32_t RECV_FILL_RX_BUFFER = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + esp_can_id;
-uint32_t RECV_PROCESS_RX_BUFFER = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + esp_can_id;
-
-uint32_t RECV_PROCESS_SHORT_BUFFER_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + ble_proxy_can_id;
-uint32_t RECV_FILL_RX_BUFFER_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + ble_proxy_can_id;
-uint32_t RECV_FILL_RX_BUFFER_LONG_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + ble_proxy_can_id;
-uint32_t RECV_PROCESS_RX_BUFFER_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + ble_proxy_can_id;
-
 CAN_device_t CAN_cfg;
 
 CanBus::CanBus() {
     stream = new LoopbackStream(BUFFER_SIZE);
+
 }
 
 void CanBus::init() {
@@ -71,6 +49,27 @@ void CanBus::init() {
     */
     //start CAN Module
     ESP32Can.CANInit();
+    vesc_id = AppConfiguration::getInstance()->config.vescId;
+    esp_can_id = vesc_id + 1;
+    ble_proxy_can_id = vesc_id + 2;
+    RECV_STATUS_1 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS) << 8) + this->vesc_id;
+    RECV_STATUS_2 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_2) << 8) + this->vesc_id;
+    RECV_STATUS_3 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_3) << 8) + this->vesc_id;
+    RECV_STATUS_4 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_4) << 8) + vesc_id;
+    RECV_STATUS_5 = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_STATUS_5) << 8) + vesc_id;
+
+    RECV_FILL_RX_BUFFER = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + esp_can_id;
+    RECV_PROCESS_RX_BUFFER = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + esp_can_id;
+
+    RECV_PROCESS_SHORT_BUFFER_PROXY =
+        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + ble_proxy_can_id;
+    RECV_FILL_RX_BUFFER_PROXY =
+        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + ble_proxy_can_id;
+    RECV_FILL_RX_BUFFER_LONG_PROXY =
+        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + ble_proxy_can_id;
+    RECV_PROCESS_RX_BUFFER_PROXY =
+        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + ble_proxy_can_id;
+
     //requestFirmwareVersion();
 }
 
