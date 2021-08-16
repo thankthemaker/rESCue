@@ -15,7 +15,7 @@
 
 // Choose either WS28xx compatible stripe or COB-LED stripe
 #define LED_WS28xx // enables the light controller for WS28xx (Neopixel)
-#define LED_COB    // enables the light controller for tri-color COB-stripes
+//#define LED_COB    // enables the light controller for tri-color COB-stripes
 
 #ifdef LED_WS28xx
  #define NUMPIXELS    16  // the number of LEDs if WS28xx is used
