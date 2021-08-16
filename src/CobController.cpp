@@ -19,7 +19,7 @@ void CobController::init() {
 #endif
 }
 
-void CobController::changePattern(Pattern pattern, boolean isForward) {
+void CobController::changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) {
 }
 
 void CobController::update(){

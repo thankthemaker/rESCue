@@ -24,7 +24,7 @@ class CobController : public ILedController {
         void stop();
         void startSequence();
         void idleSequence();
-        void changePattern(Pattern pattern, boolean isForward);
+        void changePattern(Pattern pattern, boolean isForward, boolean repeatPattern);
         void update();
 
     private:
