@@ -1,6 +1,13 @@
 # Changelog for rESCue firmware
 
-## Release 1.3.4 (not released yet)
+## Release 1.3.5 (not yet released)
+
+## Release 1.3.4
+
+### 16.08.2021
+
+- fixed CAN-issue with VESC version 5.3
+- prepared release 1.3.4
 
 ### 20.07.2021
 

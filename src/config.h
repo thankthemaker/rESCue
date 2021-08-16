@@ -7,7 +7,7 @@
 
 #define SOFTWARE_VERSION_MAJOR 1
 #define SOFTWARE_VERSION_MINOR 3
-#define SOFTWARE_VERSION_PATCH 3
+#define SOFTWARE_VERSION_PATCH 4
 #define HARDWARE_VERSION_MAJOR 3
 #define HARDWARE_VERSION_MINOR 1
 
@@ -55,9 +55,7 @@
 #define BLYNK_ENABLED
 
 #ifdef CANBUS_ENABLED
- #define VESC_CAN_ID 25
- #define ESP_CAN_ID 3
- #define BLE_CAN_PROXY_ID 4
+ #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
  #define CANBUS_ONLY
 #endif //CANBUS_ENABLED
 
