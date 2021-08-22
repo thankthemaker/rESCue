@@ -54,12 +54,12 @@ void fakeCanbusValues() {
 
 void setup() {
   Logger::setOutputFunction(localLogger);
-  Logger::setLogLevel(Logger::WARNING);
-  if(Logger::getLogLevel() != Logger::SILENT) {
-    Serial.begin(VESC_BAUD_RATE);
-  }
 
   AppConfiguration::getInstance()->readPreferences();
+  Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
+  if(Logger::getLogLevel() != Logger::SILENT) {
+      Serial.begin(VESC_BAUD_RATE);
+  }
 
   if(AppConfiguration::getInstance()->config.otaUpdateActive) {
      updater->setup();
