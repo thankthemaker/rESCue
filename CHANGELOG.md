@@ -1,10 +1,14 @@
 # Changelog for rESCue firmware
 
-## Release 1.3.5 (not yet released)
+## Release 1.3.7 (not yet released)
+
+## Release 1.3.6
 
 ### 20.08.2021
 
 - Fixed some issues when COB is used
+- updated Readme, added MOSFET-Switch
+- released v1.3.6
 
 ### 19.08.2021
 
@@ -13,6 +17,8 @@
 ### 18.08.2021
 
 - implemented changing LogLevel via Blynk-App
+
+## Release 1.3.5
 
 ### 16.08.2021
 
