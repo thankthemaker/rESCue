@@ -15,16 +15,16 @@
 class Ws28xxController : public ILedController, Adafruit_NeoPixel {
     public:
         Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type);
-        void init();
-        void stop();
-        void startSequence();
-        void idleSequence();
-        void changePattern(Pattern pattern, boolean isForward, boolean repeatPattern);
-        void update();
+        void init() override;
+        void stop() override;
+        void startSequence() override;
+        void idleSequence() override;
+        void changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) override;
+        void update() override;
 
         // Member Variables:  
-        Pattern  activePattern;   // which pattern is running
-        Direction direction;      // direction to run the pattern
+        Pattern  activePattern    = PULSE; // which pattern is running
+        Direction direction       = FORWARD; // direction to run the pattern
         unsigned long interval    = 0;     // milliseconds between updates
         unsigned long lastUpdate  = 0;     // last update of position
         boolean isStartSequence   = true;
@@ -33,9 +33,9 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         boolean repeat            = false; // repeat the pattern infinitly
         boolean reverseOnComplete = false; // reverse the pattern onComplete
 
-        uint32_t color1, color2;  // What colors are in use
-        uint16_t totalSteps;      // total number of steps in the pattern
-        uint16_t index;           // current step within the pattern
+        uint32_t color1 = 0, color2 = 0; // What colors are in use
+        uint16_t totalSteps = 0;     // total number of steps in the pattern
+        uint16_t index = 0;          // current step within the pattern
     
         void increment();
         void reverse();
