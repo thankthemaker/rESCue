@@ -3,28 +3,10 @@
 
 #ifdef CANBUS_ENABLED
 
-#define BUFFER_SIZE 65535
-
-int interval = 500;
-
-SemaphoreHandle_t mutex_v = xSemaphoreCreateMutex();
-
-uint16_t length = 0;
-uint8_t command = 0;
-boolean longPacket = false;
-std::string longPackBuffer;
-
-int lastDump = 0;
-int lastStatus = 0;
-int lastRealtimeData = 0;
-int lastBalanceData = 0;
-std::vector<uint8_t> buffer = {};
-std::vector<uint8_t> proxybuffer = {};
 CAN_device_t CAN_cfg;
 
 CanBus::CanBus() {
     stream = new LoopbackStream(BUFFER_SIZE);
-
 }
 
 void CanBus::init() {
@@ -62,15 +44,14 @@ void CanBus::init() {
     RECV_PROCESS_RX_BUFFER = (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + esp_can_id;
 
     RECV_PROCESS_SHORT_BUFFER_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + ble_proxy_can_id;
+            (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + ble_proxy_can_id;
     RECV_FILL_RX_BUFFER_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + ble_proxy_can_id;
+            (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + ble_proxy_can_id;
     RECV_FILL_RX_BUFFER_LONG_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + ble_proxy_can_id;
+            (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + ble_proxy_can_id;
     RECV_PROCESS_RX_BUFFER_PROXY =
-        (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + ble_proxy_can_id;
+            (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + ble_proxy_can_id;
 
-    //requestFirmwareVersion();
 }
 
 /*
@@ -78,20 +59,32 @@ void CanBus::init() {
   interval from 50Hz to something around 1-5Hz, which is absolutely sufficient for this application.
 */
 void CanBus::loop() {
-
-    if (millis() - lastRealtimeData > interval) {
-        requestRealtimeData();
-    }
-
-    if (millis() - lastBalanceData > interval) {
-        requestBalanceData();
-    }
-
     int frameCount = 0;
     CAN_frame_t rx_frame;
+    if (initialized) {
+        if (millis() - lastRealtimeData > interval) {
+            requestRealtimeData();
+        }
+
+        if (millis() - lastBalanceData > interval) {
+            requestBalanceData();
+        }
+    } else if(initRetryCounter > 0 && millis() - lastRetry > 500) {
+        requestFirmwareVersion();
+        initRetryCounter--;
+        lastRetry = millis();
+        if(initRetryCounter == 0) {
+            Logger::error("CANBUS initialization failed");
+        }
+    }
+
     //receive next CAN frame from queue
     while (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 3 * portTICK_PERIOD_MS) == pdTRUE) {
-      frameCount++;
+        if (!initialized) {
+            Logger::notice(LOG_TAG_CANBUS, "CANBUS is now initialized");
+            initialized = true;
+        }
+        frameCount++;
         //VESC only uses ext packages, so skip std packages
         if (rx_frame.FIR.B.FF == CAN_frame_ext) {
             if (Logger::getLogLevel() == Logger::VERBOSE) {
@@ -99,11 +92,11 @@ void CanBus::loop() {
             }
             processFrame(rx_frame, frameCount);
         }
-        if(frameCount > 1000) {
-          // WORKAROUND if messages arrive too fast
-          Logger::error(LOG_TAG_CANBUS, "reached 1000 frames in one loop, abort");
-          buffer.clear();
-          return;
+        if (frameCount > 1000) {
+            // WORKAROUND if messages arrive too fast
+            Logger::error(LOG_TAG_CANBUS, "reached 1000 frames in one loop, abort");
+            buffer.clear();
+            return;
         }
     }
     if (Logger::getLogLevel() == Logger::VERBOSE) {
@@ -220,14 +213,14 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
         proxybuffer.clear();
     }
 
-    if (RECV_FILL_RX_BUFFER == ID){
-        frametype =  "fill rx buffer";
-        for (int i=1; i < rx_frame.FIR.B.DLC; i++) {
+    if (RECV_FILL_RX_BUFFER == ID) {
+        frametype = "fill rx buffer";
+        for (int i = 1; i < rx_frame.FIR.B.DLC; i++) {
             buffer.push_back(rx_frame.data.u8[i]);
         }
     }
 
-    if(RECV_FILL_RX_BUFFER_PROXY == ID || RECV_FILL_RX_BUFFER_LONG_PROXY == ID) {
+    if (RECV_FILL_RX_BUFFER_PROXY == ID || RECV_FILL_RX_BUFFER_LONG_PROXY == ID) {
         boolean longBuffer = RECV_FILL_RX_BUFFER_LONG_PROXY == ID;
         frametype = longBuffer ? "fill rx long buffer" : "fill rx buffer";
         for (int i = (longBuffer ? 2 : 1); i < rx_frame.FIR.B.DLC; i++) {
@@ -238,9 +231,9 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
     if (RECV_PROCESS_RX_BUFFER == ID || RECV_PROCESS_RX_BUFFER_PROXY == ID) {
         boolean isProxyRequest = false;
         frametype = "process rx buffer for ";
-        if(RECV_PROCESS_RX_BUFFER_PROXY == ID) {
-          frametype += " <<BLE proxy>> ";
-          isProxyRequest = true;
+        if (RECV_PROCESS_RX_BUFFER_PROXY == ID) {
+            frametype += " <<BLE proxy>> ";
+            isProxyRequest = true;
         }
         //Serial.printf("bytes %d\n", buffer.size());
 
@@ -281,20 +274,20 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             vescData.tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
             vescData.fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
             lastRealtimeData = millis();
-        } else if(command == 0x04) {
+        } else if (command == 0x04) {
             frametype += "COMM_GET_VALUES";
-        } else if(command == 0x14) {
+        } else if (command == 0x14) {
             frametype += "COMM_GET_MCCONF";
-        } else if(command == 0x17) {
+        } else if (command == 0x17) {
             frametype += "COMM_GET_APPCONF";
-        } else if(command == 0x47) {
+        } else if (command == 0x47) {
             frametype += "COMM_GET_VALUES_SETUP";
-        } else if(command == 0x65) {
+        } else if (command == 0x65) {
             frametype += "COMM_GET_IMU_DATA";
         } else {
             frametype += command;
         }
-        if(isProxyRequest) {
+        if (isProxyRequest) {
             proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
             proxybuffer.clear();
         } else {
@@ -303,9 +296,9 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
     }
 
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-      char buf[128];
-      snprintf(buf, 128, "processed frame #%d, type %s", frameCount, frametype.c_str());
-      Logger::verbose(LOG_TAG_CANBUS, buf);
+        char buf[128];
+        snprintf(buf, 128, "processed frame #%d, type %s", frameCount, frametype.c_str());
+        Logger::verbose(LOG_TAG_CANBUS, buf);
     }
 }
 
@@ -360,7 +353,7 @@ void CanBus::proxyIn(std::string in) {
             tx_frame.data.u8[0] = byteNum - offset; //startbyte counter of frame
 
             int sendLen = (longPackBuffer.length() >= byteNum + 7) ? 7 : longPackBuffer.length() - byteNum;
-            for (int i = 1; i<sendLen+1; i++) {
+            for (int i = 1; i < sendLen + 1; i++) {
                 //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
                 tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
             }
@@ -376,7 +369,7 @@ void CanBus::proxyIn(std::string in) {
             tx_frame.data.u8[1] = (byteNum - 1) & 0xFF;
 
             int sendLen = (longPackBuffer.length() >= byteNum + 6) ? 6 : longPackBuffer.length() - byteNum;
-            for (int i=2; i<sendLen+2; i++) {
+            for (int i = 2; i < sendLen + 2; i++) {
                 //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
                 tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
             }
@@ -417,7 +410,7 @@ void CanBus::proxyIn(std::string in) {
 }
 
 void CanBus::proxyOut(uint8_t *data, int size, uint8_t crc1, uint8_t crc2) {
-    if(size > BUFFER_SIZE) {
+    if (size > BUFFER_SIZE) {
         Logger::error(LOG_TAG_CANBUS, "proxyOut - Buffer size exceeded, abort (message not sent via proxy)");
         return;
     }

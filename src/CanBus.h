@@ -12,6 +12,8 @@
 #include <ESP32CAN.h>
 #include <CAN_config.h>
 
+#define BUFFER_SIZE 65535
+
 #define B10000001 129
 #define B11000011 195
 
@@ -140,6 +142,21 @@ class CanBus {
       uint32_t RECV_FILL_RX_BUFFER_PROXY;
       uint32_t RECV_FILL_RX_BUFFER_LONG_PROXY;
       uint32_t RECV_PROCESS_RX_BUFFER_PROXY;
+      boolean initialized = false;
+      int interval = 500;
+      SemaphoreHandle_t mutex_v = xSemaphoreCreateMutex();
+      uint16_t length = 0;
+      uint8_t command = 0;
+      boolean longPacket = false;
+      std::string longPackBuffer;
+      int initRetryCounter = 5;
+      int lastDump = 0;
+      int lastRetry = 0;
+      int lastStatus = 0;
+      int lastRealtimeData = 0;
+      int lastBalanceData = 0;
+      std::vector<uint8_t> buffer = {};
+      std::vector<uint8_t> proxybuffer = {};
 };
 
 #endif //CANBUS_ENABLED

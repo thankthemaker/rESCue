@@ -2,6 +2,18 @@
 
 ## Release 1.3.5 (not yet released)
 
+### 20.08.2021
+
+- Fixed some issues when COB is used
+
+### 19.08.2021
+
+- Fixed an issue in the CANBUS-lib. Sending messages without a working CANBUS makes ESP freeze
+
+### 18.08.2021
+
+- implemented changing LogLevel via Blynk-App
+
 ### 16.08.2021
 
 - eliminated hard coded VESC-ID

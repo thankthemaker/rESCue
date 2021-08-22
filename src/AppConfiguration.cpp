@@ -44,6 +44,7 @@ void AppConfiguration::readPreferences() {
     config.lightColorSecondaryRed = (config.lightColorSecondary >> 16) & 0x0ff;
     config.lightColorSecondaryGreen = (config.lightColorSecondary >> 8) & 0x0ff;
     config.lightColorSecondaryBlue = config.lightColorSecondary & 0x0ff;
+    config.logLevel = doc["logLevel"] | Logger::WARNING;
     preferences.end();
 }
 
@@ -70,6 +71,7 @@ void AppConfiguration::savePreferences() {
     doc["vescId"] = config.vescId;
     doc["numberPixelLight"] = config.numberPixelLight;
     doc["numberPixelBatMon"] = config.numberPixelBatMon;
+    doc["logLevel"] = config.logLevel;
     String json = "";
     serializeJson(doc, json);
     Logger::verbose(LOG_TAG_APPCONFIGURATION, "savePreferences: ");
