@@ -82,6 +82,19 @@ This table shows the PIN mapping:
 |GPIO 34 | Voltage divider |Battery input (if voltage divider is used)|
 |GPIO 2 | DIN battery |Battery indicator|
 
+### Turning on and off (MOSFET-Switch)
+
+Many people are using a Antispark Switch to power a VESC and external hardware (like the rESCue-PCB) together. These Antispark-Switches are quite expensive.
+A cheaper solution is to use a MOSFET to turn on and of your external hardware when the VESC is powered on.
+There are cheap ready-to-use PCBs out there like this [![MOSFET-Switch](https://www.amazon.de/DollaTek-LR784-MOSFET-Steuermodul-Effekt/dp/B07HBL6VZ9/ref=sr_1_1?__mk_de_DE=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=dollatek+mosfet&qid=1629624662&sr=8-1)]
+
+Here's how this can be done.
+
+![MOSFET switch wiring](docs/images/mosfet-switch.png)
+
+There are some downsides using a NPN-MOSFET like the one linked obove, but PNP-based MOSFET-switch PCBs are hard to find, especially when the voltage is above 60V.
+To learn about the differences between high- and low-side switching, please read this [![article](https://www.baldengineer.com/low-side-vs-high-side-transistor-switch.html#:~:text=The%20low%2Dside%20switch%20is,connected%20and%20switch%20the%20power.&text=However%2C%20if%20you%20are%20delivering,use%20a%20high%2Dside%20switch).]
+
 ## Features
 
 - Support for Front- and Backlight
