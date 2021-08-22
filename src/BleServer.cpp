@@ -136,6 +136,11 @@ void syncPreferencesWithApp();
       snprintf(buf, 128, "Updated param \"BrakeLightMinAmp\" to %d", param.asInt());
       AppConfiguration::getInstance()->config.brakeLightMinAmp = param.asInt();
       break;
+    case VPIN_APP_LOG_LEVEL:
+      snprintf(buf, 128, "Updated param \"logLevel\" to %d", param.asInt());
+      AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(param.asInt()-1);
+      Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
+      break;
   }
   AppConfiguration::getInstance()->savePreferences();
   Logger::notice(LOG_TAG_BLESERVER, buf);
@@ -509,5 +514,7 @@ void syncPreferencesWithApp() {
     AppConfiguration::getInstance()->config.lightColorSecondaryRed,
     AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
     AppConfiguration::getInstance()->config.lightColorSecondaryBlue);
+  Blynk.virtualWrite(VPIN_APP_LOG_LEVEL, AppConfiguration::getInstance()->config.logLevel+1);
+
 }
 #endif //BLYNK_ENABLED
