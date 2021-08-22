@@ -196,7 +196,7 @@ To use this App with the official Blynk server, you'll might need to buy some en
 
 ![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
 
-QR-Code: App-Version 1.1
+QR-Code: App-Version 1.4
 
 ### Over-The-Air (OTA) Updates
 
