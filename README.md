@@ -36,7 +36,7 @@ If your not interested in the rESCue PCB and want build it yourself or only want
 
 - [ESP32 D1 Mini](https://www.amazon.de/AZDelivery-Bluetooth-Internet-Development-Compatible/dp/B08BTRQNB3/), other ESP32 might also work but check if all needed GPIO are accessible
 
-- DC-DC converter ([LM2576HV](https://www.banggood.com/RIDEN-5V-60V-To-1_25V-30V-LM2576HV-DC-DC-Step-Down-Module-p-1060892.html?cur_warehouse=CN&rmmds=search))
+- DC-DC converter ([LM2576HV](https://www.banggood.com/RIDEN-5V-60V-To-1_25V-30V-LM2576HV-DC-DC-Step-Down-Module-p-1060892.html?cur_warehouse=CN&rmmds=search)) or ([XL7015](https://de.banggood.com/XL7015-DC-DC-Converter-Step-Down-Module-5V-80V-Wide-Voltage-Input-Better-Than-7005A-p-1183456.html?cur_warehouse=CN))
 
 - Piezo-Buzzer (any model should work)
 
