@@ -16,19 +16,9 @@ The ESP32 D1 Mini is highly recommended, but other ESP32 also work.
 
 ### rESCue PCB
 
-If you're interested in an almost plug-and-play solution, you might want to get the rESCue PCB. Jonas from the #Funwheel Discord-server did a great Job and designed a PCB.
+If you're interested in an almost plug-and-play solution, you might want to get the rESCue PCB. 
 
-Here's what rev3.1 of it looks like.
-
-![rESCue PCB Rev. 3.1](docs/images/wheelbarrow-rev3.png)
-
-- sizing 94mm x 37,5mm
-- input voltage 7,5V - 76V
-- output 5V, 1A maximum
-- ESP32 D1 mini header
-- JST-PH header for CANBUS, UART, LED-Battery-indicator, LED-lights
-
-More documentation to come as soon as the PCB officially available.
+<div class="ecsp ecsp-SingleProduct-v2 ecsp-SingleProduct-v2-bordered ecsp-SingleProduct-v2-centered ecsp-Product ec-Product-387629389" itemscope itemtype="http://schema.org/Product" data-single-product-id="387629389"><div itemprop="image"></div><div class="ecsp-title" itemprop="name" content="rESCue light"></div><div itemtype="http://schema.org/Offer" itemscope itemprop="offers"><div class="ecsp-productBrowser-price ecsp-price" itemprop="price" content="25" data-spw-price-location="button"><div itemprop="priceCurrency" content="EUR"></div></div></div><div customprop="options"></div><div customprop="qty"></div><div customprop="addtobag"></div></div><script data-cfasync="false" type="text/javascript" src="https://app.ecwid.com/script.js?64857525&data_platform=singleproduct_v2" charset="utf-8"></script><script type="text/javascript">xProduct()</script>
 
 ### Hardware
 
