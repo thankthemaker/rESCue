@@ -248,7 +248,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             vescData.majorVersion = readInt8ValueFromBuffer(0, isProxyRequest);
             vescData.minorVersion = readInt8ValueFromBuffer(1, isProxyRequest);
             vescData.name = readStringValueFromBuffer(2 + offset, 12, isProxyRequest);
-        } else if (command == 0x4F) {
+        } else if (command == 0x4F) {  //0x4F = 79 DEC
             frametype += "balancedata";
             int offset = 1;
             vescData.pidOutput = readInt32ValueFromBuffer(0 + offset, isProxyRequest) / 1000000.0;
@@ -262,7 +262,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             vescData.adc1 = readInt32ValueFromBuffer(28 + offset, isProxyRequest) / 1000000.0;
             vescData.adc2 = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 1000000.0;
             lastBalanceData = millis();
-        } else if (command == 0x32) {
+        } else if (command == 0x32) { //0x32 = 50 DEC
             frametype += "realtimeData";
             int offset = 1;
             vescData.mosfetTemp = readInt16ValueFromBuffer(4 + offset, isProxyRequest) / 10.0;
@@ -276,13 +276,15 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             lastRealtimeData = millis();
         } else if (command == 0x04) {
             frametype += "COMM_GET_VALUES";
-        } else if (command == 0x14) {
+        } else if (command == 0x0E) {  //0x0E = 14 DEC
             frametype += "COMM_GET_MCCONF";
-        } else if (command == 0x17) {
+        } else if (command == 0x11) {  //0x11 = 17 DEC
             frametype += "COMM_GET_APPCONF";
-        } else if (command == 0x47) {
+        } else if (command == 0x2F) { //0x2F = 47 DEC
             frametype += "COMM_GET_VALUES_SETUP";
-        } else if (command == 0x65) {
+        } else if (command == 0x33) { //0x33 = 51 DEC
+            frametype += "COMM_GET_VALUES_SETUP_SELECTIVE";
+        } else if (command == 0x41) { //0x41 = 65 DEC
             frametype += "COMM_GET_IMU_DATA";
         } else {
             frametype += command;
