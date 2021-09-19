@@ -16,12 +16,9 @@ The ESP32 D1 Mini is highly recommended, but other ESP32 also work.
 
 ### rESCue PCB
 
-If you're interested in an almost plug-and-play solution, you might want to get the rESCue PCB from our store.
+If you're interested in an almost plug-and-play solution, you might want to get the rESCue PCB from our [rESCue-Store](https://shop.thank-the-maker.org).
 
-![rESCue-light-rev1.1](docs/images/rESCue-light-rev1.1.png)
-
-
-[rESCue-Store](https://shop.thank-the-maker.org)
+<img src="docs/images/rESCue-light-rev1.1.png" alt="rESCue-light-rev1.2" style="width:300px;">
 
 ### Hardware
 
