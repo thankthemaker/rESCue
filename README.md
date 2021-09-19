@@ -4,6 +4,15 @@
 
 # rESCue - add more safety and control to your VESC based vehicle
 
+## MAIN FEATURES
+
+- CANBUS and VESC-Status
+- transparent BLE-UART bridge for VESC-App (**no need for seperate Bluetooth module**)
+- Support for Front- and Backlight
+- Lightbar for battery monitor and footpad sensor (visual and acoustic)
+- Blynk-App (Monitoring & Configuration)
+- Over-The-Air updates (OTA)
+
 *2021-04-09: Renamed from "funwheel-controller" to rESCue.*
 
 ***2021-06-22: CANBUS-only is now supported, see CANBUS***
