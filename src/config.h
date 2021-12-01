@@ -5,9 +5,9 @@
 // ## For board specific GPIO-PIN definition please see platformio.ini ## //
 // ###################################################################### //
 
-#define SOFTWARE_VERSION_MAJOR 1
-#define SOFTWARE_VERSION_MINOR 3
-#define SOFTWARE_VERSION_PATCH 7
+#define SOFTWARE_VERSION_MAJOR 2
+#define SOFTWARE_VERSION_MINOR 0
+#define SOFTWARE_VERSION_PATCH 0
 #define HARDWARE_VERSION_MAJOR 3
 #define HARDWARE_VERSION_MINOR 1
 
@@ -66,7 +66,7 @@
   #define BLYNK_AUTH_TOKEN "bb48a7193d764ea7a90dbffb54ffcb76"
 #endif
 
-////#define FAKE_VESC_ENABLED
+///#define FAKE_VESC_ENABLED
 
 #endif //__CONFIG_H__
 

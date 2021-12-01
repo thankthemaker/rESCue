@@ -1,6 +1,18 @@
 # Changelog for rESCue firmware
 
-## Release 1.3.7 (not yet released)
+## Release 1.3.8 (not yet released)
+
+## 12.09.2021
+
+- switch to another CANBUS lib
+
+## Release 1.3.7
+
+## 12.09.2021
+
+- Fixed some small issues in canbus
+- switched back to stock version of the CANBUS lib  
+- released v1.3.6
 
 ## Release 1.3.6
 

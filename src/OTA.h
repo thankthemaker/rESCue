@@ -11,18 +11,17 @@
 #include <WiFiAP.h>
 #include <ESPAsyncWebServer.h>
 #include "base64.h"
+#include "CanBus.h"
 
-#define SERVICE_UUID_ESPOTA             "d804b643-6ce7-4e81-9f8a-ce0f699085eb"
-#define CHARACTERISTIC_UUID_ID          "d804b644-6ce7-4e81-9f8a-ce0f699085eb"
-#define CHARACTERISTIC_UUID_CONF        "d804b645-6ce7-4e81-9f8a-ce0f699085eb"
+#define RESCUE_SERVICE_UUID                   "99EB1511-A9E9-4024-B0A4-3DC4B4FABFB0"
+#define RESCUE_CHARACTERISTIC_UUID_ID         "99EB1512-A9E9-4024-B0A4-3DC4B4FABFB0"
+#define RESCUE_CHARACTERISTIC_UUID_CONF       "99EB1513-A9E9-4024-B0A4-3DC4B4FABFB0"
+#define RESCUE_CHARACTERISTIC_UUID_FW         "99EB1514-A9E9-4024-B0A4-3DC4B4FABFB0"
+#define RESCUE_CHARACTERISTIC_UUID_HW_VERSION "99EB1515-A9E9-4024-B0A4-3DC4B4FABFB0"
 
-#define SERVICE_UUID_OTA                "c8659210-af91-4ad3-a995-a58d6fd26145" // UART service UUID
-#define CHARACTERISTIC_UUID_FW          "c8659211-af91-4ad3-a995-a58d6fd26145"
-#define CHARACTERISTIC_UUID_HW_VERSION  "c8659212-af91-4ad3-a995-a58d6fd26145"
+#define SERVICE_UUID_OTA                      "c8659210-af91-4ad3-a995-a58d6fd26145" // UART service UUID
 
 #define FULL_PACKET 512
-#define CHARPOS_UPDATE_FLAG 5
-
 
 class OTAUpdater {
     public:
@@ -30,10 +29,8 @@ class OTAUpdater {
       void setup();
       bool begin(const char* localName);
       NimBLEUUID getConfCharacteristicsUuid();
-    
-    private:
-      String local_name;
 
+    private:
       BLEServer *pServer = NULL;
 
       BLEService *pESPOTAService = NULL;
@@ -43,7 +40,7 @@ class OTAUpdater {
       BLEService *pService = NULL;
       BLECharacteristic *pVersionCharacteristic = NULL;
       BLECharacteristic *pOtaCharacteristic = NULL;
-};
+    };
 
 class BLECustomServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -70,6 +67,5 @@ class OTACallback: public BLECharacteristicCallbacks {
 
     void onWrite(BLECharacteristic *pCharacteristic);
 };
-
 
 #endif

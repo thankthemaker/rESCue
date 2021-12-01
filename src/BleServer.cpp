@@ -1,413 +1,184 @@
 #include "BleServer.h"
 #include "BlynkPins.h"
 #include <Logger.h>
+#include <sstream>
 #include "esp_bt_main.h"
-#include "esp_bt_device.h"
 
 const int BLE_PACKET_SIZE = 128;
-NimBLEServer* pServer = NULL;
-#ifdef BLYNK_ENABLED
- NimBLEService* pServiceBlynk = NULL;
- NimBLECharacteristic* pCharacteristicBlynkTx = NULL;
- NimBLECharacteristic* pCharacteristicBlynkRx = NULL;
- BlynkFifo<uint8_t, BLYNK_MAX_READBYTES*2> mBuffRX;
-#endif
-NimBLEService* pServiceVesc = NULL;
-NimBLECharacteristic* pCharacteristicVescTx = NULL;
-NimBLECharacteristic* pCharacteristicVescRx = NULL;
+NimBLEServer *pServer = NULL;
+NimBLEService *pServiceVesc = NULL;
+NimBLEService *pServiceRescue = NULL;
+NimBLECharacteristic *pCharacteristicVescTx = NULL;
+NimBLECharacteristic *pCharacteristicVescRx = NULL;
+NimBLECharacteristic *pCharacteristicConf = NULL;
+NimBLECharacteristic *pCharacteristicId = NULL;
+NimBLECharacteristic *pCharacteristicVersion = NULL;
+
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t value = 0;
 Stream *vescSerial;
 std::string bufferString;
-int lastLoop = 0;
-int lastNotification = 0;
-int lastBatteryValue = 0;
-std::map<int, int> blynkSoundMapping = {
-  {1, 0}, {2, 100}, {3, 101}, {4, 102}, {5, 103}, {6, 104}, {7, 105},
-  {8, 106}, {9, 107}, {10, 108}, {11, 109}, {12, 110}, {13, 111},
-  {14, 112}, {15, 113},
-};
-std::map<int, int> blynkWarningMapping = {
-  {1, 0}, {2, 400}, {3, 402}, {4, 406},
-};
-std::map<int, int> blynkAlarmMapping = {
-  {1, 0}, {2, 402}, {3, 300},
-};
+int bleLoop = 0;
 
-void syncPreferencesWithApp();
-
-#ifdef BLYNK_ENABLED
-  // This function will run every time Blynk connection is established
- BLYNK_CONNECTED() {
-    syncPreferencesWithApp();
- }
- BLYNK_WRITE_DEFAULT() {
-  boolean restartNeeded = false;
-  int pin = request.pin;
-  int val;
-  char buf[128];
-  switch (pin) {
-    case VPIN_APP_LIGHT_INDEX:
-      snprintf(buf, 128, "Updated param \"StartLightIndex\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.startLightIndex = param.asInt();
-      break;
-    case VPIN_APP_SOUND_INDEX:
-      snprintf(buf, 128, "Updated param \"StartSoundIndex\" to %d", param.asInt());
-      val = blynkSoundMapping.find(param.asInt())->second;
-      AppConfiguration::getInstance()->config.startSoundIndex = val;
-      Buzzer::getInstance()->stopSound();
-      Buzzer::getInstance()->playSound(RTTTL_MELODIES(val));
-      break;    
-    case VPIN_APP_BATTERY_WARN_INDEX:
-      snprintf(buf, 128, "Updated param \"BatteryWarnIndex\" to %d", param.asInt());
-      val = blynkWarningMapping.find(param.asInt())->second;
-      AppConfiguration::getInstance()->config.batteryWarningSoundIndex = val;
-      Buzzer::getInstance()->stopSound();
-      Buzzer::getInstance()->playSound(RTTTL_MELODIES(val));
-      break;
-    case VPIN_APP_BATTERY_ALARM_INDEX:
-      snprintf(buf, 128, "Updated param \"BatteryAlarmIndex\" to %d", param.asInt());
-      val = blynkAlarmMapping.find(param.asInt())->second;
-      AppConfiguration::getInstance()->config.batteryAlarmSoundIndex = val;
-      Buzzer::getInstance()->stopSound();
-      Buzzer::getInstance()->playSound(RTTTL_MELODIES(val));
-      break;
-    case VPIN_APP_MIN_BAT_VOLTAGE:
-      snprintf(buf, 128, "Updated param \"MinBatVoltage\" to %f", param.asDouble());
-      AppConfiguration::getInstance()->config.minBatteryVoltage = param.asDouble();
-      break;
-    case VPIN_APP_MAX_BAT_VOLTAGE:
-      snprintf(buf, 128, "Updated param \"MaxBatVoltage\" to %f", param.asDouble());
-      AppConfiguration::getInstance()->config.maxBatteryVoltage = param.asDouble();
-      break;
-    case VPIN_APP_NOTIFICATION:
-      snprintf(buf, 128, "Updated param \"NotificationEnabled\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.isNotificationEnabled = param.asInt();
-      break;
-    case VPIN_APP_STARTLIGHT_DURATION:
-      snprintf(buf, 128, "Updated param \"StartLightDuration\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.startLightDuration = param.asInt();
-      break;
-    case VPIN_APP_LIGHT_COLOR_1:
-      snprintf(buf, 128, "Updated param \"LightColorPrimary\" to R=%d, G=%d, B=%d", 
-         param[0].asInt(), param[1].asInt(), param[2].asInt());
-      AppConfiguration::getInstance()->config.lightColorPrimaryRed   = param[0].asInt();
-      AppConfiguration::getInstance()->config.lightColorPrimaryGreen = param[1].asInt();
-      AppConfiguration::getInstance()->config.lightColorPrimaryBlue  = param[2].asInt();
-      AppConfiguration::getInstance()->config.lightColorPrimary = 
-        ((AppConfiguration::getInstance()->config.lightColorPrimaryRed & 0x0ff)<<16) | 
-        ((AppConfiguration::getInstance()->config.lightColorPrimaryGreen & 0x0ff)<<8) | 
-        (AppConfiguration::getInstance()->config.lightColorPrimaryBlue & 0x0ff);
-      break;
-    case VPIN_APP_LIGHT_COLOR_2:
-      snprintf(buf, 128, "Updated param \"LightColorSecondary\" to R=%d, G=%d, B=%d", 
-         param[0].asInt(), param[1].asInt(), param[2].asInt());
-      AppConfiguration::getInstance()->config.lightColorSecondaryRed   = param[0].asInt();
-      AppConfiguration::getInstance()->config.lightColorSecondaryGreen = param[1].asInt();
-      AppConfiguration::getInstance()->config.lightColorSecondaryBlue  = param[2].asInt();
-      AppConfiguration::getInstance()->config.lightColorSecondary = 
-        ((AppConfiguration::getInstance()->config.lightColorSecondaryRed & 0x0ff)<<16) | 
-        ((AppConfiguration::getInstance()->config.lightColorSecondaryGreen & 0x0ff)<<8) | 
-        (AppConfiguration::getInstance()->config.lightColorSecondaryBlue & 0x0ff);
-      break;
-    case VPIN_APP_IDLE_LIGHT_INDEX:
-      snprintf(buf, 128, "Updated param \"IdleLightIndex\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.idleLightIndex = param.asInt();
-      break;
-    case VPIN_APP_LIGHT_FADING_DURATION:
-      snprintf(buf, 128, "Updated param \"LightFadingDuration\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.lightFadingDuration = param.asInt();
-      break;
-    case VPIN_APP_LIGHT_MAX_BRIGHTNESS:
-      snprintf(buf, 128, "Updated param \"LightMaxBrightness\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.lightMaxBrightness = param.asInt();
-      break;
-    case VPIN_APP_ACTIVATE_OTA:
-      snprintf(buf, 128, "Updated param \"OtaUpdateActive\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.otaUpdateActive = param.asInt();
-      restartNeeded = true;
-      break;
-    case VPIN_APP_ACTIVATE_BRAKE_LIGHT:
-      snprintf(buf, 128, "Updated param \"BrakeLightEnabled\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.brakeLightEnabled = param.asInt();
-      break;
-    case VPIN_APP_BRAKE_LIGHT_MIN_AMP:
-      snprintf(buf, 128, "Updated param \"BrakeLightMinAmp\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.brakeLightMinAmp = param.asInt();
-      break;
-    case VPIN_APP_LOG_LEVEL:
-      snprintf(buf, 128, "Updated param \"logLevel\" to %d", param.asInt());
-      AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(param.asInt()-1);
-      Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
-      break;
-  }
-  AppConfiguration::getInstance()->savePreferences();
-  Logger::notice(LOG_TAG_BLESERVER, buf);
-  if(restartNeeded) {
-      Logger::notice(LOG_TAG_BLESERVER, "restart needed, restarting rESCue");
-      delay(100);
-      ESP.restart();
-  }
- }
-
- class BlynkEsp32_BLE : public BlynkProtocol<BleServer> {
-    typedef BlynkProtocol<BleServer> Base;
-    public:
-      BlynkEsp32_BLE(BleServer& transp) : Base(transp) {}
-
-      void begin(const char* auth) {
-        Logger::verbose(LOG_TAG_BLESERVER, "BlynkEsp32_BLE::begin");
-        Base::begin(auth);
-        state = DISCONNECTED;
-        conn.begin();
-      }
-
-      void setDeviceName(const char* name) {}
- };
-    
- static BleServer _blynkTransportBLE;
- BlynkEsp32_BLE Blynk(_blynkTransportBLE);
-#endif
-
-BleServer::BleServer(): 
-  mConn (false), 
-  mName (BT_NAME) {}
+BleServer::BleServer() {}
 
 // NimBLEServerCallbacks::onConnect
 inline
-void BleServer::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
-  char buf[128];
-  snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
-  Logger::notice(LOG_TAG_BLESERVER, buf);
-  Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
-  deviceConnected = true;
-#ifdef BLYNK_ENABLED
-  BLYNK_LOG1(BLYNK_F("BLE connect"));
-  connect();
-  Blynk.startSession();
-#endif
-  NimBLEDevice::startAdvertising();
+void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
+    char buf[128];
+    snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
+    Logger::notice(LOG_TAG_BLESERVER, buf);
+    Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
+    deviceConnected = true;
+    NimBLEDevice::startAdvertising();
 };
 
 // NimBLEServerCallbacks::onDisconnect
 inline
-void BleServer::onDisconnect(NimBLEServer* pServer) {
-  Logger::notice(LOG_TAG_BLESERVER, "Client disconnected - start advertising");
-  deviceConnected = false;
-#ifdef BLYNK_ENABLED
-  BLYNK_LOG1(BLYNK_F("BLE disconnect"));
-  Blynk.disconnect();
-  disconnect();
-#endif
-  NimBLEDevice::startAdvertising();
+void BleServer::onDisconnect(NimBLEServer *pServer) {
+    Logger::notice(LOG_TAG_BLESERVER, "Client disconnected - start advertising");
+    deviceConnected = false;
+    NimBLEDevice::startAdvertising();
 }
 
 void BleServer::init(Stream *vesc, CanBus *canbus) {
-  vescSerial = vesc;
-   
-  // Create the BLE Device
-  NimBLEDevice::init(BT_NAME);
+    vescSerial = vesc;
 
-  this->canbus = canbus;
+    // Create the BLE Device
+    NimBLEDevice::init(BT_NAME);
 
-  // Create the BLE Server
-  pServer = NimBLEDevice::createServer();
-  pServer->setCallbacks(this);
-  auto pSecurity = new NimBLESecurity();
-  pSecurity->setAuthenticationMode(ESP_LE_AUTH_BOND);
+    this->canbus = canbus;
 
-#ifdef BLYNK_ENABLED
-  // Create the BLE Service
-  pServiceBlynk = pServer->createService(BLYNK_SERVICE_UUID);
+    // Create the BLE Server
+    pServer = NimBLEDevice::createServer();
+    pServer->setCallbacks(this);
+    auto pSecurity = new NimBLESecurity();
+    pSecurity->setAuthenticationMode(ESP_LE_AUTH_BOND);
 
-  // Create a BLE Characteristic
-  pCharacteristicBlynkTx = pServiceBlynk->createCharacteristic(
-                      BLYNK_CHARACTERISTIC_UUID_TX,  
-                      NIMBLE_PROPERTY::NOTIFY
-                    );
-  //pCharacteristicBlynkTx->setValue("BLYNK TX");
-  pCharacteristicBlynkTx->setCallbacks(this);
+    // Create the VESC BLE Service
+    pServiceVesc = pServer->createService(VESC_SERVICE_UUID);
+    // Create the RESCUE BLE Service
+    pServiceRescue = pServer->createService(RESCUE_SERVICE_UUID);
 
-  // Create a BLE Characteristic
-  pCharacteristicBlynkRx = pServiceBlynk->createCharacteristic(
-                      BLYNK_CHARACTERISTIC_UUID_RX,  
-                      NIMBLE_PROPERTY::WRITE
-                    );
-  //pCharacteristicBlynkRx->setValue("BLYNK RX");
-  pCharacteristicBlynkRx->setCallbacks(this);
+    // Create a BLE Characteristic for VESC TX
+    pCharacteristicVescTx = pServiceVesc->createCharacteristic(
+            VESC_CHARACTERISTIC_UUID_TX,
+            NIMBLE_PROPERTY::NOTIFY |
+            NIMBLE_PROPERTY::READ
+    );
+    //pCharacteristicVescTx->setValue("VESC TX");
+    pCharacteristicVescTx->setCallbacks(this);
 
-  // Start the service
-  pServiceBlynk->start();
-#endif
+    // Create a BLE Characteristic for VESC RX
+    pCharacteristicVescRx = pServiceVesc->createCharacteristic(
+            VESC_CHARACTERISTIC_UUID_RX,
+            NIMBLE_PROPERTY::WRITE
+    );
+    //pCharacteristicVescRx->setValue("VESC RX");
+    pCharacteristicVescRx->setCallbacks(this);
 
-  // Create the VESC BLE Service
-  pServiceVesc = pServer->createService(VESC_SERVICE_UUID);
+    // Create a BLE Characteristic
+    pCharacteristicId = pServiceRescue->createCharacteristic(
+            RESCUE_CHARACTERISTIC_UUID_ID,
+            NIMBLE_PROPERTY::READ
+    );
+    pCharacteristicId->setCallbacks(this);
 
-  // Create a BLE Characteristic for VESC TX
-  pCharacteristicVescTx = pServiceVesc->createCharacteristic(
-                      VESC_CHARACTERISTIC_UUID_TX,  
-                      NIMBLE_PROPERTY::NOTIFY   |
-                      NIMBLE_PROPERTY::READ
-                    );
-  //pCharacteristicVescTx->setValue("VESC TX");
-  pCharacteristicVescTx->setCallbacks(this);
+    pCharacteristicConf = pServiceRescue->createCharacteristic(
+            RESCUE_CHARACTERISTIC_UUID_CONF,
+            NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE
+    );
+    pCharacteristicConf->setCallbacks(this);
 
-  // Create a BLE Characteristic for VESC RX
-  pCharacteristicVescRx = pServiceVesc->createCharacteristic(
-                      VESC_CHARACTERISTIC_UUID_RX,  
-                      NIMBLE_PROPERTY::READ   |
-                      NIMBLE_PROPERTY::WRITE
-                    );
-  //pCharacteristicVescRx->setValue("VESC RX");
-  pCharacteristicVescRx->setCallbacks(this);
+    uint8_t hardwareVersion[5] = {HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR, SOFTWARE_VERSION_MAJOR,
+                                  SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH};
 
-  // Start the VESC service
-  pServiceVesc->start();
+    pCharacteristicVersion = pServiceRescue->createCharacteristic(
+            RESCUE_CHARACTERISTIC_UUID_HW_VERSION,
+            NIMBLE_PROPERTY::READ
+    );
+    pCharacteristicVersion->setValue((uint8_t *) hardwareVersion, 5);
 
-  // Start advertising
-  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
-#ifdef BLYNK_ENABLED
-  pAdvertising->addServiceUUID(BLYNK_SERVICE_UUID);
-#endif
-  pAdvertising->setAppearance(0x00);
-  pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
+    // Start the VESC service
+    pServiceVesc->start();
+    pServiceRescue->start();
 
-#ifdef BLYNK_ENABLED
-  Logger::notice(LOG_TAG_BLESERVER, "Blynk is starting...");
-  Blynk.setDeviceName(BT_NAME);
-  Blynk.begin(AppConfiguration::getInstance()->config.authToken.c_str());
-#else
-  Logger::notice(LOG_TAG_BLESERVER, "Blynk is DEACTIVATED");
-#endif
+    // Start advertising
+    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+    pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
+    pAdvertising->addServiceUUID(RESCUE_SERVICE_UUID);
+    pAdvertising->setAppearance(0x00);
+    pAdvertising->setScanResponse(true);
+    pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
 
-  NimBLEDevice::startAdvertising();
-  Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
+    pAdvertising->start();
+    Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
 }
 
 #ifdef CANBUS_ENABLED
-void BleServer::loop(CanBus::VescData *vescData) {
+
+void BleServer::loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime) {
 #else
-void BleServer::loop() {
+    void BleServer::loop() {
 #endif
-  if(vescSerial->available()) {
-    int oneByte;
-    while(vescSerial->available()) {
-      oneByte = vescSerial->read();
-      bufferString.push_back(oneByte);
-    }
-    if(Logger::getLogLevel() == Logger::VERBOSE) {
-      Logger::verbose(LOG_TAG_BLESERVER, "BLE from VESC: ");
-      Logger::verbose(LOG_TAG_BLESERVER, bufferString.c_str());
-    }
-
-    if (deviceConnected) {
-      while(bufferString.length() > 0) {
-        if(bufferString.length() > BLE_PACKET_SIZE) {
-          pCharacteristicVescTx->setValue(bufferString.substr(0, BLE_PACKET_SIZE));
-          bufferString = bufferString.substr(BLE_PACKET_SIZE);        
-        } else {
-          pCharacteristicVescTx->setValue(bufferString);
-          bufferString.clear();
+    if (vescSerial->available()) {
+        int oneByte;
+        while (vescSerial->available()) {
+            oneByte = vescSerial->read();
+            bufferString.push_back(oneByte);
         }
-        pCharacteristicVescTx->notify();
-		    delay(10); // bluetooth stack will go into congestion, if too many packets are sent
-      }
-	  }
-  }
+        //if (Logger::getLogLevel() == Logger::VERBOSE) {
+        Logger::notice(LOG_TAG_BLESERVER, "BLE from VESC: ");
+        Logger::notice(LOG_TAG_BLESERVER, bufferString.c_str());
+        // }
 
-  // disconnecting
-  if (!deviceConnected && oldDeviceConnected) {
-    delay(500); // give the bluetooth stack the chance to get things ready
-    pServer->startAdvertising(); // restart advertising
-    Logger::notice(LOG_TAG_BLESERVER, "start advertising");
-    oldDeviceConnected = deviceConnected;
-  }
-  // connecting
-  if (deviceConnected && !oldDeviceConnected) {
-      // do stuff here on connecting
-      oldDeviceConnected = deviceConnected;
-  }
-
-#ifdef BLYNK_ENABLED
-  Blynk.run();
-  
- #ifdef CANBUS_ENABLED
-  if(millis() - lastLoop > 1000) {
-    updateBlynk(vescData);
-    lastLoop = millis();
-  }
- #endif //CANBUS_ENABLED
-#endif //BLYNK_ENABLED
-}
-
-#ifdef BLYNK_ENABLED
-// IP redirect not available
-void BleServer::begin(char BLYNK_UNUSED *h, uint16_t BLYNK_UNUSED p) {}
-
-void BleServer::begin() {
-  Logger::verbose(LOG_TAG_BLESERVER, "begin");
-}
-
-bool BleServer::connect() {
-  Logger::verbose(LOG_TAG_BLESERVER, "connect");
-  mBuffRX.clear();
-  return mConn = true;
-}
-
-void BleServer::disconnect() {
-  Logger::verbose(LOG_TAG_BLESERVER, "disconnect");
-  mConn = false;
-}
-
-bool BleServer::connected() { 
-  //Logger::verbose(LOG_TAG_BLESERVER, "BleServer::connected: " + mConn);
-  return mConn;
-}
-
-size_t BleServer::read(void* buf, size_t len) {
-  Logger::verbose(LOG_TAG_BLESERVER, "read");
-  millis_time_t start = BlynkMillis();
-  while (BlynkMillis() - start < BLYNK_TIMEOUT_MS) {
-    if (available() < len) {
-      delay(1);
-    } else {
-      break;
+        if (deviceConnected) {
+            while (bufferString.length() > 0) {
+                if (bufferString.length() > BLE_PACKET_SIZE) {
+                    pCharacteristicVescTx->setValue(bufferString.substr(0, BLE_PACKET_SIZE));
+                    bufferString = bufferString.substr(BLE_PACKET_SIZE);
+                } else {
+                    pCharacteristicVescTx->setValue(bufferString);
+                    bufferString.clear();
+                }
+                pCharacteristicVescTx->notify();
+                delay(10); // bluetooth stack will go into congestion, if too many packets are sent
+            }
+        }
     }
-  }
-  size_t res = mBuffRX.get((uint8_t*)buf, len);
-  return res;
-}
 
-size_t BleServer::write(const void* buf, size_t len) {
-  char buffer[128];
-  snprintf(buffer, 128, "write: %d", (uint8_t*)buf);
-  Logger::verbose(LOG_TAG_BLESERVER, buffer);
-  pCharacteristicBlynkTx->setValue((uint8_t*)buf, len);
-  pCharacteristicBlynkTx->notify();
-  return len;
-}
+    // disconnecting
+    if (!deviceConnected && oldDeviceConnected) {
+        delay(500); // give the bluetooth stack the chance to get things ready
+        pServer->startAdvertising(); // restart advertising
+        Logger::notice(LOG_TAG_BLESERVER, "start advertising");
+        oldDeviceConnected = deviceConnected;
+    }
+    // connecting
+    if (deviceConnected && !oldDeviceConnected) {
+        // do stuff here on connecting
+        oldDeviceConnected = deviceConnected;
+    }
 
-size_t BleServer::available() {
-  size_t rxSize = mBuffRX.size();
-  //Logger::verbose(LOG_TAG_BLESERVER, "BleServer::available: " + rxSize);
-  return rxSize;
+#ifdef CANBUS_ENABLED
+    if (millis() - bleLoop > 500) {
+        updateRescueApp(vescData, loopTime, maxLoopTime);
+        bleLoop = millis();
+    }
+#endif //CANBUS_ENABLED
 }
-#endif
 
 //NimBLECharacteristicCallbacks::onWrite
 void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
-  char buffer[128];
-  snprintf(buffer, 128, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
-  Logger::notice(LOG_TAG_BLESERVER, buffer);
-  std::string rxValue = pCharacteristic->getValue();
-  size_t len = rxValue.length();
-  snprintf(buffer, 128, "onWrite - value: %s\n", rxValue.data());
-  Logger::notice(LOG_TAG_BLESERVER, buffer);
-  if (rxValue.length() > 0) {
-    if(pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
+    char buffer[128];
+    snprintf(buffer, 128, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
+    Logger::notice(LOG_TAG_BLESERVER, buffer);
+    std::string rxValue = pCharacteristic->getValue();
+    snprintf(buffer, 128, "onWrite - value: %s\n", rxValue.data());
+    Logger::notice(LOG_TAG_BLESERVER, buffer);
+    if (rxValue.length() > 0) {
+        if (pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
 /*
       for (int i = 0; i < rxValue.length(); i++) {
         Serial.print(rxValue[i], DEC);
@@ -417,55 +188,127 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
 */
 
 #ifdef CANBUS_ONLY
-      canbus->proxyIn(rxValue);
+            canbus->proxyIn(rxValue);
 #else
-      for (int i = 0; i < rxValue.length(); i++) {
-        vescSerial->write(rxValue[i]);
-      }
+            for (int i = 0; i < rxValue.length(); i++) {
+              vescSerial->write(rxValue[i]);
+            }
 #endif
-    } 
-#ifdef BLYNK_ENABLED
-    else if (pCharacteristic->getUUID().equals(pCharacteristicBlynkRx->getUUID())) {
-      uint8_t* data = (uint8_t*)rxValue.data();
-      BLYNK_DBG_DUMP(">> ", data, len);
-      mBuffRX.put(data, len);
+        } else if (pCharacteristic->getUUID().equals(pCharacteristicConf->getUUID())) {
+            char buf[128];
+            std::string str(rxValue.c_str());
+            std::string::size_type middle = str.find('='); // Find position of '='
+            std::string key = "";
+            std::string value = "";
+            if (middle != std::string::npos) {
+                key = str.substr(0, middle);
+                value = str.substr(middle + 1, str.size() - (middle + 1));
+            }
+
+            Serial.println(String(key.c_str()) + String("=") + String(value.c_str()));
+
+            if (key == "config") {
+                AppConfiguration::getInstance()->config.sendConfig = true;
+            } else if (key == "save") {
+                AppConfiguration::getInstance()->config.otaUpdateActive = false;
+                AppConfiguration::getInstance()->savePreferences();
+                delay(100);
+            } else if (key == "isNotificationEnabled") {
+                AppConfiguration::getInstance()->config.isNotificationEnabled = value.c_str();
+            } else if (key == "minBatteryVoltage") {
+                AppConfiguration::getInstance()->config.minBatteryVoltage = atof(value.c_str());
+            } else if (key == "maxBatteryVoltage") {
+                AppConfiguration::getInstance()->config.maxBatteryVoltage = atof(value.c_str());
+            } else if (key == "startSoundIndex") {
+                AppConfiguration::getInstance()->config.startSoundIndex = atoi(value.c_str());
+                Buzzer::getInstance()->stopSound();
+                Buzzer::getInstance()->playSound(RTTTL_MELODIES(atoi(value.c_str())));
+                snprintf(buf, 128, "Updated param \"StartSoundIndex\" to %s", value.c_str());
+            } else if (key == "startLightIndex") {
+                AppConfiguration::getInstance()->config.startLightIndex = atoi(value.c_str());
+            } else if (key == "batteryWarningSoundIndex") {
+                AppConfiguration::getInstance()->config.batteryWarningSoundIndex = atoi(value.c_str());
+                Buzzer::getInstance()->stopSound();
+                Buzzer::getInstance()->playSound(RTTTL_MELODIES(atoi(value.c_str())));
+                snprintf(buf, 128, "Updated param \"BatteryWarningSoundIndex\" to %s", value.c_str());
+            } else if (key == "batteryAlarmSoundIndex") {
+                AppConfiguration::getInstance()->config.batteryAlarmSoundIndex = atoi(value.c_str());
+                Buzzer::getInstance()->stopSound();
+                Buzzer::getInstance()->playSound(RTTTL_MELODIES(atoi(value.c_str())));
+                snprintf(buf, 128, "Updated param \"BatteryAlarmSoundIndex\" to %s", value.c_str());
+            } else if (key == "startLightDuration") {
+                AppConfiguration::getInstance()->config.startLightDuration = atoi(value.c_str());
+            } else if (key == "idleLightIndex") {
+                AppConfiguration::getInstance()->config.idleLightIndex = atoi(value.c_str());
+            } else if (key == "lightFadingDuration") {
+                AppConfiguration::getInstance()->config.lightFadingDuration = atoi(value.c_str());
+            } else if (key == "lightMaxBrightness") {
+                AppConfiguration::getInstance()->config.lightMaxBrightness = atoi(value.c_str());
+            } else if (key == "lightColorPrimary") {
+                AppConfiguration::getInstance()->config.lightColorPrimary = atoi(value.c_str());
+            } else if (key == "lightColorSecondary") {
+                AppConfiguration::getInstance()->config.lightColorSecondary = atoi(value.c_str());
+            } else if (key == "brakeLightEnabled") {
+                AppConfiguration::getInstance()->config.brakeLightEnabled = atoi(value.c_str());
+            } else if (key == "brakeLightMinAmp") {
+                AppConfiguration::getInstance()->config.brakeLightMinAmp = atoi(value.c_str());
+            } else if (key == "numberPixelLight") {
+                AppConfiguration::getInstance()->config.numberPixelLight = atoi(value.c_str());
+            } else if (key == "numberPixelBatMon") {
+                AppConfiguration::getInstance()->config.numberPixelBatMon = atoi(value.c_str());
+            } else if (key == "vescId") {
+                AppConfiguration::getInstance()->config.vescId = atoi(value.c_str());
+            } else if (key == "authToken") {
+                AppConfiguration::getInstance()->config.authToken = value.c_str();
+            } else if (key == "ledType") {
+                AppConfiguration::getInstance()->config.ledType = value.c_str();
+            } else if (key == "ledFrequency") {
+                AppConfiguration::getInstance()->config.ledFrequency = value.c_str();
+            } else if (key == "logLevel") {
+                AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(atoi(value.c_str()));
+            }
+            Logger::notice(LOG_TAG_BLESERVER, buf);
+        }
     }
-#endif //BLYNK_ENABLED
-  }
 }
 
 //NimBLECharacteristicCallbacks::onSubscribe
-void BleServer::onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue) {
-  char buf[256];
-  snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
-    desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue, pCharacteristic->getUUID().toString().c_str());
-  Logger::notice(LOG_TAG_BLESERVER, buf);
+void BleServer::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
+    char buf[256];
+    snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
+             desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue,
+             pCharacteristic->getUUID().toString().c_str());
+    Logger::notice(LOG_TAG_BLESERVER, buf);
 }
 
 //NimBLECharacteristicCallbacks::onSubscribe
-void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code) {
-  char buf[256];
-  snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
-  Logger::verbose(LOG_TAG_BLESERVER, buf);
+void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code) {
+    char buf[256];
+    snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
+    Logger::verbose(LOG_TAG_BLESERVER, buf);
 }
 
-#ifdef BLYNK_ENABLED
- #ifdef CANBUS_ENABLED
-  void BleServer::updateBlynk(CanBus::VescData *vescData) {
-   Blynk.virtualWrite(VPIN_VESC_INPUT_VOLTAGE, vescData->inputVoltage);
-   Blynk.virtualWrite(VPIN_VESC_ERPM, vescData->erpm);
-   Blynk.virtualWrite(VPIN_VESC_DUTY_CYCLE, vescData->dutyCycle);
-   Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color", 
+#ifdef CANBUS_ENABLED
+
+void BleServer::updateRescueApp(CanBus::VescData *vescData, long loopTime, long maxLoopTime) {
+    this->sendValue("vesc.voltage", vescData->inputVoltage);
+    this->sendValue("vesc.erpm", vescData->erpm);
+    this->sendValue("vesc.dutyCycle", vescData->dutyCycle);
+    this->sendValue("vesc.mosfetTemp", vescData->mosfetTemp);
+    this->sendValue("vesc.motorTemp", vescData->motorTemp);
+    this->sendValue("vesc.ampHours", vescData->ampHours);
+    this->sendValue("vesc.ampHoursCharged", vescData->ampHoursCharged);
+    this->sendValue("vesc.wattHours", vescData->wattHours);
+    this->sendValue("vesc.wattHoursCharged", vescData->wattHoursCharged);
+    this->sendValue("vesc.current", vescData->current);
+    this->sendValue("vesc.tachometer", vescData->tachometer);
+    this->sendValue("vesc.tachometerAbsolut", vescData->tachometerAbsolut);
+    this->sendValue("loopTime", loopTime);
+    this->sendValue("maxLoopTime", maxLoopTime);
+
+/*
+   Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color",
      vescData->dutyCycle > 0 ? BLINK_COLOR_GREEN : BLINK_COLOR_RED);
-   Blynk.virtualWrite(VPIN_VESC_MOSFET_TEMP, vescData->mosfetTemp);
-   Blynk.virtualWrite(VPIN_VESC_MOTOR_TEMP, vescData->motorTemp);
-   Blynk.virtualWrite(VPIN_VESC_AMP_HOURS, vescData->ampHours);
-   Blynk.virtualWrite(VPIN_VESC_AMP_HOURS_CHARGED, vescData->ampHoursCharged);
-   Blynk.virtualWrite(VPIN_VESC_WATT_HOURS, vescData->wattHours);
-   Blynk.virtualWrite(VPIN_VESC_WATT_HOURS_CHARGED, vescData->wattHoursCharged);
-   Blynk.virtualWrite(VPIN_VESC_CURRENT, vescData->current);
-   Blynk.virtualWrite(VPIN_VESC_TACHOMETER, vescData->tachometer);
-   Blynk.virtualWrite(VPIN_VESC_TACHOMETER_ABS, vescData->tachometerAbsolut);
    if(AppConfiguration::getInstance()->config.isNotificationEnabled){
      if(millis() - lastNotification > 60000) { // Notification only all once a minutes
        if(vescData->inputVoltage > AppConfiguration::getInstance()->config.maxBatteryVoltage) {
@@ -478,43 +321,54 @@ void BleServer::onStatus(NimBLECharacteristic* pCharacteristic, Status status, i
        lastNotification = millis();
      }
    }
- }
- 
- #endif //CANBUS_ENABLED
-
-void syncPreferencesWithApp() {
-  for (std::map<int, int>::iterator it = blynkSoundMapping.begin(); it != blynkSoundMapping.end(); ++it) {
-    if(it->second == AppConfiguration::getInstance()->config.startSoundIndex)
-      Blynk.virtualWrite(VPIN_APP_SOUND_INDEX, it->first);
-  }
-  for (std::map<int, int>::iterator it = blynkAlarmMapping.begin(); it != blynkAlarmMapping.end(); ++it) {
-    if(it->second == AppConfiguration::getInstance()->config.batteryAlarmSoundIndex)
-      Blynk.virtualWrite(VPIN_APP_BATTERY_ALARM_INDEX, it->first);
-  }
-  for (std::map<int, int>::iterator it = blynkWarningMapping.begin(); it != blynkWarningMapping.end(); ++it) {
-    if(it->second == AppConfiguration::getInstance()->config.batteryWarningSoundIndex)
-      Blynk.virtualWrite(VPIN_APP_BATTERY_WARN_INDEX, it->first);
-  }
-  Blynk.virtualWrite(VPIN_APP_LIGHT_INDEX, AppConfiguration::getInstance()->config.startLightIndex);
-  Blynk.virtualWrite(VPIN_APP_MAX_BAT_VOLTAGE, AppConfiguration::getInstance()->config.maxBatteryVoltage);
-  Blynk.virtualWrite(VPIN_APP_MIN_BAT_VOLTAGE, AppConfiguration::getInstance()->config.minBatteryVoltage);
-  Blynk.virtualWrite(VPIN_APP_NOTIFICATION, AppConfiguration::getInstance()->config.isNotificationEnabled);
-  Blynk.virtualWrite(VPIN_APP_ACTIVATE_OTA, AppConfiguration::getInstance()->config.otaUpdateActive);
-  Blynk.virtualWrite(VPIN_APP_STARTLIGHT_DURATION, AppConfiguration::getInstance()->config.startLightDuration);
-  Blynk.virtualWrite(VPIN_APP_IDLE_LIGHT_INDEX, AppConfiguration::getInstance()->config.idleLightIndex);
-  Blynk.virtualWrite(VPIN_APP_LIGHT_FADING_DURATION, AppConfiguration::getInstance()->config.lightFadingDuration);
-  Blynk.virtualWrite(VPIN_APP_LIGHT_MAX_BRIGHTNESS, AppConfiguration::getInstance()->config.lightMaxBrightness);
-  Blynk.virtualWrite(VPIN_APP_ACTIVATE_BRAKE_LIGHT, AppConfiguration::getInstance()->config.brakeLightEnabled);
-  Blynk.virtualWrite(VPIN_APP_BRAKE_LIGHT_MIN_AMP, AppConfiguration::getInstance()->config.brakeLightMinAmp);
-  Blynk.virtualWrite(VPIN_APP_LIGHT_COLOR_1, 
-    AppConfiguration::getInstance()->config.lightColorPrimaryRed,
-    AppConfiguration::getInstance()->config.lightColorPrimaryGreen,
-    AppConfiguration::getInstance()->config.lightColorPrimaryBlue);
-  Blynk.virtualWrite(VPIN_APP_LIGHT_COLOR_2, 
-    AppConfiguration::getInstance()->config.lightColorSecondaryRed,
-    AppConfiguration::getInstance()->config.lightColorSecondaryGreen,
-    AppConfiguration::getInstance()->config.lightColorSecondaryBlue);
-  Blynk.virtualWrite(VPIN_APP_LOG_LEVEL, AppConfiguration::getInstance()->config.logLevel+1);
-
+*/
 }
-#endif //BLYNK_ENABLED
+
+template<typename TYPE>
+void BleServer::sendValue(std::string key, TYPE value) {
+    std::stringstream ss;
+    ss << key << "=" << value;
+    pCharacteristicConf->setValue(ss.str());
+    pCharacteristicConf->notify();
+    ss.str("");
+    delay(5);
+}
+
+boolean isStringType(String a) { return true; }
+
+boolean isStringType(std::string a) { return true; }
+
+boolean isStringType(int a) { return false; }
+
+boolean isStringType(double a) { return false; }
+
+boolean isStringType(boolean a) { return false; }
+
+struct BleServer::sendConfigValue {
+    NimBLECharacteristic *pCharacteristic;
+    std::stringstream ss;
+
+    sendConfigValue(NimBLECharacteristic *pCharacteristic) {
+        this->pCharacteristic = pCharacteristic;
+    }
+
+    template<typename T>
+    void operator()(const char *name, const T &value) {
+        if (isStringType(value)) {
+            ss << name << "=" << static_cast<String>(value).c_str();
+        } else {
+            ss << name << "=" << value;
+        }
+        Serial.println("Sending: " + String(ss.str().c_str()));
+        pCharacteristic->setValue(ss.str());
+        pCharacteristic->indicate();
+        ss.str("");
+        delay(5);
+    }
+};
+
+void BleServer::sendConfig() {
+    visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
+}
+
+#endif //CANBUS_ENABLED
