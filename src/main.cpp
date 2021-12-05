@@ -9,7 +9,6 @@
 #include "BleServer.h"
 #include "CanBus.h"
 #include "AppConfiguration.h"
-#include "OTA.h"
 
 long mainLoop = 0;
 long loopTime = 0;
@@ -21,11 +20,11 @@ int idle         = LOW;
 double idle_erpm = 10.0;
 
 int lastFake = 4000;
+int lastFakeCount = 0;
 
 HardwareSerial vesc(2);
 
 ILedController *ledController;
-OTAUpdater *updater = new OTAUpdater();
 
 #if defined(CANBUS_ENABLED)
  CanBus * canbus = new CanBus();
@@ -44,7 +43,11 @@ void fakeCanbusValues() {
         canbus->vescData.tachometer= random(0, 30);
         canbus->vescData.inputVoltage = random(43, 50);
         canbus->vescData.dutyCycle = random(0, 100);
-        canbus->vescData.erpm = random(-100, 200);
+        if(lastFakeCount > 10) {
+            canbus->vescData.erpm = random(-100, 200);
+        } else {
+            canbus->vescData.erpm = 0;//random(-100, 200);
+        }
         canbus->vescData.current = random(0, 10);
         canbus->vescData.ampHours = random(0, 100);
         canbus->vescData.mosfetTemp = random(20, 60);
@@ -53,6 +56,7 @@ void fakeCanbusValues() {
         canbus->vescData.adc2 = 0.5;
         canbus->vescData.switchState = 0;
         lastFake = millis();
+        lastFakeCount++;
     }
 }
 
@@ -67,7 +71,6 @@ void setup() {
   }
 
   if(AppConfiguration::getInstance()->config.otaUpdateActive) {
-     updater->setup();
      return;
   }
 

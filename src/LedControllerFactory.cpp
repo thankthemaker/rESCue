@@ -18,18 +18,18 @@ ILedController *LedControllerFactory::createLedController() {
 #ifdef LED_WS28xx
     uint8_t ledType = 0;
     std::string ledTypeStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
-    if (ledTypeStr.compare("RGB") == 0) {
+    if (ledTypeStr == "RGB") {
         ledType = 6;
-    } else if (ledTypeStr.compare("GRB") == 0) {
+    } else if (ledTypeStr == "GRB") {
         ledType = 82;
-    } else if (ledTypeStr.compare("RGBW") == 0) {
+    } else if (ledTypeStr == "RGBW") {
         ledType = 198;
-    } else if (ledTypeStr.compare("GRBW") == 0) {
+    } else if (ledTypeStr == "GRBW" ) {
         ledType = 210;
     }
 
     std::string ledFreqStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
-    if (ledFreqStr.compare("KHZ800") == 0) {
+    if (ledFreqStr == "KHZ800") {
         ledType = ledType + 0x0000;
     } else {
         ledType = ledType + 0x0100;

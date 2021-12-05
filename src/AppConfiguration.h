@@ -15,6 +15,9 @@ struct Config {
   BEGIN_VISITABLES(Config);
     VISITABLE(boolean, otaUpdateActive);
     VISITABLE(boolean, isNotificationEnabled);
+    VISITABLE(boolean, isBatteryNotificationEnabled);
+    VISITABLE(boolean, isCurrentNotificationEnabled);
+    VISITABLE(boolean, isErpmNotificationEnabled);
     VISITABLE(double, minBatteryVoltage);
     VISITABLE(double, maxBatteryVoltage);
     VISITABLE(int, startSoundIndex);
@@ -43,6 +46,7 @@ struct Config {
     VISITABLE(boolean, sendConfig);
     VISITABLE(String , ledType);
     VISITABLE(String , ledFrequency);
+    VISITABLE(int , idleLightTimeout);
   END_VISITABLES;
 };
 

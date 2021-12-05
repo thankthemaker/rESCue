@@ -46,6 +46,7 @@ void AppConfiguration::readPreferences() {
     config.lightColorSecondaryBlue = config.lightColorSecondary & 0x0ff;
     config.ledType = doc["ledType"] | "RGB";
     config.ledFrequency = doc["ledFrequency"] | "KHZ800";
+    config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.logLevel = doc["logLevel"] | Logger::WARNING;
     preferences.end();
 }
@@ -75,6 +76,7 @@ void AppConfiguration::savePreferences() {
     doc["numberPixelBatMon"] = config.numberPixelBatMon;
     doc["ledType"] = config.ledType;
     doc["ledFrequency"] = config.ledFrequency;
+    doc["idleLightTimeout"] = config.idleLightTimeout;
     doc["logLevel"] = config.logLevel;
     String json = "";
     serializeJson(doc, json);

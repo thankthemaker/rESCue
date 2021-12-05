@@ -104,18 +104,20 @@ void Ws28xxController::onComplete() {
 }
 
 void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) {
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-      char buf[128];
-      snprintf(buf, 128, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
-      Logger::verbose(LOG_TAG_WS28XX, buf);
-    }
-
     if (activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
         return;
     }
+
     if (blockChange) {
         return;
     }
+
+    if (Logger::getLogLevel() == Logger::VERBOSE) {
+        char buf[128];
+        snprintf(buf, 128, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
+        Logger::verbose(LOG_TAG_WS28XX, buf);
+    }
+
     maxBrightness = config.lightMaxBrightness;
     stopPattern = false;
     repeat = repeatPattern;
@@ -154,6 +156,9 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
             break;
         case SLIDE:
             slidingLightUpdate();
+            break;
+        case NONE:
+            stop();
             break;
         default:
             break;
@@ -342,6 +347,7 @@ void Ws28xxController::init() {
 
 void Ws28xxController::stop() {
     Logger::verbose("stop");
+    activePattern = NONE;
     for (int i = 0; i < numPixels(); i++) {
         setPixelColor(i, Color(0, 0, 0));
     }

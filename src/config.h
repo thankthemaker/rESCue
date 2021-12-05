@@ -66,7 +66,7 @@
   #define BLYNK_AUTH_TOKEN "bb48a7193d764ea7a90dbffb54ffcb76"
 #endif
 
-///#define FAKE_VESC_ENABLED
+////#define FAKE_VESC_ENABLED
 
 #endif //__CONFIG_H__
 

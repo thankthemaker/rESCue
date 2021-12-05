@@ -3,6 +3,9 @@
 #include <Logger.h>
 #include <sstream>
 #include "esp_bt_main.h"
+#include "esp_ota_ops.h"
+
+#define FULL_PACKET 512
 
 const int BLE_PACKET_SIZE = 128;
 NimBLEServer *pServer = NULL;
@@ -11,6 +14,7 @@ NimBLEService *pServiceRescue = NULL;
 NimBLECharacteristic *pCharacteristicVescTx = NULL;
 NimBLECharacteristic *pCharacteristicVescRx = NULL;
 NimBLECharacteristic *pCharacteristicConf = NULL;
+NimBLECharacteristic *pOtaCharacteristic = NULL;
 NimBLECharacteristic *pCharacteristicId = NULL;
 NimBLECharacteristic *pCharacteristicVersion = NULL;
 
@@ -22,6 +26,48 @@ std::string bufferString;
 int bleLoop = 0;
 
 BleServer::BleServer() {}
+
+esp_ota_handle_t otaHandler = 0;
+bool updateFlag = false;
+uint32_t frameNumber = 0;
+
+void startUpdate() {
+    Serial.println("\nBeginOTA");
+    const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+    Serial.println("Selected OTA partiton:");
+    Serial.println("partition label:" + String(partition->label));
+    Serial.println("partition size:" + String(partition->size));
+    esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &otaHandler);
+    updateFlag = true;
+    Serial.println("Update started");
+}
+
+void handleUpdate(std::string data) {
+/*
+  Serial.printf("\nhandleUpdate incoming data (size %d):\n", data.length());
+  for(int i=0; i<data.length();i++) {
+    Serial.print(data[i], HEX);
+    Serial.print(" ");
+  }
+*/
+    esp_ota_write(otaHandler, data.c_str(), data.length());
+    if (data.length() != FULL_PACKET) {
+        esp_ota_end(otaHandler);
+        Serial.println("\nEndOTA");
+        const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+        if (ESP_OK == esp_ota_set_boot_partition(partition)) {
+            Serial.println("Activate partiton:");
+            Serial.println("partition label:" + String(partition->label));
+            Serial.println("partition size:" + String(partition->size));
+            AppConfiguration::getInstance()->config.otaUpdateActive = 0;
+            AppConfiguration::getInstance()->savePreferences();
+            delay(2000);
+            esp_restart();
+        } else {
+            Serial.println("Upload Error");
+        }
+    }
+}
 
 // NimBLEServerCallbacks::onConnect
 inline
@@ -91,6 +137,13 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
     );
     pCharacteristicConf->setCallbacks(this);
 
+    pOtaCharacteristic = pServiceRescue->createCharacteristic(
+            RESCUE_CHARACTERISTIC_UUID_FW,
+            NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE
+    );
+
+    pOtaCharacteristic->setCallbacks(this);
+
     uint8_t hardwareVersion[5] = {HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR, SOFTWARE_VERSION_MAJOR,
                                   SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH};
 
@@ -99,6 +152,7 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
             NIMBLE_PROPERTY::READ
     );
     pCharacteristicVersion->setValue((uint8_t *) hardwareVersion, 5);
+    pCharacteristicVersion->setCallbacks(this);
 
     // Start the VESC service
     pServiceVesc->start();
@@ -240,6 +294,8 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.startLightDuration = atoi(value.c_str());
             } else if (key == "idleLightIndex") {
                 AppConfiguration::getInstance()->config.idleLightIndex = atoi(value.c_str());
+            } else if (key == "idleLightTimeout") {
+                AppConfiguration::getInstance()->config.idleLightTimeout = atoi(value.c_str());
             } else if (key == "lightFadingDuration") {
                 AppConfiguration::getInstance()->config.lightFadingDuration = atoi(value.c_str());
             } else if (key == "lightMaxBrightness") {
@@ -268,43 +324,57 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(atoi(value.c_str()));
             }
             Logger::notice(LOG_TAG_BLESERVER, buf);
+        } else if (pCharacteristic->getUUID().equals(pOtaCharacteristic->getUUID())) {
+            if (!updateFlag) { //If it's the first packet of OTA since bootup, begin OTA
+                startUpdate();
+            }
+
+            Serial.print("Got frame " + String(frameNumber) + ", Bytes " + String(rxValue.length()));
+            handleUpdate(rxValue);
+
+            delay(5); // needed to give BLE stack some time
+            uint8_t txdata[4] = {(uint8_t) (frameNumber >> 24), (uint8_t) (frameNumber >> 16),
+                                 (uint8_t) (frameNumber >> 8),
+                                 (uint8_t) frameNumber};
+            pCharacteristic->setValue((uint8_t *) txdata, 4);
+            pCharacteristic->notify();
+            Serial.println(", Ack. frame no. " + String(frameNumber++));
         }
     }
 }
+//NimBLECharacteristicCallbacks::onSubscribe
+    void BleServer::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
+        char buf[256];
+        snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
+                 desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue,
+                 pCharacteristic->getUUID().toString().c_str());
+        Logger::notice(LOG_TAG_BLESERVER, buf);
+    }
 
 //NimBLECharacteristicCallbacks::onSubscribe
-void BleServer::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
-    char buf[256];
-    snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
-             desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue,
-             pCharacteristic->getUUID().toString().c_str());
-    Logger::notice(LOG_TAG_BLESERVER, buf);
-}
-
-//NimBLECharacteristicCallbacks::onSubscribe
-void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code) {
-    char buf[256];
-    snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
-    Logger::verbose(LOG_TAG_BLESERVER, buf);
-}
+    void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code) {
+        char buf[256];
+        snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
+        Logger::verbose(LOG_TAG_BLESERVER, buf);
+    }
 
 #ifdef CANBUS_ENABLED
 
-void BleServer::updateRescueApp(CanBus::VescData *vescData, long loopTime, long maxLoopTime) {
-    this->sendValue("vesc.voltage", vescData->inputVoltage);
-    this->sendValue("vesc.erpm", vescData->erpm);
-    this->sendValue("vesc.dutyCycle", vescData->dutyCycle);
-    this->sendValue("vesc.mosfetTemp", vescData->mosfetTemp);
-    this->sendValue("vesc.motorTemp", vescData->motorTemp);
-    this->sendValue("vesc.ampHours", vescData->ampHours);
-    this->sendValue("vesc.ampHoursCharged", vescData->ampHoursCharged);
-    this->sendValue("vesc.wattHours", vescData->wattHours);
-    this->sendValue("vesc.wattHoursCharged", vescData->wattHoursCharged);
-    this->sendValue("vesc.current", vescData->current);
-    this->sendValue("vesc.tachometer", vescData->tachometer);
-    this->sendValue("vesc.tachometerAbsolut", vescData->tachometerAbsolut);
-    this->sendValue("loopTime", loopTime);
-    this->sendValue("maxLoopTime", maxLoopTime);
+    void BleServer::updateRescueApp(CanBus::VescData *vescData, long loopTime, long maxLoopTime) {
+        this->sendValue("vesc.voltage", vescData->inputVoltage);
+        this->sendValue("vesc.erpm", vescData->erpm);
+        this->sendValue("vesc.dutyCycle", vescData->dutyCycle);
+        this->sendValue("vesc.mosfetTemp", vescData->mosfetTemp);
+        this->sendValue("vesc.motorTemp", vescData->motorTemp);
+        this->sendValue("vesc.ampHours", vescData->ampHours);
+        this->sendValue("vesc.ampHoursCharged", vescData->ampHoursCharged);
+        this->sendValue("vesc.wattHours", vescData->wattHours);
+        this->sendValue("vesc.wattHoursCharged", vescData->wattHoursCharged);
+        this->sendValue("vesc.current", vescData->current);
+        this->sendValue("vesc.tachometer", vescData->tachometer);
+        this->sendValue("vesc.tachometerAbsolut", vescData->tachometerAbsolut);
+        this->sendValue("loopTime", loopTime);
+        this->sendValue("maxLoopTime", maxLoopTime);
 
 /*
    Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color",
@@ -322,53 +392,53 @@ void BleServer::updateRescueApp(CanBus::VescData *vescData, long loopTime, long 
      }
    }
 */
-}
-
-template<typename TYPE>
-void BleServer::sendValue(std::string key, TYPE value) {
-    std::stringstream ss;
-    ss << key << "=" << value;
-    pCharacteristicConf->setValue(ss.str());
-    pCharacteristicConf->notify();
-    ss.str("");
-    delay(5);
-}
-
-boolean isStringType(String a) { return true; }
-
-boolean isStringType(std::string a) { return true; }
-
-boolean isStringType(int a) { return false; }
-
-boolean isStringType(double a) { return false; }
-
-boolean isStringType(boolean a) { return false; }
-
-struct BleServer::sendConfigValue {
-    NimBLECharacteristic *pCharacteristic;
-    std::stringstream ss;
-
-    sendConfigValue(NimBLECharacteristic *pCharacteristic) {
-        this->pCharacteristic = pCharacteristic;
     }
 
-    template<typename T>
-    void operator()(const char *name, const T &value) {
-        if (isStringType(value)) {
-            ss << name << "=" << static_cast<String>(value).c_str();
-        } else {
-            ss << name << "=" << value;
-        }
-        Serial.println("Sending: " + String(ss.str().c_str()));
-        pCharacteristic->setValue(ss.str());
-        pCharacteristic->indicate();
+    template<typename TYPE>
+    void BleServer::sendValue(std::string key, TYPE value) {
+        std::stringstream ss;
+        ss << key << "=" << value;
+        pCharacteristicConf->setValue(ss.str());
+        pCharacteristicConf->notify();
         ss.str("");
         delay(5);
     }
-};
 
-void BleServer::sendConfig() {
-    visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
-}
+    boolean isStringType(String a) { return true; }
+
+    boolean isStringType(std::string a) { return true; }
+
+    boolean isStringType(int a) { return false; }
+
+    boolean isStringType(double a) { return false; }
+
+    boolean isStringType(boolean a) { return false; }
+
+    struct BleServer::sendConfigValue {
+        NimBLECharacteristic *pCharacteristic;
+        std::stringstream ss;
+
+        sendConfigValue(NimBLECharacteristic *pCharacteristic) {
+            this->pCharacteristic = pCharacteristic;
+        }
+
+        template<typename T>
+        void operator()(const char *name, const T &value) {
+            if (isStringType(value)) {
+                ss << name << "=" << static_cast<String>(value).c_str();
+            } else {
+                ss << name << "=" << value;
+            }
+            Serial.println("Sending: " + String(ss.str().c_str()));
+            pCharacteristic->setValue(ss.str());
+            pCharacteristic->indicate();
+            ss.str("");
+            delay(5);
+        }
+    };
+
+    void BleServer::sendConfig() {
+        visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
+    }
 
 #endif //CANBUS_ENABLED
