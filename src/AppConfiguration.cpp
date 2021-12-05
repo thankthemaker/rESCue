@@ -44,6 +44,9 @@ void AppConfiguration::readPreferences() {
     config.lightColorSecondaryRed = (config.lightColorSecondary >> 16) & 0x0ff;
     config.lightColorSecondaryGreen = (config.lightColorSecondary >> 8) & 0x0ff;
     config.lightColorSecondaryBlue = config.lightColorSecondary & 0x0ff;
+    config.ledType = doc["ledType"] | "RGB";
+    config.ledFrequency = doc["ledFrequency"] | "KHZ800";
+    config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.logLevel = doc["logLevel"] | Logger::WARNING;
     preferences.end();
 }
@@ -71,6 +74,9 @@ void AppConfiguration::savePreferences() {
     doc["vescId"] = config.vescId;
     doc["numberPixelLight"] = config.numberPixelLight;
     doc["numberPixelBatMon"] = config.numberPixelBatMon;
+    doc["ledType"] = config.ledType;
+    doc["ledFrequency"] = config.ledFrequency;
+    doc["idleLightTimeout"] = config.idleLightTimeout;
     doc["logLevel"] = config.logLevel;
     String json = "";
     serializeJson(doc, json);

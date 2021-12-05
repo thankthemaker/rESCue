@@ -9,8 +9,10 @@
 #include "BleServer.h"
 #include "CanBus.h"
 #include "AppConfiguration.h"
-#include "OTA.h"
 
+long mainLoop = 0;
+long loopTime = 0;
+long maxLoopTime = 0;
 int new_forward  = LOW;
 int new_backward = LOW;
 int new_brake    = LOW;
@@ -18,11 +20,11 @@ int idle         = LOW;
 double idle_erpm = 10.0;
 
 int lastFake = 4000;
+int lastFakeCount = 0;
 
 HardwareSerial vesc(2);
 
 ILedController *ledController;
-OTAUpdater *updater = new OTAUpdater();
 
 #if defined(CANBUS_ENABLED)
  CanBus * canbus = new CanBus();
@@ -38,9 +40,14 @@ void localLogger(Logger::Level level, const char* module, const char* message);
 
 void fakeCanbusValues() {
     if(millis() - lastFake > 3000) {
+        canbus->vescData.tachometer= random(0, 30);
         canbus->vescData.inputVoltage = random(43, 50);
         canbus->vescData.dutyCycle = random(0, 100);
-        canbus->vescData.erpm = random(-100, 200);
+        if(lastFakeCount > 10) {
+            canbus->vescData.erpm = random(-100, 200);
+        } else {
+            canbus->vescData.erpm = 0;//random(-100, 200);
+        }
         canbus->vescData.current = random(0, 10);
         canbus->vescData.ampHours = random(0, 100);
         canbus->vescData.mosfetTemp = random(20, 60);
@@ -49,6 +56,7 @@ void fakeCanbusValues() {
         canbus->vescData.adc2 = 0.5;
         canbus->vescData.switchState = 0;
         lastFake = millis();
+        lastFakeCount++;
     }
 }
 
@@ -56,24 +64,23 @@ void setup() {
   Logger::setOutputFunction(localLogger);
 
   AppConfiguration::getInstance()->readPreferences();
+    AppConfiguration::getInstance()->config.sendConfig = false;
   Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
   if(Logger::getLogLevel() != Logger::SILENT) {
       Serial.begin(VESC_BAUD_RATE);
   }
 
   if(AppConfiguration::getInstance()->config.otaUpdateActive) {
-     updater->setup();
      return;
   }
 
   ledController = LedControllerFactory::getInstance()->createLedController();
 
-
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
   pinMode(PIN_BRAKE, INPUT);
 
-  vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);      
+  vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
   delay(50);
 #ifdef CANBUS_ENABLED
   // initializes the CANBUS
@@ -95,16 +102,27 @@ void setup() {
   ledController->startSequence();
 
   char buf[128];
-  snprintf(buf, 128, " sw-version %d.%d.%d is happily running on hw-version %d.%d", 
-    SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH, 
+  snprintf(buf, 128, " sw-version %d.%d.%d is happily running on hw-version %d.%d",
+    SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH,
     HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
   Logger::notice("rESCue", buf);
 }
 
 void loop() {
-  if(AppConfiguration::getInstance()->config.otaUpdateActive) {
+    loopTime = millis() - mainLoop;
+    mainLoop = millis() ;
+    if(loopTime > maxLoopTime) {
+        maxLoopTime = loopTime;
+    }
+
+    if(AppConfiguration::getInstance()->config.otaUpdateActive) {
     return;
   }
+  if(AppConfiguration::getInstance()->config.sendConfig) {
+      bleServer->sendConfig();
+      AppConfiguration::getInstance()->config.sendConfig = false;
+  }
+
 #ifdef CANBUS_ENABLED
   #ifdef FAKE_VESC_ENABLED
     fakeCanbusValues();
@@ -122,25 +140,27 @@ void loop() {
 #endif
 
 #ifdef CANBUS_ENABLED
+ #ifndef FAKE_VESC_ENABLED
   canbus->loop();
+ #endif
 #endif
 
   // is motor brake active?
   if(new_brake == HIGH) {
     // flash backlights
     ledController->changePattern(Pattern::RESCUE_FLASH_LIGHT, new_forward == HIGH, false);
-  } 
+  }
 
   // call the led controller loop
-  ledController->loop(&new_forward, &new_backward, &idle);    
+  ledController->loop(&new_forward, &new_backward, &idle);
 
   // measure and check voltage
   batMonitor->checkValues();
 
   // call the VESC UART-to-Bluetooth bridge
 #ifdef CANBUS_ENABLED
-  bleServer->loop(&canbus->vescData);
-#else 
+  bleServer->loop(&canbus->vescData, loopTime, maxLoopTime);
+#else
   bleServer->loop();
 #endif
 }

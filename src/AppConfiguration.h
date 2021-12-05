@@ -5,37 +5,49 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include <Logger.h>
+#include "visit_struct.hh"
+#include "visit_struct_intrusive.hh"
 
 #define LOG_TAG_APPCONFIGURATION "AppConfiguration"
 
+// visitable struct, see C++ Visitor-Pattern and https://github.com/garbageslam/visit_struct
 struct Config {
-  boolean otaUpdateActive = true;
-  boolean isNotificationEnabled = false;
-  double minBatteryVoltage = 41.0;
-  double maxBatteryVoltage = MAX_BATTARY_VOLTAGE;
-  int startSoundIndex = 0;
-  int startLightIndex = 0;
-  int batteryWarningSoundIndex = 406;
-  int batteryAlarmSoundIndex = 402;
-  int startLightDuration = 1000;
-  int idleLightIndex = 0;
-  int lightFadingDuration = 50;
-  int lightMaxBrightness = MAX_BRIGHTNESS;
-  int lightColorPrimary = 0;
-  int lightColorPrimaryRed = 0;
-  int lightColorPrimaryGreen = 0;
-  int lightColorPrimaryBlue = 0;
-  int lightColorSecondary = 0;
-  int lightColorSecondaryRed = 0;
-  int lightColorSecondaryGreen = 0;
-  int lightColorSecondaryBlue = 0;
-  boolean brakeLightEnabled = true;
-  int brakeLightMinAmp = 4;
-  int numberPixelLight = 32;
-  int numberPixelBatMon = 5;
-  int vescId = 25;
-  String authToken;
-  Logger::Level logLevel = Logger::WARNING;
+  BEGIN_VISITABLES(Config);
+    VISITABLE(boolean, otaUpdateActive);
+    VISITABLE(boolean, isNotificationEnabled);
+    VISITABLE(boolean, isBatteryNotificationEnabled);
+    VISITABLE(boolean, isCurrentNotificationEnabled);
+    VISITABLE(boolean, isErpmNotificationEnabled);
+    VISITABLE(double, minBatteryVoltage);
+    VISITABLE(double, maxBatteryVoltage);
+    VISITABLE(int, startSoundIndex);
+    VISITABLE(int, startLightIndex);
+    VISITABLE(int, batteryWarningSoundIndex);
+    VISITABLE(int, batteryAlarmSoundIndex);
+    VISITABLE(int, startLightDuration);
+    VISITABLE(int, idleLightIndex);
+    VISITABLE(int, lightFadingDuration);
+    VISITABLE(int, lightMaxBrightness);
+    VISITABLE(int, lightColorPrimary);
+    VISITABLE(int, lightColorPrimaryRed);
+    VISITABLE(int, lightColorPrimaryGreen);
+    VISITABLE(int, lightColorPrimaryBlue);
+    VISITABLE(int, lightColorSecondary);
+    VISITABLE(int, lightColorSecondaryRed);
+    VISITABLE(int, lightColorSecondaryGreen);
+    VISITABLE(int, lightColorSecondaryBlue);
+    VISITABLE(boolean, brakeLightEnabled);
+    VISITABLE(int, brakeLightMinAmp);
+    VISITABLE(int, numberPixelLight);
+    VISITABLE(int, numberPixelBatMon);
+    VISITABLE(int, vescId);
+    VISITABLE(String, authToken);
+    VISITABLE(Logger::Level, logLevel);
+    VISITABLE(boolean, sendConfig);
+    VISITABLE(String , ledType);
+    VISITABLE(String , ledFrequency);
+    VISITABLE(int , idleLightTimeout);
+  END_VISITABLES;
 };
 
 class AppConfiguration {

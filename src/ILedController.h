@@ -34,7 +34,7 @@ class LedControllerFactory {
 
     private:
         LedControllerFactory();    
-        static LedControllerFactory *instance;    
+        static LedControllerFactory *instance;
 };
 
 #endif //__I_LED_CONTROLLER_H__
