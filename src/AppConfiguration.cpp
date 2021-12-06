@@ -11,13 +11,18 @@ AppConfiguration* AppConfiguration::getInstance() {
     return instance;
 }
 void AppConfiguration::readPreferences() {
-    preferences.begin("rESCue", true);
-    String json = preferences.getString("config", "");
+    String json = "";
+    if(!preferences.begin("rESCue", true)) {
+        log_e("no config file found");
+    } else {
+        log_n("found config file");
+        json = preferences.getString("config", "");
+    }
     StaticJsonDocument<1024> doc;
     deserializeJson(doc, json);
     Logger::verbose(LOG_TAG_APPCONFIGURATION, "readPreferences: ");
     Serial.println("readPreferences: " + json);
-    config.otaUpdateActive = doc["otaUpdateActive"] | true;
+    config.otaUpdateActive = doc["otaUpdateActive"] | false;
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
     config.minBatteryVoltage = doc["minBatteryVoltage"] | 40.0;
     config.maxBatteryVoltage = doc["maxBatteryVoltage"] | 50.4;
