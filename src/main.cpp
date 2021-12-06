@@ -121,6 +121,9 @@ void loop() {
   if(AppConfiguration::getInstance()->config.sendConfig) {
       bleServer->sendConfig();
       AppConfiguration::getInstance()->config.sendConfig = false;
+  }  if(AppConfiguration::getInstance()->config.saveConfig) {
+      AppConfiguration::getInstance()->savePreferences();
+      AppConfiguration::getInstance()->config.saveConfig = false;
   }
 
 #ifdef CANBUS_ENABLED

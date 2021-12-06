@@ -44,6 +44,7 @@ struct Config {
     VISITABLE(String, authToken);
     VISITABLE(Logger::Level, logLevel);
     VISITABLE(boolean, sendConfig);
+    VISITABLE(boolean, saveConfig);
     VISITABLE(String , ledType);
     VISITABLE(String , ledFrequency);
     VISITABLE(int , idleLightTimeout);
