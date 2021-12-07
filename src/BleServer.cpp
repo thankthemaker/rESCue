@@ -265,7 +265,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.sendConfig = true;
             } else if (key == "save") {
                 AppConfiguration::getInstance()->config.otaUpdateActive = false;
-                AppConfiguration::getInstance()->savePreferences();
+                AppConfiguration::getInstance()->config.saveConfig = true;
                 delay(100);
             } else if (key == "isNotificationEnabled") {
                 AppConfiguration::getInstance()->config.isNotificationEnabled = value.c_str();
