@@ -32,7 +32,7 @@ void BatteryMonitor::init() {
 
   // initialize the array for smoothing the analog value
   for (int i = 0; i < numBatReadings; i++) {
-    batteryReadings[i] = 0;
+    batteryReadings[i] = 45;
   }
   for (int i = 0; i < numCurReadings; i++) {
     currentReadings[i] = 0;
@@ -74,7 +74,14 @@ void BatteryMonitor::checkValues() {
     } 
     lastCheck = millis();
 
-    int voltage = readValues() * 100;
+    int voltage = readValues();
+    // check if voltage reading is valid, otherwise skip
+    if(voltage <= 1) {
+        return;
+    } else {
+        voltage = voltage * 100;
+    }
+
     // check if voltage is below absolute minimum or above absolute maximum (regen)
     if(voltage < min_voltage || voltage > max_voltage) {
       Logger::warning(LOG_TAG_BATMON, "ALARM: Battery voltage out of range");
