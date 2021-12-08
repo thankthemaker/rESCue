@@ -302,8 +302,12 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.lightMaxBrightness = atoi(value.c_str());
             } else if (key == "lightColorPrimary") {
                 AppConfiguration::getInstance()->config.lightColorPrimary = atoi(value.c_str());
+                snprintf(buf, 128, "Updated param \"lightColorPrimary\" to %s (%d)", value.c_str(),
+                         AppConfiguration::getInstance()->config.lightColorPrimary);
             } else if (key == "lightColorSecondary") {
                 AppConfiguration::getInstance()->config.lightColorSecondary = atoi(value.c_str());
+                snprintf(buf, 128, "Updated param \"lightColorSecondary\" to %s (%d", value.c_str(),
+                         AppConfiguration::getInstance()->config.lightColorSecondary);
             } else if (key == "brakeLightEnabled") {
                 AppConfiguration::getInstance()->config.brakeLightEnabled = atoi(value.c_str());
             } else if (key == "brakeLightMinAmp") {
