@@ -20,20 +20,22 @@ void AppConfiguration::readPreferences() {
     }
     StaticJsonDocument<1024> doc;
     deserializeJson(doc, json);
-    Logger::verbose(LOG_TAG_APPCONFIGURATION, "readPreferences: ");
-    Serial.println("readPreferences: " + json);
+    log_n("readPreferences: %s", json.c_str());
     config.otaUpdateActive = doc["otaUpdateActive"] | false;
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
+    config.isBatteryNotificationEnabled = doc["isBatteryNotificationEnabled"] | false;
+    config.isCurrentNotificationEnabled = doc["isCurrentNotificationEnabled"] | false;
+    config.isErpmNotificationEnabled = doc["isErpmNotificationEnabled"] | false;
     config.minBatteryVoltage = doc["minBatteryVoltage"] | 40.0;
     config.maxBatteryVoltage = doc["maxBatteryVoltage"] | 50.4;
     config.startSoundIndex = doc["startSoundIndex"] | 107;
-    config.startLightIndex = doc["startLightIndex"] | 1;
+    config.startLightIndex = doc["startLightIndex"] | 2;
     config.batteryWarningSoundIndex = doc["batteryWarningSoundIndex"] | 406;
     config.batteryAlarmSoundIndex = doc["batteryAlarmSoundIndex"] | 402;
     config.startLightDuration = doc["startLightDuration"] | 1000;
     config.lightColorPrimary = doc["lightColorPrimary"] | 0xFFFFFF;
     config.lightColorSecondary = doc["lightColorSecondary"] | 0xFF0000;
-    config.idleLightIndex = doc["idleLightIndex"] | 0;
+    config.idleLightIndex = doc["idleLightIndex"] | 4;
     config.lightFadingDuration = doc["lightFadingDuration"] | 220;
     config.lightMaxBrightness = doc["lightMaxBrightness"] | MAX_BRIGHTNESS;
     config.brakeLightEnabled = doc["brakeLightEnabled"] | true;
@@ -53,6 +55,8 @@ void AppConfiguration::readPreferences() {
     config.ledFrequency = doc["ledFrequency"] | "KHZ800";
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.logLevel = doc["logLevel"] | Logger::WARNING;
+    config.saveConfig = false;
+    config.sendConfig = false;
     preferences.end();
 }
 
@@ -85,8 +89,7 @@ void AppConfiguration::savePreferences() {
     doc["logLevel"] = config.logLevel;
     String json = "";
     serializeJson(doc, json);
-    Logger::verbose(LOG_TAG_APPCONFIGURATION, "savePreferences: ");
-    Serial.println("savePreferences: " + json);
+    log_n("savePreferences: %s", json.c_str());
     preferences.putString("config", json);
     preferences.end();
 }
