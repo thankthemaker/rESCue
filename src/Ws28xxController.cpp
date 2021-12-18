@@ -104,7 +104,7 @@ void Ws28xxController::onComplete() {
 }
 
 void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) {
-    if (activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
+    if (!repeatPattern && activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
         return;
     }
 
@@ -133,7 +133,7 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
                           (config.lightColorPrimaryBlue * maxBrightness) >> 8),
                     Color((config.lightColorSecondaryRed * maxBrightness) >> 8,
                           (config.lightColorSecondaryGreen * maxBrightness) >> 8,
-                          (config.lightColorSecondaryBlue * maxBrightness) >> 8), 100);
+                          (config.lightColorSecondaryBlue * maxBrightness) >> 8), 400);
             break;
         case COLOR_WIPE:
             break;

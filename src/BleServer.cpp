@@ -92,7 +92,8 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
     vescSerial = vesc;
 
     // Create the BLE Device
-    NimBLEDevice::init(BT_NAME);
+    NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
+    //NimBLEDevice::setMTU(BLE_PACKET_SIZE);
 
     this->canbus = canbus;
 
@@ -267,12 +268,18 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.otaUpdateActive = false;
                 AppConfiguration::getInstance()->config.saveConfig = true;
                 delay(100);
+               } else if (key == "deviceName") {
+                AppConfiguration::getInstance()->config.deviceName = value.c_str();
             } else if (key == "isNotificationEnabled") {
                 AppConfiguration::getInstance()->config.isNotificationEnabled = value.c_str();
             } else if (key == "minBatteryVoltage") {
                 AppConfiguration::getInstance()->config.minBatteryVoltage = atof(value.c_str());
+            } else if (key == "lowBatteryVoltage") {
+                AppConfiguration::getInstance()->config.lowBatteryVoltage = atof(value.c_str());
             } else if (key == "maxBatteryVoltage") {
                 AppConfiguration::getInstance()->config.maxBatteryVoltage = atof(value.c_str());
+            } else if (key == "batteryDrift") {
+                AppConfiguration::getInstance()->config.batteryDrift = atof(value.c_str());
             } else if (key == "startSoundIndex") {
                 AppConfiguration::getInstance()->config.startSoundIndex = atoi(value.c_str());
                 Buzzer::getInstance()->stopSound();

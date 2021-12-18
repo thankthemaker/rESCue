@@ -13,13 +13,18 @@
 // visitable struct, see C++ Visitor-Pattern and https://github.com/garbageslam/visit_struct
 struct Config {
   BEGIN_VISITABLES(Config);
+    VISITABLE(String, deviceName);
     VISITABLE(boolean, otaUpdateActive);
     VISITABLE(boolean, isNotificationEnabled);
     VISITABLE(boolean, isBatteryNotificationEnabled);
     VISITABLE(boolean, isCurrentNotificationEnabled);
     VISITABLE(boolean, isErpmNotificationEnabled);
     VISITABLE(double, minBatteryVoltage);
+    VISITABLE(double, lowBatteryVoltage);
     VISITABLE(double, maxBatteryVoltage);
+    VISITABLE(double, maxAverageCurrent);
+    VISITABLE(double, brakeLightMinAmp);
+    VISITABLE(double, batteryDrift);
     VISITABLE(int, startSoundIndex);
     VISITABLE(int, startLightIndex);
     VISITABLE(int, batteryWarningSoundIndex);
@@ -37,7 +42,6 @@ struct Config {
     VISITABLE(int, lightColorSecondaryGreen);
     VISITABLE(int, lightColorSecondaryBlue);
     VISITABLE(boolean, brakeLightEnabled);
-    VISITABLE(int, brakeLightMinAmp);
     VISITABLE(int, numberPixelLight);
     VISITABLE(int, numberPixelBatMon);
     VISITABLE(int, vescId);

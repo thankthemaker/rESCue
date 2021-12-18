@@ -202,6 +202,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
         frametype = "status5";
         vescData.tachometer = readInt32Value(rx_frame, 0);
         vescData.inputVoltage = readInt16Value(rx_frame, 4) / 10.0;
+        vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
     }
 
     if (RECV_PROCESS_SHORT_BUFFER_PROXY == ID) {
@@ -270,6 +271,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             vescData.dutyCycle = readInt16ValueFromBuffer(8 + offset, isProxyRequest) / 1000.0;
             vescData.erpm = readInt32ValueFromBuffer(10 + offset, isProxyRequest);
             vescData.inputVoltage = readInt16ValueFromBuffer(14 + offset, isProxyRequest) / 10.0;
+            vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
             vescData.tachometer = readInt32ValueFromBuffer(16 + offset, isProxyRequest);
             vescData.tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
             vescData.fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
