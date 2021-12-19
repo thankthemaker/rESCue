@@ -7,7 +7,7 @@
 
 #define SOFTWARE_VERSION_MAJOR 2
 #define SOFTWARE_VERSION_MINOR 0
-#define SOFTWARE_VERSION_PATCH 2
+#define SOFTWARE_VERSION_PATCH 3
 #define HARDWARE_VERSION_MAJOR 3
 #define HARDWARE_VERSION_MINOR 1
 
@@ -30,14 +30,6 @@
  #define DUAL_MOSFET     // uncomment if you use two MOSFET to activate color switching
 #endif //LED_COB
 
-/**** Definition of the battery parameter for battery monitor ****/
-
-// min and max battery voltage as int (voltage * 100)
-#define MAX_BATTARY_VOLTAGE      5040  // set your max. battery voltage here
-#define MIN_BATTARY_VOLTAGE      4000  // set your min. battery voltage here
-
-#define MAX_AVG_CURRENT          40.00
-
 // optional WS28xx lightbar & battery-monitor params
 #define LIGHT_BAR_ENABLED            // activates a visual WS28xx battery bar, if connected
 #define LIGHT_BAR_NUMPIXELS    5     // the number of LEDS of the battery bar
@@ -51,7 +43,6 @@
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
 // The name this controller should advertise for BLE
-#define BT_NAME "rESCue"
 #define CANBUS_ENABLED
 #define BLYNK_ENABLED
 

@@ -4,11 +4,13 @@
 
 const int numBatReadings = 15;
 const int numCurReadings = 50;
-const int min_voltage   = MIN_BATTARY_VOLTAGE;
-const int max_voltage   = MAX_BATTARY_VOLTAGE;
-const int warn_voltage  = MIN_BATTARY_VOLTAGE + (MAX_BATTARY_VOLTAGE - MIN_BATTARY_VOLTAGE) / 10;
-const int voltage_range = MAX_BATTARY_VOLTAGE - MIN_BATTARY_VOLTAGE;
-const double max_current= MAX_AVG_CURRENT;
+const int pixel_count = AppConfiguration::getInstance()->config.numberPixelBatMon;
+const int min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
+const int max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
+const int warn_voltage = AppConfiguration::getInstance()->config.lowBatteryVoltage * 100;
+const int voltage_range =  max_voltage - min_voltage;
+const double max_current = AppConfiguration::getInstance()->config.maxAverageCurrent;;
+
 int lastCheck           = 0;
 int lastBatWarn         = 0;
 int lastCurWarn         = 0;
@@ -45,8 +47,9 @@ float BatteryMonitor::readValues() {
     int adc = smoothAnalogReading();  // read the sensor and smooth the value
     float sensorValue = ( adc * 3.3 ) / (4096);  // calculate the voltage at the ESP32 GPIO
     float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
+    voltage = vescData->inputVoltage + AppConfiguration::getInstance()->config.batteryDrift;
 #else
-    float voltage = vescData->inputVoltage; 
+    float voltage = vescData->inputVoltage;
     float current = abs(vescData->current);
     updateCurrentArray(current);
 #endif //CANBUS_ENABLED

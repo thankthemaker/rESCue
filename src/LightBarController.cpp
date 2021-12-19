@@ -6,11 +6,11 @@ Adafruit_NeoPixel lightPixels = Adafruit_NeoPixel(AppConfiguration::getInstance(
 #endif
 
 const int pixel_count = AppConfiguration::getInstance()->config.numberPixelBatMon;
-const int min_voltage = MIN_BATTARY_VOLTAGE;
-const int max_voltage = MAX_BATTARY_VOLTAGE;
-const int warn_voltage = MIN_BATTARY_VOLTAGE + (MAX_BATTARY_VOLTAGE - MIN_BATTARY_VOLTAGE) / 10;
-const int voltage_range = MAX_BATTARY_VOLTAGE - MIN_BATTARY_VOLTAGE;
-const double max_current = MAX_AVG_CURRENT;
+const int min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
+const int max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
+const int warn_voltage = AppConfiguration::getInstance()->config.lowBatteryVoltage * 100;
+const int voltage_range =  max_voltage - min_voltage;
+const double max_current = AppConfiguration::getInstance()->config.maxAverageCurrent;;
 
 AdcState lastAdcState = AdcState::ADC_NONE;
 unsigned long lastAdcStateChange = 0;
