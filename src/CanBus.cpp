@@ -144,7 +144,7 @@ void CanBus::requestBalanceData() {
     tx_frame.FIR.B.DLC = 0x03;
     tx_frame.data.u8[0] = esp_can_id;
     tx_frame.data.u8[1] = 0x00;
-    tx_frame.data.u8[2] = 0x4F;
+    tx_frame.data.u8[2] = 0x4F;  // COMM_GET_IMU_DATA
     sendCanFrame(&tx_frame);
 }
 
@@ -278,6 +278,25 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             lastRealtimeData = millis();
         } else if (command == 0x04) {
             frametype += "COMM_GET_VALUES";
+            int offset = 1;
+            vescData.mosfetTemp = readInt16ValueFromBuffer(0 + offset, isProxyRequest) / 10.0;
+            vescData.motorTemp = readInt16ValueFromBuffer(2 + offset, isProxyRequest) / 10.0;
+            vescData.motorCurrent = readInt32ValueFromBuffer(4 + offset, isProxyRequest) / 100.0;
+            vescData.current = readInt32ValueFromBuffer(8 + offset, isProxyRequest) / 100.0;
+            // id = vescData.readInt32ValueFromBuffer(12 + offset, isProxyRequest) / 100.0;
+            // iq = vescData.readInt32ValueFromBuffer(16 + offset, isProxyRequest) / 100.0;
+            vescData.dutyCycle = readInt16ValueFromBuffer(20 + offset, isProxyRequest) / 1000.0;
+            vescData.erpm = readInt32ValueFromBuffer(22 + offset, isProxyRequest);
+            vescData.inputVoltage = readInt16ValueFromBuffer(26 + offset, isProxyRequest) / 10.0;
+            vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
+            vescData.ampHours =  readInt32ValueFromBuffer(28 + offset, isProxyRequest) / 10000.0;
+            vescData.ampHoursCharged = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 10000.0;
+            vescData.wattHours =  readInt32ValueFromBuffer(46 + offset, isProxyRequest) / 10000.0;
+            vescData.wattHoursCharged = readInt32ValueFromBuffer(40 + offset, isProxyRequest) / 10000.0;
+            vescData.tachometer = readInt32ValueFromBuffer(44 + offset, isProxyRequest);
+            vescData.tachometerAbsolut = readInt32ValueFromBuffer(58 + offset, isProxyRequest);
+            vescData.fault = readInt8ValueFromBuffer(52 + offset, isProxyRequest);
+            lastRealtimeData = millis();
         } else if (command == 0x0E) {  //0x0E = 14 DEC
             frametype += "COMM_GET_MCCONF";
         } else if (command == 0x11) {  //0x11 = 17 DEC
