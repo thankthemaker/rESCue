@@ -43,13 +43,13 @@ class BleServer :
       void sendConfig();
 
 #ifdef CANBUS_ENABLED
-    void updateRescueApp(CanBus::VescData *vescData, long loopTime, long maxLoopTime);
+    void updateRescueApp(long loopTime, long maxLoopTime);
     template<typename TYPE>
     void sendValue(std::string key, TYPE value);
 #endif
 
     private:
-      CanBus *canbus;
+      CanBus *canbus{};
       struct sendConfigValue;
 };
 

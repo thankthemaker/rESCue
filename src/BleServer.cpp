@@ -8,15 +8,15 @@
 #define FULL_PACKET 512
 
 const int BLE_PACKET_SIZE = 128;
-NimBLEServer *pServer = NULL;
-NimBLEService *pServiceVesc = NULL;
-NimBLEService *pServiceRescue = NULL;
-NimBLECharacteristic *pCharacteristicVescTx = NULL;
-NimBLECharacteristic *pCharacteristicVescRx = NULL;
-NimBLECharacteristic *pCharacteristicConf = NULL;
-NimBLECharacteristic *pOtaCharacteristic = NULL;
-NimBLECharacteristic *pCharacteristicId = NULL;
-NimBLECharacteristic *pCharacteristicVersion = NULL;
+NimBLEServer *pServer = nullptr;
+NimBLEService *pServiceVesc = nullptr;
+NimBLEService *pServiceRescue = nullptr;
+NimBLECharacteristic *pCharacteristicVescTx = nullptr;
+NimBLECharacteristic *pCharacteristicVescRx = nullptr;
+NimBLECharacteristic *pCharacteristicConf = nullptr;
+NimBLECharacteristic *pOtaCharacteristic = nullptr;
+NimBLECharacteristic *pCharacteristicId = nullptr;
+NimBLECharacteristic *pCharacteristicVersion = nullptr;
 
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
@@ -33,7 +33,7 @@ uint32_t frameNumber = 0;
 
 void startUpdate() {
     Serial.println("\nBeginOTA");
-    const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+    const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
     Serial.println("Selected OTA partiton:");
     Serial.println("partition label:" + String(partition->label));
     Serial.println("partition size:" + String(partition->size));
@@ -42,7 +42,7 @@ void startUpdate() {
     Serial.println("Update started");
 }
 
-void handleUpdate(std::string data) {
+void handleUpdate(const std::string& data) {
 /*
   Serial.printf("\nhandleUpdate incoming data (size %d):\n", data.length());
   for(int i=0; i<data.length();i++) {
@@ -54,12 +54,12 @@ void handleUpdate(std::string data) {
     if (data.length() != FULL_PACKET) {
         esp_ota_end(otaHandler);
         Serial.println("\nEndOTA");
-        const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+        const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
         if (ESP_OK == esp_ota_set_boot_partition(partition)) {
             Serial.println("Activate partiton:");
             Serial.println("partition label:" + String(partition->label));
             Serial.println("partition size:" + String(partition->size));
-            AppConfiguration::getInstance()->config.otaUpdateActive = 0;
+            AppConfiguration::getInstance()->config.otaUpdateActive = false;
             AppConfiguration::getInstance()->savePreferences();
             delay(2000);
             esp_restart();
@@ -162,7 +162,7 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
     // Start advertising
     NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
-    pAdvertising->addServiceUUID(RESCUE_SERVICE_UUID);
+    ///// pAdvertising->addServiceUUID(RESCUE_SERVICE_UUID);
     pAdvertising->setAppearance(0x00);
     pAdvertising->setScanResponse(true);
     pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
@@ -218,7 +218,7 @@ void BleServer::loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime
 
 #ifdef CANBUS_ENABLED
     if (millis() - bleLoop > 500) {
-        updateRescueApp(vescData, loopTime, maxLoopTime);
+        updateRescueApp(loopTime, maxLoopTime);
         bleLoop = millis();
     }
 #endif //CANBUS_ENABLED
@@ -371,19 +371,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
 
 #ifdef CANBUS_ENABLED
 
-    void BleServer::updateRescueApp(CanBus::VescData *vescData, long loopTime, long maxLoopTime) {
-        this->sendValue("vesc.voltage", vescData->inputVoltage);
-        this->sendValue("vesc.erpm", vescData->erpm);
-        this->sendValue("vesc.dutyCycle", vescData->dutyCycle);
-        this->sendValue("vesc.mosfetTemp", vescData->mosfetTemp);
-        this->sendValue("vesc.motorTemp", vescData->motorTemp);
-        this->sendValue("vesc.ampHours", vescData->ampHours);
-        this->sendValue("vesc.ampHoursCharged", vescData->ampHoursCharged);
-        this->sendValue("vesc.wattHours", vescData->wattHours);
-        this->sendValue("vesc.wattHoursCharged", vescData->wattHoursCharged);
-        this->sendValue("vesc.current", vescData->current);
-        this->sendValue("vesc.tachometer", vescData->tachometer);
-        this->sendValue("vesc.tachometerAbsolut", vescData->tachometerAbsolut);
+    void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
         this->sendValue("loopTime", loopTime);
         this->sendValue("maxLoopTime", maxLoopTime);
 
@@ -451,5 +439,4 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
     void BleServer::sendConfig() {
         visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
     }
-
 #endif //CANBUS_ENABLED
