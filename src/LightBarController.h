@@ -5,6 +5,7 @@
 #include <Logger.h>
 #include "config.h"
 #include "AppConfiguration.h"
+#include "ILedController.h"
 
 #define LOG_TAG_LIGHTBAR "LightBar"
 

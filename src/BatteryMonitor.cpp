@@ -4,12 +4,6 @@
 
 const int numBatReadings = 15;
 const int numCurReadings = 50;
-const int pixel_count = AppConfiguration::getInstance()->config.numberPixelBatMon;
-const int min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
-const int max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
-const int warn_voltage = AppConfiguration::getInstance()->config.lowBatteryVoltage * 100;
-const int voltage_range =  max_voltage - min_voltage;
-const double max_current = AppConfiguration::getInstance()->config.maxAverageCurrent;;
 
 int lastCheck           = 0;
 int lastBatWarn         = 0;
@@ -31,8 +25,11 @@ BatteryMonitor::BatteryMonitor(CanBus::VescData *vescData) {
 
 void BatteryMonitor::init() {
   Logger::notice(LOG_TAG_BATMON, "initializing...");
-
-  // initialize the array for smoothing the analog value
+    this->min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
+    this->max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
+    this->warn_voltage = AppConfiguration::getInstance()->config.lowBatteryVoltage * 100;
+    this->max_current = AppConfiguration::getInstance()->config.maxAverageCurrent;;
+    // initialize the array for smoothing the analog value
   for (int i = 0; i < numBatReadings; i++) {
     batteryReadings[i] = 45;
   }
