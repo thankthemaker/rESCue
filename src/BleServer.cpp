@@ -7,7 +7,8 @@
 
 #define FULL_PACKET 512
 
-const int BLE_PACKET_SIZE = 128;
+int MTU_SIZE = FULL_PACKET;
+int BLE_PACKET_SIZE = MTU_SIZE - 3;
 NimBLEServer *pServer = nullptr;
 NimBLEService *pServiceVesc = nullptr;
 NimBLEService *pServiceRescue = nullptr;
@@ -76,6 +77,14 @@ void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
     snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
     Logger::notice(LOG_TAG_BLESERVER, buf);
     Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
+    uint16_t mtu = pServer->getPeerMTU(NimBLEAddress(desc->peer_ota_addr));
+    if(mtu != 0 && mtu < MTU_SIZE) {
+        MTU_SIZE = mtu;
+        BLE_PACKET_SIZE = MTU_SIZE - 3;
+        NimBLEDevice::setMTU(mtu);
+        snprintf(buf, 128, "New MTU-size: %d", mtu);
+        Logger::warning(LOG_TAG_BLESERVER, buf);
+    }
     deviceConnected = true;
     NimBLEDevice::startAdvertising();
 };
@@ -93,7 +102,7 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
 
     // Create the BLE Device
     NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
-    //NimBLEDevice::setMTU(BLE_PACKET_SIZE);
+    NimBLEDevice::setMTU(MTU_SIZE);
 
     this->canbus = canbus;
 
@@ -162,7 +171,7 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
     // Start advertising
     NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
-    ///// pAdvertising->addServiceUUID(RESCUE_SERVICE_UUID);
+    pAdvertising->addServiceUUID(RESCUE_SERVICE_UUID);
     pAdvertising->setAppearance(0x00);
     pAdvertising->setScanResponse(true);
     pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
