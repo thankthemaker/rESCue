@@ -30,6 +30,7 @@ class ILedController {
 class LedControllerFactory {
     public:
         static LedControllerFactory* getInstance();
+        static uint8_t determineLedType();
         ILedController* createLedController();
 
     private:

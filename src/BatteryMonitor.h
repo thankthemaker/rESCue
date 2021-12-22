@@ -22,6 +22,10 @@ class BatteryMonitor {
         void checkValues();
 
     private:
+        int min_voltage = 0;
+        int max_voltage = 0;
+        int warn_voltage = 0;
+        double max_current = 0;
 #ifdef CANBUS_ENABLED
         CanBus::VescData *vescData;
 #endif

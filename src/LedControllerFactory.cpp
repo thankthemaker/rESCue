@@ -16,6 +16,15 @@ LedControllerFactory *LedControllerFactory::getInstance() {
 
 ILedController *LedControllerFactory::createLedController() {
 #ifdef LED_WS28xx
+    uint8_t ledType = LedControllerFactory::determineLedType();
+    return new Ws28xxController(AppConfiguration::getInstance()->config.numberPixelLight, PIN_NEOPIXEL, ledType);
+#endif //LED_WS28xx
+#ifdef LED_COB
+    return new CobController();
+#endif //LED_COB
+}
+
+uint8_t LedControllerFactory::determineLedType() {
     uint8_t ledType = 0;
     std::string ledTypeStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
     if (ledTypeStr == "RGB") {
@@ -26,6 +35,8 @@ ILedController *LedControllerFactory::createLedController() {
         ledType = 198;
     } else if (ledTypeStr == "GRBW" ) {
         ledType = 210;
+    } else {
+        ledType = 6;
     }
 
     std::string ledFreqStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
@@ -34,9 +45,5 @@ ILedController *LedControllerFactory::createLedController() {
     } else {
         ledType = ledType + 0x0100;
     }
-    return new Ws28xxController(AppConfiguration::getInstance()->config.numberPixelLight, PIN_NEOPIXEL, ledType);
-#endif //LED_WS28xx
-#ifdef LED_COB
-    return new CobController();
-#endif //LED_COB
+    return ledType;
 }
