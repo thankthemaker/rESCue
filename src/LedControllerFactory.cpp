@@ -35,6 +35,8 @@ uint8_t LedControllerFactory::determineLedType() {
         ledType = 198;
     } else if (ledTypeStr == "GRBW" ) {
         ledType = 210;
+    } else {
+        ledType = 6;
     }
 
     std::string ledFreqStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
