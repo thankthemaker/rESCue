@@ -25,8 +25,9 @@ class BleServer :
   public BLECharacteristicCallbacks  {
     public:
       BleServer();
-      void init(Stream *vesc, CanBus *canbus);
+      void init(Stream *vesc);      
 #ifdef CANBUS_ENABLED
+      void init(Stream *vesc, CanBus *canbus);
       void loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime);
 #else
       void loop();
@@ -49,7 +50,9 @@ class BleServer :
 #endif
 
     private:
+#ifdef CANBUS_ENABLED
       CanBus *canbus;
+#endif
       struct sendConfigValue;
 };
 

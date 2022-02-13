@@ -38,6 +38,7 @@ BleServer *bleServer = new BleServer();
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char* module, const char* message);
 
+#ifdef CANBUS_ENABLED
 void fakeCanbusValues() {
     if(millis() - lastFake > 3000) {
         canbus->vescData.tachometer= random(0, 30);
@@ -59,6 +60,7 @@ void fakeCanbusValues() {
         lastFakeCount++;
     }
 }
+#endif
 
 void setup() {
   Logger::setOutputFunction(localLogger);
@@ -90,11 +92,12 @@ void setup() {
   // initializes the battery monitor
   batMonitor->init();
   // initialize the UART bridge from VESC to BLE and the BLE support for Blynk (https://blynk.io)
-#ifdef CANBUS_ONLY
+#ifdef CANBUS_ENABLED
   bleServer->init(canbus->stream, canbus);
-#else
-  bleServer->init(&vesc, canbus);
+#else  
+  bleServer->init(&vesc);
 #endif
+
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 
@@ -119,7 +122,9 @@ void loop() {
     return;
   }
   if(AppConfiguration::getInstance()->config.sendConfig) {
+#ifdef CANBUS_ENABLED
       bleServer->sendConfig();
+#endif
       AppConfiguration::getInstance()->config.sendConfig = false;
   }  if(AppConfiguration::getInstance()->config.saveConfig) {
       AppConfiguration::getInstance()->savePreferences();
@@ -139,7 +144,7 @@ void loop() {
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
-  idle         = *(new_forward) == LOW && *(new_backward) == LOW;
+  idle         = new_forward && new_backward;
 #endif
 
 #ifdef CANBUS_ENABLED
@@ -166,6 +171,7 @@ void loop() {
 #else
   bleServer->loop();
 #endif
+
 }
 
 void localLogger(Logger::Level level, const char* module, const char* message) {
