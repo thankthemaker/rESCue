@@ -7,6 +7,7 @@
 #include "AppConfiguration.h"
 #include "Buzzer.h"
 #include <NimBLEDevice.h>
+#include "base64.h"
 
 #define LOG_TAG_BLESERVER "BleServer"
 

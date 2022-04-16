@@ -4,6 +4,7 @@
 #include <sstream>
 #include "esp_bt_main.h"
 #include "esp_ota_ops.h"
+#include <ESPAsyncWebServer.h>
 
 #define FULL_PACKET 512
 
@@ -31,6 +32,9 @@ BleServer::BleServer() {}
 esp_ota_handle_t otaHandler = 0;
 bool updateFlag = false;
 uint32_t frameNumber = 0;
+AsyncWebServer server(80);
+boolean wifiActive = false;
+const char *wifiPassword;
 
 void startUpdate() {
     Serial.println("\nBeginOTA");
@@ -68,6 +72,39 @@ void handleUpdate(const std::string& data) {
             Serial.println("Upload Error");
         }
     }
+}
+
+void activateWiFiAp(const char *password) {
+    WiFi.softAP("rESCue OTA Updates", password);
+    IPAddress myIP = WiFi.softAPIP();
+    Serial.print("AP IP address: ");
+    Serial.println(myIP);
+    server.on("/ping", HTTP_GET, [](AsyncWebServerRequest *request){
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "alive");
+        response->addHeader("Access-Control-Allow-Origin", "*");
+        request->send(response);
+    });
+    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+        int params = request->params();
+        for(int i=0;i<params;i++){
+            AsyncWebParameter* p = request->getParam(i);
+            if(p->isPost() && p->name().compareTo("data") != -1) {
+                const char *value =p->value().c_str();
+                //Serial.printf("\nPOST[%s]: bytes %d\n", p->name().c_str(), p->value().length());
+                if(!updateFlag) {
+                    startUpdate();
+                }
+                if(p->value().length() > 0) {
+                    handleUpdate(base64_decode(value, false));
+                }
+            }
+        }
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "ok");
+        response->addHeader("Access-Control-Allow-Origin", "*");
+        request->send(response);
+    });
+    server.begin();
+    wifiActive = true;
 }
 
 // NimBLEServerCallbacks::onConnect
@@ -252,7 +289,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
 */
 
 #ifdef CANBUS_ONLY
-            canbus->proxyIn(rxValue);
+            canbus->proxy->proxyIn(rxValue);
 #else
             for (int i = 0; i < rxValue.length(); i++) {
               vescSerial->write(rxValue[i]);
@@ -342,6 +379,12 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.ledFrequency = value.c_str();
             } else if (key == "logLevel") {
                 AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(atoi(value.c_str()));
+            } else if(key == "wifiActive") {
+                if(value.compare("true") != -1) {
+                    activateWiFiAp(wifiPassword);
+                }
+            } else if(key == "wifiPassword") {
+                wifiPassword = value.c_str();
             }
             Logger::notice(LOG_TAG_BLESERVER, buf);
         } else if (pCharacteristic->getUUID().equals(pOtaCharacteristic->getUUID())) {
