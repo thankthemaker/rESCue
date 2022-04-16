@@ -8,8 +8,6 @@
 #include "visit_struct.hh"
 #include "visit_struct_intrusive.hh"
 
-#define LOG_TAG_APPCONFIGURATION "AppConfiguration"
-
 // visitable struct, see C++ Visitor-Pattern and https://github.com/garbageslam/visit_struct
 struct Config {
   BEGIN_VISITABLES(Config);
@@ -63,7 +61,7 @@ class AppConfiguration {
     Config config;
 
   private:
-    AppConfiguration() {}
+    AppConfiguration() = default;
     static AppConfiguration *instance; 
     Preferences preferences; 
 };

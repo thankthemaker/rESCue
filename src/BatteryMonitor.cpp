@@ -84,6 +84,7 @@ void BatteryMonitor::checkValues() {
 
     // check if voltage is below absolute minimum or above absolute maximum (regen)
     if(voltage < min_voltage || voltage > max_voltage) {
+        Serial.printf("Voltages: %d %d, %d", min_voltage, voltage, max_voltage );
       Logger::warning(LOG_TAG_BATMON, "ALARM: Battery voltage out of range");
       Buzzer::getInstance()->alarm();  // play an anoying alarm tone
       return;

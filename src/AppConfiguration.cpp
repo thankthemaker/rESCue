@@ -1,10 +1,10 @@
 #include "AppConfiguration.h"
 #include "config.h"
 
-AppConfiguration* AppConfiguration::instance = 0;
+AppConfiguration* AppConfiguration::instance = nullptr;
 
 AppConfiguration* AppConfiguration::getInstance() {
-    if (instance == 0){
+    if (instance == nullptr){
         instance = new AppConfiguration();
     }
 

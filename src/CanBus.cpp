@@ -1,36 +1,13 @@
 #include "CanBus.h"
-#include <Logger.h>
 
 #ifdef CANBUS_ENABLED
 
-CAN_device_t CAN_cfg;
 
 CanBus::CanBus() {
     stream = new LoopbackStream(BUFFER_SIZE);
 }
 
 void CanBus::init() {
-    CAN_cfg.speed = CAN_SPEED_500KBPS;
-    CAN_cfg.tx_pin_id = GPIO_NUM_26;
-    CAN_cfg.rx_pin_id = GPIO_NUM_27;
-    CAN_cfg.rx_queue = xQueueCreate(1000, sizeof(CAN_frame_t));
-    /*
-      CAN_filter_t p_filter;
-      p_filter.FM = Single_Mode;
-
-      p_filter.ACR0 = 0x00;
-      p_filter.ACR1 = 0x00;
-      p_filter.ACR2 = 0x10;
-      p_filter.ACR3 = 0x19;
-
-      p_filter.AMR0 = 0x1F;
-      p_filter.AMR1 = 0xFF;
-      p_filter.AMR2 = 0xFF;
-      p_filter.AMR3 = 0xFF;
-      ESP32Can.CANConfigFilter(&p_filter);
-    */
-    //start CAN Module
-    ESP32Can.CANInit();
     vesc_id = AppConfiguration::getInstance()->config.vescId;
     esp_can_id = vesc_id + 1;
     ble_proxy_can_id = vesc_id + 2;
@@ -51,7 +28,9 @@ void CanBus::init() {
             (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + ble_proxy_can_id;
     RECV_PROCESS_RX_BUFFER_PROXY =
             (uint32_t(0x0000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + ble_proxy_can_id;
-
+    candevice = new CanDevice();
+    candevice->init();
+    proxy = new BleCanProxy(candevice, stream, vesc_id, ble_proxy_can_id);
 }
 
 /*
@@ -62,11 +41,11 @@ void CanBus::loop() {
     int frameCount = 0;
     CAN_frame_t rx_frame;
     if (initialized) {
-        if (millis() - lastRealtimeData > interval) {
+        if (millis() - lastRealtimeData > interval && !proxy->processing) {
             requestRealtimeData();
         }
 
-        if (millis() - lastBalanceData > interval) {
+        if (millis() - lastBalanceData > interval && !proxy->processing) {
             requestBalanceData();
         }
     } else if(initRetryCounter > 0 && millis() - lastRetry > 500) {
@@ -114,7 +93,7 @@ void CanBus::requestFirmwareVersion() {
     tx_frame.data.u8[0] = esp_can_id;
     tx_frame.data.u8[1] = 0x00;
     tx_frame.data.u8[2] = 0x00;  // COMM_FW_VERSION
-    sendCanFrame(&tx_frame);
+    candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::requestRealtimeData() {
@@ -132,7 +111,7 @@ void CanBus::requestRealtimeData() {
     tx_frame.data.u8[4] = 0x00;      // Byte2 of mask (Bits 16-23)
     tx_frame.data.u8[5] = B10000111; // Byte3 of mask (Bits 8-15)
     tx_frame.data.u8[6] = B11000011; // Byte4 of mask (Bits 0-7)
-    sendCanFrame(&tx_frame);
+    candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::requestBalanceData() {
@@ -144,8 +123,8 @@ void CanBus::requestBalanceData() {
     tx_frame.FIR.B.DLC = 0x03;
     tx_frame.data.u8[0] = esp_can_id;
     tx_frame.data.u8[1] = 0x00;
-    tx_frame.data.u8[2] = 0x4F;
-    sendCanFrame(&tx_frame);
+    tx_frame.data.u8[2] = 0x4F;  // COMM_GET_DECODED_BALANCE
+    candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::ping() {
@@ -154,7 +133,7 @@ void CanBus::ping() {
     tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PING) << 8) + vesc_id;
     tx_frame.FIR.B.DLC = 0x01;
     tx_frame.data.u8[0] = esp_can_id;
-    sendCanFrame(&tx_frame);
+    candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::printFrame(CAN_frame_t rx_frame, int frameCount) {
@@ -210,7 +189,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
         for (int i = 1; i < rx_frame.FIR.B.DLC; i++) {
             proxybuffer.push_back(rx_frame.data.u8[i]);
         }
-        proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
+        proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
         proxybuffer.clear();
     }
 
@@ -238,19 +217,19 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
         }
         //Serial.printf("bytes %d\n", buffer.size());
 
-        if ((!isProxyRequest && buffer.size() <= 0) || (isProxyRequest && proxybuffer.size() <= 0)) {
+        if ((!isProxyRequest && buffer.empty()) || (isProxyRequest && proxybuffer.empty())) {
             Serial.printf("buffer empty, abort");
             return;
         }
         uint8_t command = (isProxyRequest ? proxybuffer : buffer).at(0);
         if (command == 0x00) {
-            frametype += "firmwareversion";
+            frametype += "COMM_FW_VERSION";
             int offset = 1;
             vescData.majorVersion = readInt8ValueFromBuffer(0, isProxyRequest);
             vescData.minorVersion = readInt8ValueFromBuffer(1, isProxyRequest);
             vescData.name = readStringValueFromBuffer(2 + offset, 12, isProxyRequest);
         } else if (command == 0x4F) {  //0x4F = 79 DEC
-            frametype += "balancedata";
+            frametype += "COMM_GET_DECODED_BALANCE";
             int offset = 1;
             vescData.pidOutput = readInt32ValueFromBuffer(0 + offset, isProxyRequest) / 1000000.0;
             vescData.pitch = readInt32ValueFromBuffer(4 + offset, isProxyRequest) / 1000000.0;
@@ -264,7 +243,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             vescData.adc2 = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 1000000.0;
             lastBalanceData = millis();
         } else if (command == 0x32) { //0x32 = 50 DEC
-            frametype += "realtimeData";
+            frametype += "COMM_GET_VALUES_SELECTIVE";
             int offset = 1;
             vescData.mosfetTemp = readInt16ValueFromBuffer(4 + offset, isProxyRequest) / 10.0;
             vescData.motorTemp = readInt16ValueFromBuffer(6 + offset, isProxyRequest) / 10.0;
@@ -276,8 +255,99 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             vescData.tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
             vescData.fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
             lastRealtimeData = millis();
+        }  else if (command == 0x33) { //0x33 = 51 DEC
+            frametype += "COMM_GET_VALUES_SETUP_SELECTIVE";
+            int offset = 1;
+            int startbyte = 0;
+            uint32_t bitmask = readInt32ValueFromBuffer(0 + offset, isProxyRequest);
+            startbyte += 4;
+            if(bitmask & ((uint32_t) 1 << 0)) {
+                vescData.mosfetTemp = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
+                startbyte += 2;
+            }
+            if(bitmask & ((uint32_t) 1 << 1)) {
+                vescData.motorTemp = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
+                startbyte += 2;
+            }
+            if(bitmask & ((uint32_t) 1 << 2)) {
+                // current in
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 3)) {
+                // current in_total
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 4)) {
+                vescData.dutyCycle = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 1000.0;
+                startbyte += 2;
+            }
+            if(bitmask & ((uint32_t) 1 << 5)) {
+                vescData.erpm = readInt32ValueFromBuffer(startbyte + offset, isProxyRequest);
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 6)) {
+                // speed
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 7)) {
+                vescData.inputVoltage = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
+                vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
+                startbyte += 2;
+            }
+            if(bitmask & ((uint32_t) 1 << 8)) {
+                // battery level
+                startbyte += 2;
+            }
+            if(bitmask & ((uint32_t) 1 << 9)) {
+                // amphours consumed
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 10)) {
+                // amphours charged
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 11)) {
+                // watthours consumed
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 12)) {
+                // watthours charged
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 13)) {
+                vescData.tachometer = readInt32ValueFromBuffer(16 + offset, isProxyRequest);
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 14)) {
+                vescData.tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
+                startbyte += 4;
+            }
+            if(bitmask & ((uint32_t) 1 << 16)) {
+                vescData.fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
+                startbyte += 1;
+            }
+            lastRealtimeData = millis();
         } else if (command == 0x04) {
             frametype += "COMM_GET_VALUES";
+            int offset = 1;
+            vescData.mosfetTemp = readInt16ValueFromBuffer(0 + offset, isProxyRequest) / 10.0;
+            vescData.motorTemp = readInt16ValueFromBuffer(2 + offset, isProxyRequest) / 10.0;
+            vescData.motorCurrent = readInt32ValueFromBuffer(4 + offset, isProxyRequest) / 100.0;
+            vescData.current = readInt32ValueFromBuffer(8 + offset, isProxyRequest) / 100.0;
+            // id = vescData.readInt32ValueFromBuffer(12 + offset, isProxyRequest) / 100.0;
+            // iq = vescData.readInt32ValueFromBuffer(16 + offset, isProxyRequest) / 100.0;
+            vescData.dutyCycle = readInt16ValueFromBuffer(20 + offset, isProxyRequest) / 1000.0;
+            vescData.erpm = readInt32ValueFromBuffer(22 + offset, isProxyRequest);
+            vescData.inputVoltage = readInt16ValueFromBuffer(26 + offset, isProxyRequest) / 10.0;
+            vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
+            vescData.ampHours =  readInt32ValueFromBuffer(28 + offset, isProxyRequest) / 10000.0;
+            vescData.ampHoursCharged = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 10000.0;
+            vescData.wattHours =  readInt32ValueFromBuffer(46 + offset, isProxyRequest) / 10000.0;
+            vescData.wattHoursCharged = readInt32ValueFromBuffer(40 + offset, isProxyRequest) / 10000.0;
+            vescData.tachometer = readInt32ValueFromBuffer(44 + offset, isProxyRequest);
+            vescData.tachometerAbsolut = readInt32ValueFromBuffer(58 + offset, isProxyRequest);
+            vescData.fault = readInt8ValueFromBuffer(52 + offset, isProxyRequest);
+            lastRealtimeData = millis();
         } else if (command == 0x0E) {  //0x0E = 14 DEC
             frametype += "COMM_GET_MCCONF";
         } else if (command == 0x11) {  //0x11 = 17 DEC
@@ -292,7 +362,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             frametype += command;
         }
         if (isProxyRequest) {
-            proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
+            proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
             proxybuffer.clear();
         } else {
             buffer.clear();
@@ -306,176 +376,13 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
     }
 }
 
-void CanBus::proxyIn(std::string in) {
-    uint8_t packet_type = (uint8_t) in.at(0);
-
-    if (!longPacket) {
-        switch (packet_type) {
-            case 2:
-                length = (uint8_t) in.at(1);
-                command = (uint8_t) in.at(2);
-                break;
-            case 3:
-                length = ((uint8_t) in.at(1) << 8) + (uint8_t) in.at(2);
-                command = (uint8_t) in.at(3);
-                longPacket = true;
-                break;
-            default:
-                return;
-        }
-        if (Logger::getLogLevel() == Logger::VERBOSE) {
-            char buf[64];
-            snprintf(buf, 64, "Proxy in, command %d, length %d\n", command, length);
-            Logger::verbose(LOG_TAG_CANBUS, buf);
-        }
-    }
-
-    if (longPacket) {
-        longPackBuffer += in;
-        // 7 bytes overhead
-        if (length > (longPackBuffer.size() - 6)) {
-            //Serial.printf("Buffer not full, needed %d, is %d\n", length, longPackBuffer.size()-6);
-            return;
-        }
-
-        //Serial.printf("Buffer full now processing, needed %d, is %d\n", length, longPackBuffer.size()-6);
-
-        unsigned int end_a = 0;
-        int offset = 2;
-        // skip first two bytes CRC here
-        for (unsigned int byteNum = offset; byteNum < length; byteNum += 7) {
-            if (byteNum > 255 + offset) {
-                break;
-            }
-
-            end_a = byteNum + 7;
-
-            CAN_frame_t tx_frame = {};
-            tx_frame.FIR.B.FF = CAN_frame_ext;
-            tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + vesc_id;
-            tx_frame.FIR.B.DLC = 8;
-            tx_frame.data.u8[0] = byteNum - offset; //startbyte counter of frame
-
-            int sendLen = (longPackBuffer.length() >= byteNum + 7) ? 7 : longPackBuffer.length() - byteNum;
-            for (int i = 1; i < sendLen + 1; i++) {
-                //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
-                tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
-            }
-            sendCanFrame(&tx_frame);
-        }
-
-        for (unsigned int byteNum = end_a - 1; byteNum < length; byteNum += 6) {
-            CAN_frame_t tx_frame = {};
-            tx_frame.FIR.B.FF = CAN_frame_ext;
-            tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + vesc_id;
-            tx_frame.FIR.B.DLC = 8;
-            tx_frame.data.u8[0] = (byteNum - 1) >> 8;
-            tx_frame.data.u8[1] = (byteNum - 1) & 0xFF;
-
-            int sendLen = (longPackBuffer.length() >= byteNum + 6) ? 6 : longPackBuffer.length() - byteNum;
-            for (int i = 2; i < sendLen + 2; i++) {
-                //Serial.printf("Reading byte %d, length %d\n", byteNum + i, longPackBuffer.length());
-                tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum + i);
-            }
-
-            sendCanFrame(&tx_frame);
-        }
-
-        CAN_frame_t tx_frame = {};
-        tx_frame.FIR.B.FF = CAN_frame_ext;
-        tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + vesc_id;
-        tx_frame.FIR.B.DLC = 6;
-        tx_frame.data.u8[0] = ble_proxy_can_id;
-        tx_frame.data.u8[1] = 0; // IS THIS CORRECT?????
-        tx_frame.data.u8[2] = length >> 8;
-        tx_frame.data.u8[3] = length & 0xFF;
-        tx_frame.data.u8[4] = longPackBuffer.at(longPackBuffer.size() - 3);
-        tx_frame.data.u8[5] = longPackBuffer.at(longPackBuffer.size() - 2);
-        sendCanFrame(&tx_frame);
-
-    } else {
-        CAN_frame_t tx_frame = {};
-        tx_frame.FIR.B.FF = CAN_frame_ext;
-        tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
-        tx_frame.FIR.B.DLC = 0x02 + length;
-        tx_frame.data.u8[0] = ble_proxy_can_id;
-        tx_frame.data.u8[1] = 0x00;
-        tx_frame.data.u8[2] = command;
-        for (int i = 3; i < length + 2; i++) {
-            tx_frame.data.u8[i] = (uint8_t) in.at(i);
-        }
-        sendCanFrame(&tx_frame);
-    }
-
-    length = 0;
-    command = 0;
-    longPacket = false;
-    longPackBuffer = "";
-}
-
-void CanBus::proxyOut(uint8_t *data, int size, uint8_t crc1, uint8_t crc2) {
-    if (size > BUFFER_SIZE) {
-        Logger::error(LOG_TAG_CANBUS, "proxyOut - Buffer size exceeded, abort (message not sent via proxy)");
-        return;
-    }
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[32];
-        snprintf(buf, 32, "Proxy out, sending %d bytes\n", size);
-        Logger::verbose(LOG_TAG_CANBUS, buf);
-    }
-    //Start bit, package size
-    if (size <= 255) {
-        //Serial.print(0x02);
-        stream->write(0x02);
-        // size
-        //Serial.print(size);
-        stream->write(size);
-    } else if (size <= 65535) {
-        //Serial.print(0x03);
-        stream->write(0x03);
-        // size
-        //Serial.print(size >> 8);
-        //Serial.print(size & 0xFF);
-        stream->write(size >> 8);
-        stream->write(size & 0xFF);
-    } else {
-        //Serial.print(0x04);
-        stream->write(0x04);
-        // size
-        //Serial.print(size >> 16);
-        //Serial.print((size >> 8) & 0x0F);
-        //Serial.print(size & 0xFF);
-        stream->write(size >> 16);
-        stream->write((size >> 8) & 0x0F);
-        stream->write(size & 0xFF);
-    }
-
-    // data
-    for (int i = 0; i < size; i++) {
-        //Serial.print(data[i]);
-        stream->write(data[i]);
-    }
-
-    //crc 2 byte
-    //Serial.print(crc1);
-    //Serial.print(crc2);
-    stream->write(crc1);
-    stream->write(crc2);
-
-    // Stop bit
-    //Serial.print(0x03);
-    stream->write(0x03);
-
-    //Serial.println("");
-}
-
 void CanBus::dumpVescValues() {
     if (Logger::getLogLevel() != Logger::VERBOSE || millis() - lastDump < 1000) {
         return;
     }
     int size = 25;
     char val[size];
-    std::string bufferString = "";
+    std::string bufferString;
     bufferString += "name=";
     snprintf(val, size, "%s, ", vescData.name.c_str());
     bufferString += val;
@@ -586,31 +493,11 @@ int8_t CanBus::readInt8ValueFromBuffer(int startbyte, boolean isProxyRequest) {
 }
 
 std::string CanBus::readStringValueFromBuffer(int startbyte, int length, boolean isProxyRequest) {
-    std::string name = "";
+    std::string name;
     for (int i = startbyte; i < startbyte + length; i++) {
         name += (char) (isProxyRequest ? proxybuffer : buffer).at(i);
     }
     return name;
-}
-
-void CanBus::sendCanFrame(const CAN_frame_t *p_frame) {
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[64];
-        snprintf(buf, 64, "Sending CAN frame %" PRIu32 ", [%d, %d, %d, %d, %d, %d, %d, %d]\n",
-                 p_frame->MsgID,
-                 p_frame->data.u8[0],
-                 p_frame->data.u8[1],
-                 p_frame->data.u8[2],
-                 p_frame->data.u8[3],
-                 p_frame->data.u8[4],
-                 p_frame->data.u8[5],
-                 p_frame->data.u8[6],
-                 p_frame->data.u8[7]);
-        Logger::verbose(LOG_TAG_CANBUS, buf);
-    }
-    xSemaphoreTake(mutex_v, portMAX_DELAY);
-    ESP32Can.CANWriteFrame(p_frame);
-    xSemaphoreGive(mutex_v);
 }
 
 #endif //CANBUS_ENABLED

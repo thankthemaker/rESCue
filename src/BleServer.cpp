@@ -4,19 +4,21 @@
 #include <sstream>
 #include "esp_bt_main.h"
 #include "esp_ota_ops.h"
+#include <ESPAsyncWebServer.h>
 
 #define FULL_PACKET 512
 
-const int BLE_PACKET_SIZE = 128;
-NimBLEServer *pServer = NULL;
-NimBLEService *pServiceVesc = NULL;
-NimBLEService *pServiceRescue = NULL;
-NimBLECharacteristic *pCharacteristicVescTx = NULL;
-NimBLECharacteristic *pCharacteristicVescRx = NULL;
-NimBLECharacteristic *pCharacteristicConf = NULL;
-NimBLECharacteristic *pOtaCharacteristic = NULL;
-NimBLECharacteristic *pCharacteristicId = NULL;
-NimBLECharacteristic *pCharacteristicVersion = NULL;
+int MTU_SIZE = FULL_PACKET;
+int BLE_PACKET_SIZE = MTU_SIZE - 3;
+NimBLEServer *pServer = nullptr;
+NimBLEService *pServiceVesc = nullptr;
+NimBLEService *pServiceRescue = nullptr;
+NimBLECharacteristic *pCharacteristicVescTx = nullptr;
+NimBLECharacteristic *pCharacteristicVescRx = nullptr;
+NimBLECharacteristic *pCharacteristicConf = nullptr;
+NimBLECharacteristic *pOtaCharacteristic = nullptr;
+NimBLECharacteristic *pCharacteristicId = nullptr;
+NimBLECharacteristic *pCharacteristicVersion = nullptr;
 
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
@@ -30,10 +32,13 @@ BleServer::BleServer() {}
 esp_ota_handle_t otaHandler = 0;
 bool updateFlag = false;
 uint32_t frameNumber = 0;
+AsyncWebServer server(80);
+boolean wifiActive = false;
+const char *wifiPassword;
 
 void startUpdate() {
     Serial.println("\nBeginOTA");
-    const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+    const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
     Serial.println("Selected OTA partiton:");
     Serial.println("partition label:" + String(partition->label));
     Serial.println("partition size:" + String(partition->size));
@@ -42,7 +47,7 @@ void startUpdate() {
     Serial.println("Update started");
 }
 
-void handleUpdate(std::string data) {
+void handleUpdate(const std::string& data) {
 /*
   Serial.printf("\nhandleUpdate incoming data (size %d):\n", data.length());
   for(int i=0; i<data.length();i++) {
@@ -54,12 +59,12 @@ void handleUpdate(std::string data) {
     if (data.length() != FULL_PACKET) {
         esp_ota_end(otaHandler);
         Serial.println("\nEndOTA");
-        const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+        const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
         if (ESP_OK == esp_ota_set_boot_partition(partition)) {
             Serial.println("Activate partiton:");
             Serial.println("partition label:" + String(partition->label));
             Serial.println("partition size:" + String(partition->size));
-            AppConfiguration::getInstance()->config.otaUpdateActive = 0;
+            AppConfiguration::getInstance()->config.otaUpdateActive = false;
             AppConfiguration::getInstance()->savePreferences();
             delay(2000);
             esp_restart();
@@ -69,6 +74,39 @@ void handleUpdate(std::string data) {
     }
 }
 
+void activateWiFiAp(const char *password) {
+    WiFi.softAP("rESCue OTA Updates", password);
+    IPAddress myIP = WiFi.softAPIP();
+    Serial.print("AP IP address: ");
+    Serial.println(myIP);
+    server.on("/ping", HTTP_GET, [](AsyncWebServerRequest *request){
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "alive");
+        response->addHeader("Access-Control-Allow-Origin", "*");
+        request->send(response);
+    });
+    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+        int params = request->params();
+        for(int i=0;i<params;i++){
+            AsyncWebParameter* p = request->getParam(i);
+            if(p->isPost() && p->name().compareTo("data") != -1) {
+                const char *value =p->value().c_str();
+                //Serial.printf("\nPOST[%s]: bytes %d\n", p->name().c_str(), p->value().length());
+                if(!updateFlag) {
+                    startUpdate();
+                }
+                if(p->value().length() > 0) {
+                    handleUpdate(base64_decode(value, false));
+                }
+            }
+        }
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "ok");
+        response->addHeader("Access-Control-Allow-Origin", "*");
+        request->send(response);
+    });
+    server.begin();
+    wifiActive = true;
+}
+
 // NimBLEServerCallbacks::onConnect
 inline
 void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
@@ -76,6 +114,14 @@ void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
     snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
     Logger::notice(LOG_TAG_BLESERVER, buf);
     Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
+    uint16_t mtu = pServer->getPeerMTU(NimBLEAddress(desc->peer_ota_addr));
+    if(mtu != 0 && mtu < MTU_SIZE) {
+        MTU_SIZE = mtu;
+        BLE_PACKET_SIZE = MTU_SIZE - 3;
+        NimBLEDevice::setMTU(mtu);
+        snprintf(buf, 128, "New MTU-size: %d", mtu);
+        Logger::warning(LOG_TAG_BLESERVER, buf);
+    }
     deviceConnected = true;
     NimBLEDevice::startAdvertising();
 };
@@ -93,7 +139,7 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
 
     // Create the BLE Device
     NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
-    //NimBLEDevice::setMTU(BLE_PACKET_SIZE);
+    NimBLEDevice::setMTU(MTU_SIZE);
 
     this->canbus = canbus;
 
@@ -218,7 +264,7 @@ void BleServer::loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime
 
 #ifdef CANBUS_ENABLED
     if (millis() - bleLoop > 500) {
-        updateRescueApp(vescData, loopTime, maxLoopTime);
+        updateRescueApp(loopTime, maxLoopTime);
         bleLoop = millis();
     }
 #endif //CANBUS_ENABLED
@@ -243,7 +289,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
 */
 
 #ifdef CANBUS_ONLY
-            canbus->proxyIn(rxValue);
+            canbus->proxy->proxyIn(rxValue);
 #else
             for (int i = 0; i < rxValue.length(); i++) {
               vescSerial->write(rxValue[i]);
@@ -333,6 +379,12 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.ledFrequency = value.c_str();
             } else if (key == "logLevel") {
                 AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(atoi(value.c_str()));
+            } else if(key == "wifiActive") {
+                if(value.compare("true") != -1) {
+                    activateWiFiAp(wifiPassword);
+                }
+            } else if(key == "wifiPassword") {
+                wifiPassword = value.c_str();
             }
             Logger::notice(LOG_TAG_BLESERVER, buf);
         } else if (pCharacteristic->getUUID().equals(pOtaCharacteristic->getUUID())) {
@@ -371,19 +423,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
 
 #ifdef CANBUS_ENABLED
 
-    void BleServer::updateRescueApp(CanBus::VescData *vescData, long loopTime, long maxLoopTime) {
-        this->sendValue("vesc.voltage", vescData->inputVoltage);
-        this->sendValue("vesc.erpm", vescData->erpm);
-        this->sendValue("vesc.dutyCycle", vescData->dutyCycle);
-        this->sendValue("vesc.mosfetTemp", vescData->mosfetTemp);
-        this->sendValue("vesc.motorTemp", vescData->motorTemp);
-        this->sendValue("vesc.ampHours", vescData->ampHours);
-        this->sendValue("vesc.ampHoursCharged", vescData->ampHoursCharged);
-        this->sendValue("vesc.wattHours", vescData->wattHours);
-        this->sendValue("vesc.wattHoursCharged", vescData->wattHoursCharged);
-        this->sendValue("vesc.current", vescData->current);
-        this->sendValue("vesc.tachometer", vescData->tachometer);
-        this->sendValue("vesc.tachometerAbsolut", vescData->tachometerAbsolut);
+    void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
         this->sendValue("loopTime", loopTime);
         this->sendValue("maxLoopTime", maxLoopTime);
 
@@ -451,5 +491,4 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
     void BleServer::sendConfig() {
         visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
     }
-
 #endif //CANBUS_ENABLED
