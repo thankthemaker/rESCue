@@ -5,6 +5,7 @@
 #include <Logger.h>
 #include "config.h"
 #include "AppConfiguration.h"
+#include "ILedController.h"
 
 #define LOG_TAG_LIGHTBAR "LightBar"
 
@@ -26,7 +27,7 @@ class LightBarController {
 
     private:
         LightBarController() {}
-        static LightBarController *instance; 
+        static LightBarController *instance;
         int calcVal(int value);
 };
 

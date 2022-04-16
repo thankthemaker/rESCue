@@ -6,7 +6,7 @@
 // ###################################################################### //
 
 #define SOFTWARE_VERSION_MAJOR 2
-#define SOFTWARE_VERSION_MINOR 0
+#define SOFTWARE_VERSION_MINOR 1
 #define SOFTWARE_VERSION_PATCH 3
 #define HARDWARE_VERSION_MAJOR 3
 #define HARDWARE_VERSION_MINOR 1

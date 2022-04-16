@@ -5,12 +5,10 @@ Adafruit_NeoPixel lightPixels = Adafruit_NeoPixel(AppConfiguration::getInstance(
                                                   LIGHT_BAR_PIN, NEO_GRB + NEO_KHZ800);
 #endif
 
-const int pixel_count = AppConfiguration::getInstance()->config.numberPixelBatMon;
-const int min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
-const int max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
-const int warn_voltage = AppConfiguration::getInstance()->config.lowBatteryVoltage * 100;
-const int voltage_range =  max_voltage - min_voltage;
-const double max_current = AppConfiguration::getInstance()->config.maxAverageCurrent;;
+int pixel_count = 0;
+int min_voltage = 0;
+int max_voltage = 0;
+int voltage_range = 0;
 
 AdcState lastAdcState = AdcState::ADC_NONE;
 unsigned long lastAdcStateChange = 0;
@@ -19,7 +17,18 @@ LightBarController *LightBarController::instance = 0;
 LightBarController *LightBarController::getInstance() {
     if (instance == 0) {
         instance = new LightBarController();
+        pixel_count = AppConfiguration::getInstance()->config.numberPixelBatMon;
+        min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
+        max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
+        uint8_t ledType = LedControllerFactory::getInstance()->determineLedType();
+        voltage_range = max_voltage - min_voltage;
+        lightPixels.updateLength(pixel_count);
+        lightPixels.updateType(ledType);
         lightPixels.begin(); // This initializes the NeoPixel library.
+        for (int j = 0; j < pixel_count; j++) {
+            lightPixels.setPixelColor(j, 51, 153, 255);
+        }
+        lightPixels.show();
     }
     return instance;
 }
@@ -59,12 +68,12 @@ void LightBarController::updateLightBar(float voltage, AdcState adcState, double
                     lightPixels.setPixelColor(i, 153, 0, 153); // full purple
                     break;
                 case ADC_HALF_ADC1:
-                    if(i>(pixel_count/2)) {
+                    if (i > (pixel_count / 2)) {
                         lightPixels.setPixelColor(i, 153, 0, 153); // half purple
                     }
                     break;
                 case ADC_HALF_ADC2:
-                    if(i<(pixel_count/2)) {
+                    if (i < (pixel_count / 2)) {
                         lightPixels.setPixelColor(i, 153, 0, 153); // half purple
                     }
                     break;

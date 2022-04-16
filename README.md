@@ -179,23 +179,13 @@ This application assumes you have enabled status messages 1-5, please update you
 
 If the CANBUS-feature is enabled, the battery monitor can also use the voltage measured by the VESC. A separate voltage divider isn't necessary in that case.
 
-### Blynk-App (Monitoring & Configuration)
+### rESCue-App (Monitoring & Configuration)
 
-rESCue also supports the [Blynk-App](https://blynk.io/).
+rESCue is configured by the rESCue-App which is available for free in Apple App Store and Google Play Store.
 
-![Blynk-Logo](docs/images/Blynk-logo.png)
+The rESCue-App is used to configure the ESP32, e.g. the lights and sounds and also the monitoring features including charts and local push-notifications. It also includes some basic metrics of the VESC and ride tracking.
 
-The Blynk-App is used to configure the ESP32, e.g. the lights and sounds and also the monitoring features including charts and local push-notifications (Android only, iOS doesn't work in Blynk at the moment).
 
-![Blynk-App](docs/images/rESCue-Blynk.png)
-
-If you'd like to use our Blynk dashboard, simply download the Blynk app to your smartphone and scan this QR code.
-
-To use this App with the official Blynk server, you'll might need to buy some energy as this App needs more than the 2000 `free energy` points. Therefore we offer you to use the `thank-the-maker.org` server, which gives you more than enough energy to run this app.
-
-![Blynk-App](docs/images/rESCue-Blynk-QR.jpeg)
-
-QR-Code: App-Version 1.4
 
 ### Over-The-Air (OTA) Updates
 
