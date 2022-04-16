@@ -441,7 +441,7 @@ void CanBus::dumpVescValues() {
     snprintf(val, size, "%d", vescData.balanceState);
     bufferString += val;
     bufferString += ", switchState=";
-    snprintf(val, size, "%d", vescData.balanceState);
+    snprintf(val, size, "%d", vescData.switchState);
     bufferString += val;
     bufferString += ", adc1=";
     snprintf(val, size, "%f", vescData.adc1);
