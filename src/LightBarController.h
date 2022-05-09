@@ -27,7 +27,7 @@ class LightBarController {
 
     private:
         LightBarController() {}
-        static LightBarController *instance; 
+        static LightBarController *instance;
         int calcVal(int value);
 };
 

@@ -102,6 +102,7 @@ To learn about the differences between high- and low-side switching, please read
 - CANBUS and VESC-Status
 - Blynk-App (Monitoring & Configuration)
 - Over-The-Air updates (OTA)
+- Wifi Support: let rESCue connect to your Wifi Network
 
 ### Front- and backlight control
 
@@ -145,6 +146,9 @@ For further information on measuring voltages with the ESP32, check this [great 
 ***Use UART if not connected via CANBUS, otherwise it's not needed anymore!***
 
 The VESC applications for desktop and mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
+
+To build without CANBUS support comment #define CANBUS_ENABLED line out in config.h
+//#define CANBUS_ENABLED
 
 The desktop and mobile version of the [VESC tool app](https://vesc-project.com/vesc_tool) (Linux, Windows, Android) and also [Yours Truly](https://apps.apple.com/gb/app/yours-truly/id1523671235) are well tested and should just work fine.
 
@@ -196,6 +200,11 @@ The browser will check if a newer firmware version, that is compatible with your
 ![rESCue-OTA](docs/images/rESCue-OTA.png)
 
 Please be patient, the update via BLE may take several minutes.
+
+## - Wifi Support
+
+
+
 
 ## Configuration
 
