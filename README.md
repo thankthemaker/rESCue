@@ -12,6 +12,7 @@
 - Lightbar for battery monitor and footpad sensor (visual and acoustic)
 - Blynk-App (Monitoring & Configuration)
 - Over-The-Air updates (OTA)
+- Connects to your Wifi Accesspoint -> connect to it directly via IP with the VESC Tool from PC (no Smartphone VESC App Wireless Bridge required)
 
 *2021-04-09: Renamed from "funwheel-controller" to rESCue.*
 
