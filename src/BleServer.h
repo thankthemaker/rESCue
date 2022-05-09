@@ -53,7 +53,7 @@ class BleServer :
     private:
 #ifdef CANBUS_ENABLED
       CanBus *canbus{};
-
+#endif
       struct sendConfigValue;
 };
 

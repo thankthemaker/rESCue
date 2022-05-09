@@ -144,9 +144,7 @@ void BleServer::init(Stream *vesc) {
 
     // Create the BLE Device
     NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
-    NimBLEDevice::setMTU(MTU_SIZE);
-    this->canbus = canbus;
-
+    NimBLEDevice::setMTU(MTU_SIZE);    
 
     // Create the BLE Server
     pServer = NimBLEDevice::createServer();
