@@ -1,5 +1,10 @@
 #include <Arduino.h>
 #include <Logger.h>
+
+#include <WiFi.h>
+#include <ArduinoOTA.h>
+//https://registry.platformio.org/libraries/arduino-libraries/WiFi/installation
+
 #include "config.h"
 #include "BatteryMonitor.h"
 #include "Buzzer.h"
@@ -34,6 +39,9 @@ ILedController *ledController;
 #endif //CANBUS_ENABLED
 
 BleServer *bleServer = new BleServer();
+
+int port = 65102;  //Port number
+WiFiServer server(port);
 
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char* module, const char* message);
@@ -109,6 +117,16 @@ void setup() {
     SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH,
     HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
   Logger::notice("rESCue", buf);
+
+  // wifi
+  //WiFi.mode(WIFI_STA);
+  WiFi.begin("INSERT_YOUR_WIFI_SSID_HERE", "INSERT_YOUR_WIFI_PASSWORD_HERE");
+
+  ArduinoOTA.setHostname("rESCue");
+  ArduinoOTA.begin();
+  
+  server.begin();
+
 }
 
 void loop() {
@@ -171,6 +189,33 @@ void loop() {
 #else
   bleServer->loop();
 #endif
+
+  ArduinoOTA.handle();
+
+  WiFiClient client = server.available();
+  
+  if (client) {
+    if(client.connected())
+    {
+      //Serial.println("Client Connected");
+      Logger::error(LOG_TAG_BLESERVER, "Client Connected");
+    }
+    
+    while(client.connected()){      
+      while(client.available()>0){
+        // read data from the connected client
+        vesc.write(client.read()); 
+      }
+      //Send Data to connected client
+      while(vesc.available()>0)
+      {
+        client.write(vesc.read());
+      }
+    }
+    client.stop();
+    //Serial.println("Client disconnected");    
+    Logger::error(LOG_TAG_BLESERVER, "Client disconnected");
+  }
 
 }
 
