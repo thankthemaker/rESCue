@@ -43,7 +43,7 @@
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
 // The name this controller should advertise for BLE
-//#define CANBUS_ENABLED
+#define CANBUS_ENABLED
 #define BLYNK_ENABLED
 
 #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
@@ -55,6 +55,13 @@
 #endif
 
 ////#define FAKE_VESC_ENABLED
+
+#define WIFI_ENABLED
+
+#ifdef WIFI_ENABLED
+  #define WIFI_SSID "INSERT_YOUR_WIFI_SSID_HERE"
+  #define WIFI_PASS "INSERT_YOUR_WIFI_PASSWORD_HERE"
+#endif
 
 #endif //__CONFIG_H__
 

@@ -203,7 +203,15 @@ Please be patient, the update via BLE may take several minutes.
 
 ## - Wifi Support
 
+Enable Wifi Support with comment in WIFI_ENABLE in config.h and enter your Accesspoint SSID and Passphrase:
 
+#define WIFI_SSID "INSERT_YOUR_WIFI_SSID_HERE"
+#define WIFI_PASS "INSERT_YOUR_WIFI_PASSWORD_HERE"
+
+After flashing rEScue will connect automatically to you Wifi Network and you can connect with your PC VESC tool directly to your board.
+You can find out the IP of your VESC under linux with avachi-disccover command (look for rESCue)
+
+![rESCue-AVAHI](docs/images/avahi.png)
 
 
 ## Configuration

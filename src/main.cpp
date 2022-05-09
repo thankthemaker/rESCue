@@ -36,12 +36,14 @@ ILedController *ledController;
  BatteryMonitor *batMonitor = new BatteryMonitor(&canbus->vescData);
 #else
  BatteryMonitor *batMonitor = new BatteryMonitor();
-#endif //CANBUS_ENABLED
+#endif // CANBUS_ENABLED
 
 BleServer *bleServer = new BleServer();
 
-int port = 65102;  //Port number
-WiFiServer server(port);
+#if defined(WIFI_ENABLED)
+ int port = 65102;  // standard vesc port
+ WiFiServer WifiServer(port);
+#endif // WIFI_ENABLED
 
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char* module, const char* message);
@@ -118,14 +120,15 @@ void setup() {
     HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
   Logger::notice("rESCue", buf);
 
-  // wifi
-  //WiFi.mode(WIFI_STA);
+#ifdef WIFI_ENABLED
+  WiFi.mode(WIFI_STA);
   WiFi.begin("INSERT_YOUR_WIFI_SSID_HERE", "INSERT_YOUR_WIFI_PASSWORD_HERE");
 
   ArduinoOTA.setHostname("rESCue");
   ArduinoOTA.begin();
   
-  server.begin();
+  WifiServer.begin();
+#endif // WIFI_ENABLED
 
 }
 
@@ -190,9 +193,10 @@ void loop() {
   bleServer->loop();
 #endif
 
+#ifdef WIFI_ENABLED
   ArduinoOTA.handle();
 
-  WiFiClient client = server.available();
+  WiFiClient client = WifiServer.available();
   
   if (client) {
     if(client.connected())
@@ -216,6 +220,7 @@ void loop() {
     //Serial.println("Client disconnected");    
     Logger::error(LOG_TAG_BLESERVER, "Client disconnected");
   }
+#endif // WIFI_ENABLED
 
 }
 
