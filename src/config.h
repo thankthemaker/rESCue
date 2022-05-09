@@ -46,10 +46,7 @@
 #define CANBUS_ENABLED
 #define BLYNK_ENABLED
 
-#ifdef CANBUS_ENABLED
- #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
- #define CANBUS_ONLY
-#endif //CANBUS_ENABLED
+#define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
 
 #ifdef BLYNK_ENABLED
   // Blynk token for BLE
@@ -58,6 +55,13 @@
 #endif
 
 ////#define FAKE_VESC_ENABLED
+
+#define WIFI_ENABLED
+
+#ifdef WIFI_ENABLED
+  #define WIFI_SSID "INSERT_YOUR_WIFI_SSID_HERE"
+  #define WIFI_PASS "INSERT_YOUR_WIFI_PASSWORD_HERE"
+#endif
 
 #endif //__CONFIG_H__
 

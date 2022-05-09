@@ -43,19 +43,21 @@ float BatteryMonitor::readValues() {
 #ifndef CANBUS_ENABLED
     int adc = smoothAnalogReading();  // read the sensor and smooth the value
     float sensorValue = ( adc * 3.3 ) / (4096);  // calculate the voltage at the ESP32 GPIO
-    float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
-    voltage = vescData->inputVoltage + AppConfiguration::getInstance()->config.batteryDrift;
+    float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage    
 #else
     float voltage = vescData->inputVoltage;
     float current = abs(vescData->current);
     updateCurrentArray(current);
 #endif //CANBUS_ENABLED
 
+#ifdef CANBUS_ENABLED
 #ifdef LIGHT_BAR_ENABLED
     LightBarController::getInstance()->updateLightBar(
             voltage,mapSwitchState(vescData->switchState, vescData->adc1 > vescData->adc2),
             vescData->erpm);  // update the WS28xx battery bar
 #endif
+#endif
+
   if(Logger::getLogLevel() == Logger::VERBOSE) {
 #ifndef CANBUS_ENABLED
     Logger::verbose(LOG_TAG_BATMON, String("ADC: " + String(adc)).c_str());

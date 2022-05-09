@@ -134,14 +134,17 @@ void BleServer::onDisconnect(NimBLEServer *pServer) {
     NimBLEDevice::startAdvertising();
 }
 
+#ifdef CANBUS_ENABLED
 void BleServer::init(Stream *vesc, CanBus *canbus) {
+    this->canbus = canbus;
+#else
+void BleServer::init(Stream *vesc) {
+#endif
     vescSerial = vesc;
 
     // Create the BLE Device
     NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
-    NimBLEDevice::setMTU(MTU_SIZE);
-
-    this->canbus = canbus;
+    NimBLEDevice::setMTU(MTU_SIZE);    
 
     // Create the BLE Server
     pServer = NimBLEDevice::createServer();
@@ -288,7 +291,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
       Serial.println();
 */
 
-#ifdef CANBUS_ONLY
+#ifdef CANBUS_ENABLED
             canbus->proxy->proxyIn(rxValue);
 #else
             for (int i = 0; i < rxValue.length(); i++) {

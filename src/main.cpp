@@ -1,5 +1,10 @@
 #include <Arduino.h>
 #include <Logger.h>
+
+#include <WiFi.h>
+#include <ArduinoOTA.h>
+//https://registry.platformio.org/libraries/arduino-libraries/WiFi/installation
+
 #include "config.h"
 #include "BatteryMonitor.h"
 #include "Buzzer.h"
@@ -31,13 +36,19 @@ ILedController *ledController;
  BatteryMonitor *batMonitor = new BatteryMonitor(&canbus->vescData);
 #else
  BatteryMonitor *batMonitor = new BatteryMonitor();
-#endif //CANBUS_ENABLED
+#endif // CANBUS_ENABLED
 
 BleServer *bleServer = new BleServer();
+
+#if defined(WIFI_ENABLED)
+ int port = 65102;  // standard vesc port
+ WiFiServer WifiServer(port);
+#endif // WIFI_ENABLED
 
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char* module, const char* message);
 
+#ifdef CANBUS_ENABLED
 void fakeCanbusValues() {
     if(millis() - lastFake > 3000) {
         canbus->vescData.tachometer= random(0, 30);
@@ -59,6 +70,7 @@ void fakeCanbusValues() {
         lastFakeCount++;
     }
 }
+#endif
 
 void setup() {
   Logger::setOutputFunction(localLogger);
@@ -90,11 +102,12 @@ void setup() {
   // initializes the battery monitor
   batMonitor->init();
   // initialize the UART bridge from VESC to BLE and the BLE support for Blynk (https://blynk.io)
-#ifdef CANBUS_ONLY
+#ifdef CANBUS_ENABLED
   bleServer->init(canbus->stream, canbus);
-#else
-  bleServer->init(&vesc, canbus);
+#else  
+  bleServer->init(&vesc);
 #endif
+
   // initialize the LED (either COB or Neopixel)
   ledController->init();
 
@@ -106,6 +119,17 @@ void setup() {
     SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH,
     HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
   Logger::notice("rESCue", buf);
+
+#ifdef WIFI_ENABLED
+  WiFi.mode(WIFI_STA);
+  WiFi.begin("INSERT_YOUR_WIFI_SSID_HERE", "INSERT_YOUR_WIFI_PASSWORD_HERE");
+
+  ArduinoOTA.setHostname("rESCue");
+  ArduinoOTA.begin();
+  
+  WifiServer.begin();
+#endif // WIFI_ENABLED
+
 }
 
 void loop() {
@@ -119,7 +143,9 @@ void loop() {
     return;
   }
   if(AppConfiguration::getInstance()->config.sendConfig) {
+#ifdef CANBUS_ENABLED
       bleServer->sendConfig();
+#endif
       AppConfiguration::getInstance()->config.sendConfig = false;
   }  if(AppConfiguration::getInstance()->config.saveConfig) {
       AppConfiguration::getInstance()->savePreferences();
@@ -139,7 +165,7 @@ void loop() {
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
-  idle         = *(new_forward) == LOW && *(new_backward) == LOW;
+  idle         = new_forward && new_backward;
 #endif
 
 #ifdef CANBUS_ENABLED
@@ -166,6 +192,36 @@ void loop() {
 #else
   bleServer->loop();
 #endif
+
+#ifdef WIFI_ENABLED
+  ArduinoOTA.handle();
+
+  WiFiClient client = WifiServer.available();
+  
+  if (client) {
+    if(client.connected())
+    {
+      //Serial.println("Client Connected");
+      Logger::error(LOG_TAG_BLESERVER, "Client Connected");
+    }
+    
+    while(client.connected()){      
+      while(client.available()>0){
+        // read data from the connected client
+        vesc.write(client.read()); 
+      }
+      //Send Data to connected client
+      while(vesc.available()>0)
+      {
+        client.write(vesc.read());
+      }
+    }
+    client.stop();
+    //Serial.println("Client disconnected");    
+    Logger::error(LOG_TAG_BLESERVER, "Client disconnected");
+  }
+#endif // WIFI_ENABLED
+
 }
 
 void localLogger(Logger::Level level, const char* module, const char* message) {

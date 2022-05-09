@@ -12,6 +12,7 @@
 - Lightbar for battery monitor and footpad sensor (visual and acoustic)
 - Blynk-App (Monitoring & Configuration)
 - Over-The-Air updates (OTA)
+- Connects to your Wifi Accesspoint -> connect to it directly via IP with the VESC Tool from PC (no Smartphone VESC App Wireless Bridge required)
 
 *2021-04-09: Renamed from "funwheel-controller" to rESCue.*
 
@@ -102,6 +103,7 @@ To learn about the differences between high- and low-side switching, please read
 - CANBUS and VESC-Status
 - Blynk-App (Monitoring & Configuration)
 - Over-The-Air updates (OTA)
+- Wifi Support: let rESCue connect to your Wifi Network
 
 ### Front- and backlight control
 
@@ -145,6 +147,9 @@ For further information on measuring voltages with the ESP32, check this [great 
 ***Use UART if not connected via CANBUS, otherwise it's not needed anymore!***
 
 The VESC applications for desktop and mobile are able to connect to the VESC via Bluetooth Low Energy (BLE). Normally you'll need a separate Bluetooth module (e.g. NRF51822) connected to your VESC. The ESP32 will do the same. Connected to the UART interface of the VESC, it allows to connect the App via BLE to the VESC.
+
+To build without CANBUS support comment #define CANBUS_ENABLED line out in config.h
+//#define CANBUS_ENABLED
 
 The desktop and mobile version of the [VESC tool app](https://vesc-project.com/vesc_tool) (Linux, Windows, Android) and also [Yours Truly](https://apps.apple.com/gb/app/yours-truly/id1523671235) are well tested and should just work fine.
 
@@ -196,6 +201,22 @@ The browser will check if a newer firmware version, that is compatible with your
 ![rESCue-OTA](docs/images/rESCue-OTA.png)
 
 Please be patient, the update via BLE may take several minutes.
+
+## Wifi Support
+
+```
+Enable Wifi Support with comment in "WIFI_ENABLE" in config.h and enter your Accesspoint SSID and Passphrase:
+
+#define WIFI_ENABLE
+#define WIFI_SSID "INSERT_YOUR_WIFI_SSID_HERE"
+#define WIFI_PASS "INSERT_YOUR_WIFI_PASSWORD_HERE"
+```
+
+After flashing rEScue will connect automatically to you Wifi Network and you can connect with your PC VESC tool directly to your board.
+You can find out the IP of your VESC under linux with avachi-disccover command (look for rESCue)
+
+![rESCue-AVAHI](docs/images/avahi.png)
+
 
 ## Configuration
 
