@@ -47,7 +47,7 @@ void startUpdate() {
     Serial.println("Update started");
 }
 
-void handleUpdate(const std::string& data) {
+void handleUpdate(const std::string &data) {
 /*
   Serial.printf("\nhandleUpdate incoming data (size %d):\n", data.length());
   for(int i=0; i<data.length();i++) {
@@ -79,22 +79,22 @@ void activateWiFiAp(const char *password) {
     IPAddress myIP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
     Serial.println(myIP);
-    server.on("/ping", HTTP_GET, [](AsyncWebServerRequest *request){
+    server.on("/ping", HTTP_GET, [](AsyncWebServerRequest *request) {
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "alive");
         response->addHeader("Access-Control-Allow-Origin", "*");
         request->send(response);
     });
-    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request) {
         int params = request->params();
-        for(int i=0;i<params;i++){
-            AsyncWebParameter* p = request->getParam(i);
-            if(p->isPost() && p->name().compareTo("data") != -1) {
-                const char *value =p->value().c_str();
+        for (int i = 0; i < params; i++) {
+            AsyncWebParameter *p = request->getParam(i);
+            if (p->isPost() && p->name().compareTo("data") != -1) {
+                const char *value = p->value().c_str();
                 //Serial.printf("\nPOST[%s]: bytes %d\n", p->name().c_str(), p->value().length());
-                if(!updateFlag) {
+                if (!updateFlag) {
                     startUpdate();
                 }
-                if(p->value().length() > 0) {
+                if (p->value().length() > 0) {
                     handleUpdate(base64_decode(value, false));
                 }
             }
@@ -115,7 +115,7 @@ void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
     Logger::notice(LOG_TAG_BLESERVER, buf);
     Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
     uint16_t mtu = pServer->getPeerMTU(NimBLEAddress(desc->peer_ota_addr));
-    if(mtu != 0 && mtu < MTU_SIZE) {
+    if (mtu != 0 && mtu < MTU_SIZE) {
         MTU_SIZE = mtu;
         BLE_PACKET_SIZE = MTU_SIZE - 3;
         NimBLEDevice::setMTU(mtu);
@@ -229,17 +229,15 @@ void BleServer::loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime
             oneByte = vescSerial->read();
             bufferString.push_back(oneByte);
         }
-        //if (Logger::getLogLevel() == Logger::VERBOSE) {
-        Logger::notice(LOG_TAG_BLESERVER, "BLE from VESC: ");
-        Logger::notice(LOG_TAG_BLESERVER, bufferString.c_str());
-        // }
 
         if (deviceConnected) {
             while (bufferString.length() > 0) {
                 if (bufferString.length() > BLE_PACKET_SIZE) {
+                    dumpBuffer("VESC => BLE/UART", bufferString.substr(0, BLE_PACKET_SIZE));
                     pCharacteristicVescTx->setValue(bufferString.substr(0, BLE_PACKET_SIZE));
                     bufferString = bufferString.substr(BLE_PACKET_SIZE);
                 } else {
+                    dumpBuffer("VESC => BLE/UART", bufferString);
                     pCharacteristicVescTx->setValue(bufferString);
                     bufferString.clear();
                 }
@@ -270,23 +268,28 @@ void BleServer::loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime
 #endif //CANBUS_ENABLED
 }
 
+void BleServer::dumpBuffer(std::string header, std::string buffer) {
+    if(!Logger::getLogLevel() == Logger::VERBOSE) {
+        return;
+    }
+    char tmpbuf[1024];
+    int length = snprintf(tmpbuf, 50, "%s : len = %d / ", header.c_str(), buffer.length());
+    for (int i = 0; i < buffer.size(); i++) {
+        length += snprintf(tmpbuf+length, 1024-length, "%02x ", buffer.at(i));
+    }
+    Logger::verbose(LOG_TAG_BLESERVER, tmpbuf);
+}
+
 //NimBLECharacteristicCallbacks::onWrite
 void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
     char buffer[128];
     snprintf(buffer, 128, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
     Logger::notice(LOG_TAG_BLESERVER, buffer);
     std::string rxValue = pCharacteristic->getValue();
-    snprintf(buffer, 128, "onWrite - value: %s\n", rxValue.data());
     Logger::notice(LOG_TAG_BLESERVER, buffer);
     if (rxValue.length() > 0) {
         if (pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
-/*
-      for (int i = 0; i < rxValue.length(); i++) {
-        Serial.print(rxValue[i], DEC);
-        Serial.print(" ");
-      }
-      Serial.println();
-*/
+            dumpBuffer("BLE/UART => VESC: ", rxValue);
 
 #ifdef CANBUS_ONLY
             canbus->proxy->proxyIn(rxValue);
@@ -314,7 +317,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.otaUpdateActive = false;
                 AppConfiguration::getInstance()->config.saveConfig = true;
                 delay(100);
-               } else if (key == "deviceName") {
+            } else if (key == "deviceName") {
                 AppConfiguration::getInstance()->config.deviceName = value.c_str();
             } else if (key == "isNotificationEnabled") {
                 AppConfiguration::getInstance()->config.isNotificationEnabled = value.c_str();
@@ -379,11 +382,11 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.ledFrequency = value.c_str();
             } else if (key == "logLevel") {
                 AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(atoi(value.c_str()));
-            } else if(key == "wifiActive") {
-                if(value.compare("true") != -1) {
+            } else if (key == "wifiActive") {
+                if (value.compare("true") != -1) {
                     activateWiFiAp(wifiPassword);
                 }
-            } else if(key == "wifiPassword") {
+            } else if (key == "wifiPassword") {
                 wifiPassword = value.c_str();
             }
             Logger::notice(LOG_TAG_BLESERVER, buf);
@@ -405,27 +408,30 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
         }
     }
 }
-//NimBLECharacteristicCallbacks::onSubscribe
-    void BleServer::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
-        char buf[256];
-        snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
-                 desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue,
-                 pCharacteristic->getUUID().toString().c_str());
-        Logger::notice(LOG_TAG_BLESERVER, buf);
-    }
 
 //NimBLECharacteristicCallbacks::onSubscribe
-    void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code) {
+void BleServer::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
+    char buf[256];
+    snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
+             desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue,
+             pCharacteristic->getUUID().toString().c_str());
+    Logger::notice(LOG_TAG_BLESERVER, buf);
+}
+
+//NimBLECharacteristicCallbacks::onSubscribe
+void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code) {
+    if(Logger::getLogLevel() == Logger::VERBOSE) {
         char buf[256];
         snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
         Logger::verbose(LOG_TAG_BLESERVER, buf);
     }
+}
 
 #ifdef CANBUS_ENABLED
 
-    void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
-        this->sendValue("loopTime", loopTime);
-        this->sendValue("maxLoopTime", maxLoopTime);
+void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
+    this->sendValue("loopTime", loopTime);
+    this->sendValue("maxLoopTime", maxLoopTime);
 
 /*
    Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color",
@@ -443,52 +449,53 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
      }
    }
 */
+}
+
+template<typename TYPE>
+void BleServer::sendValue(std::string key, TYPE value) {
+    std::stringstream ss;
+    ss << key << "=" << value;
+    pCharacteristicConf->setValue(ss.str());
+    pCharacteristicConf->notify();
+    ss.str("");
+    delay(5);
+}
+
+boolean isStringType(String a) { return true; }
+
+boolean isStringType(std::string a) { return true; }
+
+boolean isStringType(int a) { return false; }
+
+boolean isStringType(double a) { return false; }
+
+boolean isStringType(boolean a) { return false; }
+
+struct BleServer::sendConfigValue {
+    NimBLECharacteristic *pCharacteristic;
+    std::stringstream ss;
+
+    sendConfigValue(NimBLECharacteristic *pCharacteristic) {
+        this->pCharacteristic = pCharacteristic;
     }
 
-    template<typename TYPE>
-    void BleServer::sendValue(std::string key, TYPE value) {
-        std::stringstream ss;
-        ss << key << "=" << value;
-        pCharacteristicConf->setValue(ss.str());
-        pCharacteristicConf->notify();
+    template<typename T>
+    void operator()(const char *name, const T &value) {
+        if (isStringType(value)) {
+            ss << name << "=" << static_cast<String>(value).c_str();
+        } else {
+            ss << name << "=" << value;
+        }
+        Serial.println("Sending: " + String(ss.str().c_str()));
+        pCharacteristic->setValue(ss.str());
+        pCharacteristic->indicate();
         ss.str("");
         delay(5);
     }
+};
 
-    boolean isStringType(String a) { return true; }
+void BleServer::sendConfig() {
+    visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
+}
 
-    boolean isStringType(std::string a) { return true; }
-
-    boolean isStringType(int a) { return false; }
-
-    boolean isStringType(double a) { return false; }
-
-    boolean isStringType(boolean a) { return false; }
-
-    struct BleServer::sendConfigValue {
-        NimBLECharacteristic *pCharacteristic;
-        std::stringstream ss;
-
-        sendConfigValue(NimBLECharacteristic *pCharacteristic) {
-            this->pCharacteristic = pCharacteristic;
-        }
-
-        template<typename T>
-        void operator()(const char *name, const T &value) {
-            if (isStringType(value)) {
-                ss << name << "=" << static_cast<String>(value).c_str();
-            } else {
-                ss << name << "=" << value;
-            }
-            Serial.println("Sending: " + String(ss.str().c_str()));
-            pCharacteristic->setValue(ss.str());
-            pCharacteristic->indicate();
-            ss.str("");
-            delay(5);
-        }
-    };
-
-    void BleServer::sendConfig() {
-        visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
-    }
 #endif //CANBUS_ENABLED
