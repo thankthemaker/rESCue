@@ -74,7 +74,7 @@ void setup() {
      return;
   }
 
-  ledController = LedControllerFactory::getInstance()->createLedController();
+  ledController = LedControllerFactory::getInstance()->createLedController(&canbus->vescData);
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);

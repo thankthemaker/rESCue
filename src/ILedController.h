@@ -2,11 +2,12 @@
 #define __I_LED_CONTROLLER_H__
 
 #include <Arduino.h>
+#include "CanBus.h"
 
 #define LOG_TAG_LED "ILedController"
 
 // Pattern types supported:
-enum  Pattern { NONE, RAINBOW_CYCLE, THEATER_CHASE, COLOR_WIPE, CYLON, FADE, RESCUE_FLASH_LIGHT, PULSE, SLIDE};
+enum  Pattern { NONE, RAINBOW_CYCLE, THEATER_CHASE, COLOR_WIPE, CYLON, FADE, RESCUE_FLASH_LIGHT, PULSE, SLIDE, BATTERY_INDICATOR};
 // Patern directions supported:
 enum  Direction { FORWARD, REVERSE };
 
@@ -31,7 +32,7 @@ class LedControllerFactory {
     public:
         static LedControllerFactory* getInstance();
         static uint8_t determineLedType();
-        ILedController* createLedController();
+        ILedController* createLedController(CanBus::VescData *vescData);
 
     private:
         LedControllerFactory();    
