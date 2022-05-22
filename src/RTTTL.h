@@ -17,6 +17,7 @@ extern const char *rtttl_star_wars_imperial;
 extern const char *rtttl_star_wars_rebel;
 extern const char *rtttl_star_wars_end;
 extern const char *rtttl_star_wars_cantina;
+extern const char *rtttl_back_to_the_future;
 
 // Music
 extern const char *rtttl_scooter_howmuch;
@@ -57,6 +58,7 @@ enum class RTTTL_MELODIES {
   STAR_WARS_END,
   STAR_WARS_CANTINA,
   SCOOTER_HOW_MUCH,
+  BACK_TO_THE_FUTURE,
 
   ALERT_SIREN = 200,
   ALERT_SIREN2,
