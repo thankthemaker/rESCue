@@ -33,7 +33,8 @@ void ILedController::loop(int *new_forward, int *new_backward, int *new_idle) {
         old_idle = *(new_idle);
     }
 
-    if (idleTimer != 0 && millis() - idleTimer > AppConfiguration::getInstance()->config.idleLightTimeout) {
+    if (idleTimer != 0 && AppConfiguration::getInstance()->config.idleLightTimeout > 0 &&
+      millis() - idleTimer > AppConfiguration::getInstance()->config.idleLightTimeout) {
         Logger::notice(LOG_TAG_LED, "Turn off idle light");
         this->changePattern(NONE, true, false);
         idleTimer = 0;

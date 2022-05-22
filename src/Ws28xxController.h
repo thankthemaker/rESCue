@@ -5,6 +5,7 @@
 #include "ILedController.h"
 #include "AppConfiguration.h"
 #include <Adafruit_NeoPixel.h>
+#include "CanBus.h"
 
 #ifndef PIN_NEOPIXEL
  #define PIN_NEOPIXEL   5
@@ -14,7 +15,7 @@
 
 class Ws28xxController : public ILedController, Adafruit_NeoPixel {
     public:
-        Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type);
+        Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, CanBus::VescData *vescData);
         void init() override;
         void stop() override;
         void startSequence() override;
@@ -53,16 +54,20 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         void cylonUpdate();
         void slidingLight(uint32_t col1, uint32_t col2, uint16_t timeinterval);
         void slidingLightUpdate();
+        void batteryIndicator(uint16_t timeinterval);
+        void batteryIndicatorUpdate();
         void onComplete();
 
     private:
         uint32_t wheel(byte wheelPos);
         void setLight(boolean forward, int brightness);
         uint32_t dimColor(uint32_t color, uint8_t width);
+        int calcVal(int value);
         uint8_t pulse = 0;
         uint32_t lastPulse = 0;
         boolean up = false;
         int maxBrightness = MAX_BRIGHTNESS;
         Config config = AppConfiguration::getInstance()->config;
+        CanBus::VescData *vescData;
 };
 #endif //__LED_CONTROLLER_H__

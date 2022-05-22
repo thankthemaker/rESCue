@@ -17,6 +17,7 @@
 #include "VescCanConstants.h"
 #include "BleCanProxy.h"
 #include "CanDevice.h"
+#include <vector>
 
 #define B10000001 129
 #define B11000011 195

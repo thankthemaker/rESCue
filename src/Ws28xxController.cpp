@@ -1,8 +1,10 @@
 #include "Ws28xxController.h"
 #include <Logger.h>
 
-Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type)
-        : Adafruit_NeoPixel(pixels, pin, type) {}
+Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, CanBus::VescData *vescData)
+        : Adafruit_NeoPixel(pixels, pin, type) {
+    this->vescData = vescData;
+}
 
 
 // Update the pattern
@@ -36,6 +38,9 @@ void Ws28xxController::update() {
                 break;
             case SLIDE:
                 slidingLightUpdate();
+                break;
+            case BATTERY_INDICATOR:
+                batteryIndicatorUpdate();
                 break;
             default:
                 break;
@@ -83,7 +88,7 @@ void Ws28xxController::onComplete() {
       char buf[128];
       snprintf(buf, 128, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
              activePattern, isStartSequence, reverseOnComplete, repeat);
-      Logger::warning(LOG_TAG_WS28XX, buf);
+      Logger::verbose(LOG_TAG_WS28XX, buf);
     }
     stopPattern = true;
     blockChange = false;
@@ -117,6 +122,9 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
         snprintf(buf, 128, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
         Logger::verbose(LOG_TAG_WS28XX, buf);
     }
+
+    clear();
+    show();
 
     maxBrightness = config.lightMaxBrightness;
     stopPattern = false;
@@ -155,7 +163,16 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
             reverseOnComplete = true;
             break;
         case SLIDE:
-            slidingLightUpdate();
+            slidingLight(Color((config.lightColorPrimaryRed * maxBrightness) >> 8,
+                               (config.lightColorPrimaryGreen * maxBrightness) >> 8,
+                               (config.lightColorPrimaryBlue * maxBrightness) >> 8),
+                         Color((config.lightColorSecondaryRed * maxBrightness) >> 8,
+                               (config.lightColorSecondaryGreen * maxBrightness) >> 8,
+                               (config.lightColorSecondaryBlue * maxBrightness) >> 8),
+                         config.startLightDuration / (numPixels() / 4));
+            break;
+        case BATTERY_INDICATOR:
+            batteryIndicator(1000);
             break;
         case NONE:
             stop();
@@ -323,6 +340,53 @@ void Ws28xxController::slidingLightUpdate() {
     setPixelColor(numPixels()-1 - index, color2);
 }
 
+void Ws28xxController::batteryIndicator(uint16_t timeinterval) {
+    activePattern = Pattern::BATTERY_INDICATOR;
+    interval = timeinterval;
+    totalSteps = 100;
+    index = 0;
+    direction = Direction::FORWARD;
+}
+
+void Ws28xxController::batteryIndicatorUpdate() {
+    float voltage = vescData->inputVoltage;
+    int min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
+    int max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
+    int voltage_range = max_voltage - min_voltage;
+    int used = max_voltage - voltage * 100; // calculate how much the voltage has dropped
+    int value = voltage_range - used; // calculate the remaining value to lowest voltage
+    float diffPerPixel = voltage_range / (numPixels() / 2); // calculate how much voltage a single pixel shall represent
+    float count = value / diffPerPixel; // calculate how many pixels must shine
+
+    int whole = count; // number of "full" green pixels
+    int remainder = value*100 / voltage_range; // percentage of usage of current pixel
+
+    Serial.printf("batteryIndicatorUpdate: voltage %f, voltage_range %d, diffPerPixel %f, pixel %d, count %f, used %d, value %d, remainder %d",
+                  voltage, voltage_range, diffPerPixel, numPixels(), count, used, value, remainder);
+    Serial.println();
+    for(int i=0; i<numPixels();i++) {
+        if(value<0) {
+            setPixelColor(i, MAX_BRIGHTNESS, 0, 0);
+            continue;
+        }
+        if (i < numPixels() / 2) {
+            if (i <= whole) {
+                int val = calcVal(remainder);
+                setPixelColor(i, MAX_BRIGHTNESS - val, val, 0);
+            } else {
+                setPixelColor(i, 0, 0, 0);
+            }
+        } else {
+            if (i <= whole+numPixels()/2) {
+                int val = calcVal(remainder);
+                setPixelColor(i, MAX_BRIGHTNESS - val, val, 0);
+            } else {
+                setPixelColor(i, 0, 0, 0);
+            }
+        }
+    }
+}
+
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
 uint32_t Ws28xxController::wheel(byte wheelPos) {
@@ -405,8 +469,13 @@ void Ws28xxController::idleSequence() {
           pattern = Pattern::RAINBOW_CYCLE;
           break;
         case 4:
-        default: 
           pattern = Pattern::PULSE;
+          break;
+        case 5:
+          pattern = Pattern::BATTERY_INDICATOR;
+          break;
+        default:
+            pattern = Pattern::PULSE;
     }
     changePattern(pattern, true, true);
 }
@@ -453,4 +522,9 @@ void Ws28xxController::startSequence() {
 uint32_t Ws28xxController::dimColor(uint32_t color, uint8_t width) {
     return (((color & 0xFF0000) / width) & 0xFF0000) + (((color & 0x00FF00) / width) & 0x00FF00) +
            (((color & 0x0000FF) / width) & 0x0000FF);
+}
+
+// map the remaining value to a value between 0 and MAX_BRIGHTNESS
+int Ws28xxController::calcVal(int value) {
+    return map(value, 0, 100, 0, MAX_BRIGHTNESS);
 }

@@ -24,8 +24,7 @@
 #include "XT_DAC_Audio.h"
 #include "HardwareSerial.h"
 #include "soc/sens_reg.h"  // For dacWrite() patch, TEB Sep-16-2019
-
-
+#include "soc/rtc_io_reg.h"
 
 /*  Every variable that is used in the mainline code and in the onTImer interrupt code
  *	must be declared volatile.
