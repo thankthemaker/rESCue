@@ -111,17 +111,9 @@ void activateWiFiAp(const char *password) {
 inline
 void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
     char buf[128];
-    snprintf(buf, 128, "Client connected: %s", NimBLEAddress(desc->peer_ota_addr).toString().c_str());
+    snprintf(buf, 128, "Client connected: %s",  NimBLEAddress(desc->peer_ota_addr).toString().c_str());
     Logger::notice(LOG_TAG_BLESERVER, buf);
     Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
-    uint16_t mtu = pServer->getPeerMTU(NimBLEAddress(desc->peer_ota_addr));
-    if (mtu != 0 && mtu < MTU_SIZE) {
-        MTU_SIZE = mtu;
-        BLE_PACKET_SIZE = MTU_SIZE - 3;
-        NimBLEDevice::setMTU(mtu);
-        snprintf(buf, 128, "New MTU-size: %d", mtu);
-        Logger::warning(LOG_TAG_BLESERVER, buf);
-    }
     deviceConnected = true;
     NimBLEDevice::startAdvertising();
 };
@@ -134,13 +126,26 @@ void BleServer::onDisconnect(NimBLEServer *pServer) {
     NimBLEDevice::startAdvertising();
 }
 
+// NimBLEServerCallbacks::onMTUChange
+inline
+void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
+    char buf[128];
+    snprintf(buf, 128, "MTU changed - new size %d, peer %s", MTU, NimBLEAddress(desc->peer_ota_addr).toString().c_str());
+    Logger::notice(LOG_TAG_BLESERVER, buf);
+    MTU_SIZE = MTU;
+    BLE_PACKET_SIZE = MTU_SIZE - 3;
+}
+
 void BleServer::init(Stream *vesc, CanBus *canbus) {
     vescSerial = vesc;
 
     // Create the BLE Device
     NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
-    NimBLEDevice::setMTU(MTU_SIZE);
-
+    int mtu_size = AppConfiguration::getInstance()->config.mtuSize;
+    NimBLEDevice::setMTU(mtu_size);
+    char buf[128];
+    snprintf(buf, 128, "Initial MTU size %d", mtu_size);
+    Logger::notice(LOG_TAG_BLESERVER, buf);
     this->canbus = canbus;
 
     // Create the BLE Server
@@ -382,6 +387,14 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.ledFrequency = value.c_str();
             } else if (key == "logLevel") {
                 AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(atoi(value.c_str()));
+            } else if (key == "mtuSize") {
+                uint16_t mtu = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.mtuSize = mtu;
+                if (mtu != 0 && mtu < MTU_SIZE) {
+                    NimBLEDevice::setMTU(mtu);
+                    snprintf(buf, 128, "New MTU-size: %d", mtu);
+                    Logger::warning(LOG_TAG_BLESERVER, buf);
+                }
             } else if (key == "wifiActive") {
                 if (value.compare("true") != -1) {
                     activateWiFiAp(wifiPassword);

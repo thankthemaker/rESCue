@@ -59,6 +59,7 @@ void AppConfiguration::readPreferences() {
     config.ledFrequency = doc["ledFrequency"] | "KHZ800";
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.logLevel = doc["logLevel"] | Logger::WARNING;
+    config.mtuSize = doc["mtuSize"] | 512;
     config.saveConfig = false;
     config.sendConfig = false;
     preferences.end();
@@ -95,6 +96,7 @@ void AppConfiguration::savePreferences() {
     doc["ledFrequency"] = config.ledFrequency;
     doc["idleLightTimeout"] = config.idleLightTimeout;
     doc["logLevel"] = config.logLevel;
+    doc["mtuSize"] = config.mtuSize;
     String json = "";
     serializeJson(doc, json);
     log_n("savePreferences: %s", json.c_str());

@@ -36,6 +36,7 @@ class BleServer :
       // NimBLEServerCallbacks
       void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc);
       void onDisconnect(NimBLEServer* pServer);
+      void onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc);
 
       // NimBLECharacteristicCallbacks
       void onWrite(NimBLECharacteristic* pCharacteristic);
