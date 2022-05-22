@@ -14,6 +14,7 @@ const char *rtttl_star_wars_imperial = "Imperial:d=4,o=5,b=112:8g,16p,8g,16p,8g,
 const char *rtttl_star_wars_rebel    = "St Wars:d=4,o=5,b=180:8f,8f,8f,2a#.,2f.6,8d#6,8d6,8c6,2a#.6,f.6,8d#6,8d6,8c6,2a#.6,f.6,8d#6,8d6,8d#6,2c6,p,8f,8f,8f,2a#.,2f.6,8d#6,8d6,8c6,2a#.6,f.6,8d#6,8d6,8c6,2a#.6,f.6,8d#6,8d6,8d#6,2c6";
 const char *rtttl_star_wars_end      = "SW End:d=4,o=5,b=225:2c,1f,2g.,8g#,8a#,1g#,2c.,c,2f.,g,g#,c,8g#.,8c.,8c6,1a#.,2c,2f.,g,g#.,8f,c.6,8g#,1f6,2f,8g#.,8g.,8f,2c6,8c.6,8g#.,8f,2c,8c.,8c.,8c,2f,8f.,8f.,8f,2f";
 const char *rtttl_star_wars_cantina  = "Cantina:d=4,o=5,b=250:8a,8p,8d6,8p,8a,8p,8d6,8p,8a,8d6,8p,8a,8p,8g#,a,8a,8g#,8a,g,8f#,8g,8f#,f.,8d.,16p,p.,8a,8p,8d6,8p,8a,8p,8d6,8p,8a,8d6,8p,8a,8p,8g#,8a,8p,8g,8p,g.,8f#,8g,8p,8c6,a#,a,g";
+const char *rtttl_back_to_the_future = "BackToTheFuture:d=4,o=6,b=180:2c,8b5,8a5,b5,a5,g5,1a5,p,d,2c,8b5,8a5,b5,a5,g5,1a5";
 
 // Music
 const char *rtttl_scooter_howmuch    = "HowMuchI:d=4,o=6,b=125:8g,8g,16f,16e,f,8d.,16c,8d,8g,8g,8f,8e,8g,8g,16f,16e,f,d,8e,8c,2d,8p,8d,8f,8g,a,a,8a_,8g,2a,8g,8g,16f,16e,f,d,8f,8g,8g,8f,8e,8g,8g,16f,16e,f,d,8e,8c,2d";
@@ -52,6 +53,7 @@ RTTTL_MELODIES_MAP  RTTTL_MELODIES_VALUES {
   { RTTTL_MELODIES::STAR_WARS_REBELION, rtttl_star_wars_rebel },
   { RTTTL_MELODIES::STAR_WARS_END, rtttl_star_wars_end },
   { RTTTL_MELODIES::STAR_WARS_CANTINA, rtttl_star_wars_cantina },
+  { RTTTL_MELODIES::BACK_TO_THE_FUTURE, rtttl_back_to_the_future },
   { RTTTL_MELODIES::SCOOTER_HOW_MUCH, rtttl_scooter_howmuch },
   { RTTTL_MELODIES::ALERT_SIREN, rtttl_siren },
   { RTTTL_MELODIES::ALERT_SIREN2, rtttl_siren2 },
