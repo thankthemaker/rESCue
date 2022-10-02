@@ -1,4 +1,6 @@
 #include "CanBus.h"
+#include "../lib/ESP32-Arduino-CAN/src/CAN_config.h"
+#include "../lib/ESP32-Arduino-CAN/src/CAN.h"
 
 #ifdef CANBUS_ENABLED
 
@@ -39,14 +41,14 @@ void CanBus::init() {
 */
 void CanBus::loop() {
     int frameCount = 0;
-    CAN_frame_t rx_frame;
+
     if (initialized) {
         if (millis() - lastRealtimeData > interval && !proxy->processing) {
-            requestRealtimeData();
+            //requestRealtimeData();
         }
 
         if (millis() - lastBalanceData > interval && !proxy->processing) {
-            requestBalanceData();
+            //requestBalanceData();
         }
     } else if(initRetryCounter > 0 && millis() - lastRetry > 500) {
         requestFirmwareVersion();
@@ -58,6 +60,7 @@ void CanBus::loop() {
     }
 
     //receive next CAN frame from queue
+    CAN_frame_t rx_frame;
     while (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 3 * portTICK_PERIOD_MS) == pdTRUE) {
         if (!initialized) {
             Logger::notice(LOG_TAG_CANBUS, "CANBUS is now initialized");
@@ -71,6 +74,7 @@ void CanBus::loop() {
             }
             processFrame(rx_frame, frameCount);
         }
+        clearFrame(rx_frame);
         if (frameCount > 1000) {
             // WORKAROUND if messages arrive too fast
             Logger::error(LOG_TAG_CANBUS, "reached 1000 frames in one loop, abort");
@@ -151,6 +155,22 @@ void CanBus::printFrame(CAN_frame_t rx_frame, int frameCount) {
     }
 }
 
+void CanBus::clearFrame(CAN_frame_t rx_frame) {
+    rx_frame.MsgID=0;
+    rx_frame.FIR.B.DLC=0;
+    rx_frame.data.u8[0]=0;
+    rx_frame.data.u8[1]=0;
+    rx_frame.data.u8[2]=0;
+    rx_frame.data.u8[3]=0;
+    rx_frame.data.u8[4]=0;
+    rx_frame.data.u8[5]=0;
+    rx_frame.data.u8[6]=0;
+    rx_frame.data.u8[7]=0;
+    rx_frame.data.u32[0]=0;
+    rx_frame.data.u32[1]=0;
+    rx_frame.data.u64=0;
+}
+
 void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
     String frametype = "";
     uint32_t ID = rx_frame.MsgID;
@@ -186,10 +206,11 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
 
     if (RECV_PROCESS_SHORT_BUFFER_PROXY == ID) {
         frametype = "process short buffer for <<BLE proxy>>";
-        for (int i = 1; i < rx_frame.FIR.B.DLC; i++) {
+        for (int i = 2; i < rx_frame.FIR.B.DLC; i++) {
             proxybuffer.push_back(rx_frame.data.u8[i]);
         }
-        proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
+        proxybuffer.push_back(1);
+        proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), 54, 187);
         proxybuffer.clear();
     }
 
@@ -358,6 +379,8 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             frametype += "COMM_GET_VALUES_SETUP_SELECTIVE";
         } else if (command == 0x41) { //0x41 = 65 DEC
             frametype += "COMM_GET_IMU_DATA";
+        } else if (command == 0x3E) { //0x3E = 62 DEC
+            frametype += "COMM_PING_CAN";
         } else {
             frametype += command;
         }
@@ -369,10 +392,10 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
         }
     }
 
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
+    if (Logger::getLogLevel() <= Logger::NOTICE) {
         char buf[128];
         snprintf(buf, 128, "processed frame #%d, type %s", frameCount, frametype.c_str());
-        Logger::verbose(LOG_TAG_CANBUS, buf);
+        Logger::notice(LOG_TAG_CANBUS, buf);
     }
 }
 

@@ -74,6 +74,7 @@ class CanBus {
       void ping();
       static void printFrame(CAN_frame_t rx_frame, int frameCount);
       void processFrame(CAN_frame_t rx_frame, int frameCount);
+      void clearFrame(CAN_frame_t rx_frame);
       static int32_t readInt32Value(CAN_frame_t rx_frame, int startbyte);
       static int16_t readInt16Value(CAN_frame_t rx_frame, int startbyte);
       int32_t readInt32ValueFromBuffer(int startbyte, boolean isProxyRequest);
