@@ -9,6 +9,7 @@ int pixel_count = 0;
 int min_voltage = 0;
 int max_voltage = 0;
 int voltage_range = 0;
+boolean pixelCountOdd = false;
 
 AdcState lastAdcState = AdcState::ADC_NONE;
 unsigned long lastAdcStateChange = 0;
@@ -20,6 +21,7 @@ LightBarController *LightBarController::getInstance() {
         pixel_count = AppConfiguration::getInstance()->config.numberPixelBatMon;
         min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
         max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
+        pixelCountOdd = pixel_count % 2 == 1;
         uint8_t ledType = LedControllerFactory::getInstance()->determineLedType();
         voltage_range = max_voltage - min_voltage;
         lightPixels.updateLength(pixel_count);
@@ -68,7 +70,7 @@ void LightBarController::updateLightBar(float voltage, AdcState adcState, double
                     lightPixels.setPixelColor(i, 153, 0, 153); // full purple
                     break;
                 case ADC_HALF_ADC1:
-                    if (i > (pixel_count / 2)) {
+                    if ((pixelCountOdd && i > (pixel_count / 2)) || (!pixelCountOdd &&i >= (pixel_count / 2))) {
                         lightPixels.setPixelColor(i, 153, 0, 153); // half purple
                     }
                     break;
