@@ -123,9 +123,6 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
         Logger::verbose(LOG_TAG_WS28XX, buf);
     }
 
-    clear();
-    show();
-
     maxBrightness = config.lightMaxBrightness;
     stopPattern = false;
     repeat = repeatPattern;
@@ -172,6 +169,8 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
                          config.startLightDuration / (numPixels() / 4));
             break;
         case BATTERY_INDICATOR:
+            clear();
+            show();
             batteryIndicator(1000);
             break;
         case NONE:
