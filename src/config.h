@@ -42,7 +42,7 @@
 
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
-//#define CANBUS_ENABLED
+#define CANBUS_ENABLED
 
 #ifdef CANBUS_ENABLED
  #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
