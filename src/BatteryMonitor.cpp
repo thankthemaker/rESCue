@@ -15,12 +15,9 @@ int batteryReadings[numBatReadings];   // the batteryReadings from the analog in
 double currentReadings[numCurReadings];
 
 
-BatteryMonitor::BatteryMonitor() {}
-#ifdef CANBUS_ENABLED
-BatteryMonitor::BatteryMonitor(CanBus::VescData *vescData) {
+BatteryMonitor::BatteryMonitor(VescData *vescData) {
   this->vescData = vescData;
 }
-#endif
 
 
 void BatteryMonitor::init() {
@@ -44,7 +41,7 @@ float BatteryMonitor::readValues() {
     int adc = smoothAnalogReading();  // read the sensor and smooth the value
     float sensorValue = ( adc * 3.3 ) / (4096);  // calculate the voltage at the ESP32 GPIO
     float voltage = sensorValue *  VOLTAGE_DIVIDER_CONSTANT;  // calculate the battery voltage
-    voltage = vescData->inputVoltage + AppConfiguration::getInstance()->config.batteryDrift;
+    voltage = voltage+ AppConfiguration::getInstance()->config.batteryDrift;
 #else
     float voltage = vescData->inputVoltage;
     float current = abs(vescData->current);

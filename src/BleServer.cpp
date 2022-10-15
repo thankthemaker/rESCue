@@ -136,7 +136,11 @@ void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
     BLE_PACKET_SIZE = MTU_SIZE - 3;
 }
 
+#if defined(CANBUS_ENABLED)
 void BleServer::init(Stream *vesc, CanBus *canbus) {
+#else
+void BleServer::init(Stream *vesc) {
+#endif
     vescSerial = vesc;
 
     // Create the BLE Device
@@ -146,7 +150,9 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
     char buf[128];
     snprintf(buf, 128, "Initial MTU size %d", mtu_size);
     Logger::notice(LOG_TAG_BLESERVER, buf);
+#if defined(CANBUD_ENABLED)
     this->canbus = canbus;
+#endif
 
     // Create the BLE Server
     pServer = NimBLEDevice::createServer();
@@ -224,7 +230,7 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
 
 #ifdef CANBUS_ENABLED
 
-void BleServer::loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime) {
+void BleServer::loop(VescData *vescData, long loopTime, long maxLoopTime) {
 #else
     void BleServer::loop() {
 #endif
@@ -464,6 +470,8 @@ void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
 */
 }
 
+#endif //CANBUS_ENABLED
+
 template<typename TYPE>
 void BleServer::sendValue(std::string key, TYPE value) {
     std::stringstream ss;
@@ -510,5 +518,3 @@ struct BleServer::sendConfigValue {
 void BleServer::sendConfig() {
     visit_struct::for_each(AppConfiguration::getInstance()->config, sendConfigValue(pCharacteristicConf));
 }
-
-#endif //CANBUS_ENABLED

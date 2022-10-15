@@ -1,7 +1,7 @@
 #include "Ws28xxController.h"
 #include <Logger.h>
 
-Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, CanBus::VescData *vescData)
+Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, VescData *vescData)
         : Adafruit_NeoPixel(pixels, pin, type) {
     this->vescData = vescData;
 }
@@ -138,7 +138,7 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
                           (config.lightColorPrimaryBlue * maxBrightness) >> 8),
                     Color((config.lightColorSecondaryRed * maxBrightness) >> 8,
                           (config.lightColorSecondaryGreen * maxBrightness) >> 8,
-                          (config.lightColorSecondaryBlue * maxBrightness) >> 8), 400);
+                          (config.lightColorSecondaryBlue * maxBrightness) >> 8), (uint8_t)400);
             break;
         case COLOR_WIPE:
             break;
