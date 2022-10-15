@@ -1,5 +1,6 @@
 #include "BleCanProxy.h"
 
+#if defined(CANBUS_ENABLED)
 BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, uint8_t ble_proxy_can_id) {
     this->candevice = candevice;
     this->stream = stream;
@@ -179,3 +180,4 @@ void BleCanProxy::proxyOut(uint8_t *data, unsigned int size, uint8_t crc1, uint8
 
     //Serial.println("");
 }
+#endif

@@ -15,7 +15,7 @@
 
 class Ws28xxController : public ILedController, Adafruit_NeoPixel {
     public:
-        Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, CanBus::VescData *vescData);
+        Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, VescData *vescData);
         void init() override;
         void stop() override;
         void startSequence() override;
@@ -68,6 +68,6 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         boolean up = false;
         int maxBrightness = MAX_BRIGHTNESS;
         Config config = AppConfiguration::getInstance()->config;
-        CanBus::VescData *vescData;
+        VescData *vescData;
 };
 #endif //__LED_CONTROLLER_H__

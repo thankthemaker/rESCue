@@ -21,44 +21,45 @@ double idle_erpm = 10.0;
 
 int lastFake = 4000;
 int lastFakeCount = 0;
+VescData vescData;
 
 HardwareSerial vesc(2);
 
 ILedController *ledController;
 
 #if defined(CANBUS_ENABLED)
- CanBus * canbus = new CanBus();
- BatteryMonitor *batMonitor = new BatteryMonitor(&canbus->vescData);
-#else
- BatteryMonitor *batMonitor = new BatteryMonitor();
+ CanBus * canbus = new CanBus(&vescData);
 #endif //CANBUS_ENABLED
+ BatteryMonitor *batMonitor = new BatteryMonitor(&vescData);
 
 BleServer *bleServer = new BleServer();
 
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char* module, const char* message);
 
+#if defined(CANBUS_ENABLED)
 void fakeCanbusValues() {
     if(millis() - lastFake > 3000) {
-        canbus->vescData.tachometer= random(0, 30);
-        canbus->vescData.inputVoltage = random(43, 50);
-        canbus->vescData.dutyCycle = random(0, 100);
+        vescData.tachometer= random(0, 30);
+        vescData.inputVoltage = random(43, 50);
+        vescData.dutyCycle = random(0, 100);
         if(lastFakeCount > 10) {
-            canbus->vescData.erpm = random(-100, 200);
+            vescData.erpm = random(-100, 200);
         } else {
-            canbus->vescData.erpm = 0;//random(-100, 200);
+            vescData.erpm = 0;//random(-100, 200);
         }
-        canbus->vescData.current = random(0, 10);
-        canbus->vescData.ampHours = random(0, 100);
-        canbus->vescData.mosfetTemp = random(20, 60);
-        canbus->vescData.motorTemp = random(20, 40);
-        canbus->vescData.adc1 = 0.5;
-        canbus->vescData.adc2 = 0.5;
-        canbus->vescData.switchState = 0;
+        vescData.current = random(0, 10);
+        vescData.ampHours = random(0, 100);
+        vescData.mosfetTemp = random(20, 60);
+        vescData.motorTemp = random(20, 40);
+        vescData.adc1 = 0.5;
+        vescData.adc2 = 0.5;
+        vescData.switchState = 0;
         lastFake = millis();
         lastFakeCount++;
     }
 }
+#endif
 
 void setup() {
   Logger::setOutputFunction(localLogger);
@@ -74,7 +75,7 @@ void setup() {
      return;
   }
 
-  ledController = LedControllerFactory::getInstance()->createLedController(&canbus->vescData);
+  ledController = LedControllerFactory::getInstance()->createLedController(&vescData);
 
   pinMode(PIN_FORWARD, INPUT);
   pinMode(PIN_BACKWARD, INPUT);
@@ -93,7 +94,7 @@ void setup() {
 #ifdef CANBUS_ONLY
   bleServer->init(canbus->stream, canbus);
 #else
-  bleServer->init(&vesc, canbus);
+  bleServer->init(&vesc);
 #endif
   // initialize the LED (either COB or Neopixel)
   ledController->init();
@@ -131,15 +132,15 @@ void loop() {
     fakeCanbusValues();
   #endif
 
-  new_forward  = canbus->vescData.erpm > idle_erpm ? HIGH : LOW;
-  new_backward = canbus->vescData.erpm < -idle_erpm ? HIGH : LOW;
-  idle         = (abs(canbus->vescData.erpm) < idle_erpm && canbus->vescData.switchState == 0) ? HIGH : LOW;
-  new_brake    = (abs(canbus->vescData.erpm) > idle_erpm && canbus->vescData.current < -4.0) ? HIGH : LOW;
+  new_forward  = vescData.erpm > idle_erpm ? HIGH : LOW;
+  new_backward = vescData.erpm < -idle_erpm ? HIGH : LOW;
+  idle         = (abs(vescData.erpm) < idle_erpm && vescData.switchState == 0) ? HIGH : LOW;
+  new_brake    = (abs(vescData.erpm) > idle_erpm && vescData.current < -4.0) ? HIGH : LOW;
 #else
   new_forward  = digitalRead(PIN_FORWARD);
   new_backward = digitalRead(PIN_BACKWARD);
   new_brake    = digitalRead(PIN_BRAKE);
-  idle         = *(new_forward) == LOW && *(new_backward) == LOW;
+  idle         = new_forward == LOW && new_backward == LOW;
 #endif
 
 #ifdef CANBUS_ENABLED
@@ -162,7 +163,7 @@ void loop() {
 
   // call the VESC UART-to-Bluetooth bridge
 #ifdef CANBUS_ENABLED
-  bleServer->loop(&canbus->vescData, loopTime, maxLoopTime);
+  bleServer->loop(&vescData, loopTime, maxLoopTime);
 #else
   bleServer->loop();
 #endif

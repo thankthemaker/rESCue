@@ -44,8 +44,9 @@ void AppConfiguration::readPreferences() {
     config.lightFadingDuration = doc["lightFadingDuration"] | 220;
     config.lightMaxBrightness = doc["lightMaxBrightness"] | MAX_BRIGHTNESS;
     config.brakeLightEnabled = doc["brakeLightEnabled"] | true;
-    config.authToken = doc["authToken"] | BLYNK_AUTH_TOKEN;
+#if defined(CANBUS_ENABLED)
     config.vescId = doc["vescId"] | VESC_CAN_ID;
+#endif
     config.numberPixelLight = doc["numberPixelLight"] | NUMPIXELS;
     config.numberPixelBatMon = doc["numberPixelBatMon"] | LIGHT_BAR_NUMPIXELS;
     // calculate RGB values for primary and secondary color
@@ -88,7 +89,6 @@ void AppConfiguration::savePreferences() {
     doc["lightFadingDuration"] = config.lightFadingDuration;
     doc["lightMaxBrightness"] = config.lightMaxBrightness;
     doc["brakeLightEnabled"] = config.brakeLightEnabled;
-    doc["authToken"] = config.authToken;
     doc["vescId"] = config.vescId;
     doc["numberPixelLight"] = config.numberPixelLight;
     doc["numberPixelBatMon"] = config.numberPixelBatMon;
