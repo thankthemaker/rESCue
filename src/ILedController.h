@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "CanBus.h"
+#include "VescData.h"
 
 #define LOG_TAG_LED "ILedController"
 
@@ -32,7 +33,7 @@ class LedControllerFactory {
     public:
         static LedControllerFactory* getInstance();
         static uint8_t determineLedType();
-        ILedController* createLedController(CanBus::VescData *vescData);
+        ILedController* createLedController(VescData *vescData);
 
     private:
         LedControllerFactory();    

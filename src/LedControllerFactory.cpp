@@ -14,7 +14,7 @@ LedControllerFactory *LedControllerFactory::getInstance() {
     return instance;
 }
 
-ILedController *LedControllerFactory::createLedController(CanBus::VescData *vescData) {
+ILedController *LedControllerFactory::createLedController(VescData *vescData) {
 #ifdef LED_WS28xx
     uint8_t ledType = LedControllerFactory::determineLedType();
     return new Ws28xxController(AppConfiguration::getInstance()->config.numberPixelLight, PIN_NEOPIXEL, ledType, vescData);

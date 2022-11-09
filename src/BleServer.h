@@ -11,7 +11,7 @@
 
 #define LOG_TAG_BLESERVER "BleServer"
 
-#define VESC_SERVICE_UUID            "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" 
+#define VESC_SERVICE_UUID            "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 #define VESC_CHARACTERISTIC_UUID_RX  "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 #define VESC_CHARACTERISTIC_UUID_TX  "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
@@ -22,15 +22,16 @@
 #define RESCUE_CHARACTERISTIC_UUID_HW_VERSION "99EB1515-A9E9-4024-B0A4-3DC4B4FABFB0"
 
 class BleServer :
-  public NimBLEServerCallbacks, 
+  public NimBLEServerCallbacks,
   public BLECharacteristicCallbacks  {
     public:
       BleServer();
-      void init(Stream *vesc, CanBus *canbus);
 #ifdef CANBUS_ENABLED
-      void loop(CanBus::VescData *vescData, long loopTime, long maxLoopTime);
+    void init(Stream *vesc, CanBus *canbus);
+    void loop(VescData *vescData, long loopTime, long maxLoopTime);
 #else
-      void loop();
+    void init(Stream *vesc);
+    void loop();
 #endif
 
       // NimBLEServerCallbacks
@@ -43,15 +44,17 @@ class BleServer :
       void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue);
       void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code);
       void sendConfig();
+      template<typename TYPE>
+      void sendValue(std::string key, TYPE value);
 
-#ifdef CANBUS_ENABLED
+#if defined(CANBUS_ENABLED)
     void updateRescueApp(long loopTime, long maxLoopTime);
-    template<typename TYPE>
-    void sendValue(std::string key, TYPE value);
 #endif
 
     private:
+#if defined(CANBUS_ENABLED)
       CanBus *canbus{};
+#endif
       struct sendConfigValue;
       void dumpBuffer(std::string header, std::string buffer);
 };

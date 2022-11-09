@@ -13,10 +13,7 @@
 
 class BatteryMonitor {
     public:
-        BatteryMonitor();
-#ifdef CANBUS_ENABLED
-        BatteryMonitor(CanBus::VescData *vescData);
-#endif
+        BatteryMonitor(VescData *vescData);
         void init();
         float readValues();
         void checkValues();
@@ -26,9 +23,7 @@ class BatteryMonitor {
         int max_voltage = 0;
         int warn_voltage = 0;
         double max_current = 0;
-#ifdef CANBUS_ENABLED
-        CanBus::VescData *vescData;
-#endif
+        VescData *vescData;
         int smoothAnalogReading();
         void updateCurrentArray(double value);
         double getAverageCurrent();

@@ -5,8 +5,9 @@
 #ifdef CANBUS_ENABLED
 
 
-CanBus::CanBus() {
-    stream = new LoopbackStream(BUFFER_SIZE);
+CanBus::CanBus(VescData *vescData) {
+    this->vescData = vescData;
+    this->stream = new LoopbackStream(BUFFER_SIZE);
 }
 
 void CanBus::init() {
@@ -176,32 +177,32 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
     uint32_t ID = rx_frame.MsgID;
     if (RECV_STATUS_1 == ID) {
         frametype = "status1";
-        vescData.erpm = readInt32Value(rx_frame, 0);
-        vescData.current = readInt16Value(rx_frame, 4) / 10.0;
-        vescData.dutyCycle = readInt16Value(rx_frame, 6);
+        vescData->erpm = readInt32Value(rx_frame, 0);
+        vescData->current = readInt16Value(rx_frame, 4) / 10.0;
+        vescData->dutyCycle = readInt16Value(rx_frame, 6);
     }
     if (RECV_STATUS_2 == ID) {
         frametype = "status2";
-        vescData.ampHours = readInt32Value(rx_frame, 0) / 10000.0;
-        vescData.ampHoursCharged = readInt32Value(rx_frame, 4) / 10000.0;
+        vescData->ampHours = readInt32Value(rx_frame, 0) / 10000.0;
+        vescData->ampHoursCharged = readInt32Value(rx_frame, 4) / 10000.0;
     }
     if (RECV_STATUS_3 == ID) {
         frametype = "status3";
-        vescData.wattHours = readInt32Value(rx_frame, 0) / 10000.0;
-        vescData.wattHoursCharged = readInt32Value(rx_frame, 4) / 10000.0;
+        vescData->wattHours = readInt32Value(rx_frame, 0) / 10000.0;
+        vescData->wattHoursCharged = readInt32Value(rx_frame, 4) / 10000.0;
     }
     if (RECV_STATUS_4 == ID) {
         frametype = "status4";
-        vescData.mosfetTemp = readInt16Value(rx_frame, 0) / 10.0;
-        vescData.motorTemp = readInt16Value(rx_frame, 2) / 10.0;
-        vescData.totalCurrentIn = readInt16Value(rx_frame, 4) / 10.0;
-        vescData.pidPosition = readInt16Value(rx_frame, 6) / 50.0;
+        vescData->mosfetTemp = readInt16Value(rx_frame, 0) / 10.0;
+        vescData->motorTemp = readInt16Value(rx_frame, 2) / 10.0;
+        vescData->totalCurrentIn = readInt16Value(rx_frame, 4) / 10.0;
+        vescData->pidPosition = readInt16Value(rx_frame, 6) / 50.0;
     }
     if (RECV_STATUS_5 == ID) {
         frametype = "status5";
-        vescData.tachometer = readInt32Value(rx_frame, 0);
-        vescData.inputVoltage = readInt16Value(rx_frame, 4) / 10.0;
-        vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
+        vescData->tachometer = readInt32Value(rx_frame, 0);
+        vescData->inputVoltage = readInt16Value(rx_frame, 4) / 10.0;
+        vescData->inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
     }
 
     if (RECV_PROCESS_SHORT_BUFFER_PROXY == ID) {
@@ -246,35 +247,35 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
         if (command == 0x00) {
             frametype += "COMM_FW_VERSION";
             int offset = 1;
-            vescData.majorVersion = readInt8ValueFromBuffer(0, isProxyRequest);
-            vescData.minorVersion = readInt8ValueFromBuffer(1, isProxyRequest);
-            vescData.name = readStringValueFromBuffer(2 + offset, 12, isProxyRequest);
+            vescData->majorVersion = readInt8ValueFromBuffer(0, isProxyRequest);
+            vescData->minorVersion = readInt8ValueFromBuffer(1, isProxyRequest);
+            vescData->name = readStringValueFromBuffer(2 + offset, 12, isProxyRequest);
         } else if (command == 0x4F) {  //0x4F = 79 DEC
             frametype += "COMM_GET_DECODED_BALANCE";
             int offset = 1;
-            vescData.pidOutput = readInt32ValueFromBuffer(0 + offset, isProxyRequest) / 1000000.0;
-            vescData.pitch = readInt32ValueFromBuffer(4 + offset, isProxyRequest) / 1000000.0;
-            vescData.roll = readInt32ValueFromBuffer(8 + offset, isProxyRequest) / 1000000.0;
-            vescData.loopTime = readInt32ValueFromBuffer(12 + offset, isProxyRequest);
-            vescData.motorCurrent = readInt32ValueFromBuffer(16 + offset, isProxyRequest) / 1000000.0;
-            vescData.motorPosition = readInt32ValueFromBuffer(20 + offset, isProxyRequest) / 1000000.0;
-            vescData.balanceState = readInt16ValueFromBuffer(24 + offset, isProxyRequest);
-            vescData.switchState = readInt16ValueFromBuffer(26 + offset, isProxyRequest);
-            vescData.adc1 = readInt32ValueFromBuffer(28 + offset, isProxyRequest) / 1000000.0;
-            vescData.adc2 = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 1000000.0;
+            vescData->pidOutput = readInt32ValueFromBuffer(0 + offset, isProxyRequest) / 1000000.0;
+            vescData->pitch = readInt32ValueFromBuffer(4 + offset, isProxyRequest) / 1000000.0;
+            vescData->roll = readInt32ValueFromBuffer(8 + offset, isProxyRequest) / 1000000.0;
+            vescData->loopTime = readInt32ValueFromBuffer(12 + offset, isProxyRequest);
+            vescData->motorCurrent = readInt32ValueFromBuffer(16 + offset, isProxyRequest) / 1000000.0;
+            vescData->motorPosition = readInt32ValueFromBuffer(20 + offset, isProxyRequest) / 1000000.0;
+            vescData->balanceState = readInt16ValueFromBuffer(24 + offset, isProxyRequest);
+            vescData->switchState = readInt16ValueFromBuffer(26 + offset, isProxyRequest);
+            vescData->adc1 = readInt32ValueFromBuffer(28 + offset, isProxyRequest) / 1000000.0;
+            vescData->adc2 = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 1000000.0;
             lastBalanceData = millis();
         } else if (command == 0x32) { //0x32 = 50 DEC
             frametype += "COMM_GET_VALUES_SELECTIVE";
             int offset = 1;
-            vescData.mosfetTemp = readInt16ValueFromBuffer(4 + offset, isProxyRequest) / 10.0;
-            vescData.motorTemp = readInt16ValueFromBuffer(6 + offset, isProxyRequest) / 10.0;
-            vescData.dutyCycle = readInt16ValueFromBuffer(8 + offset, isProxyRequest) / 1000.0;
-            vescData.erpm = readInt32ValueFromBuffer(10 + offset, isProxyRequest);
-            vescData.inputVoltage = readInt16ValueFromBuffer(14 + offset, isProxyRequest) / 10.0;
-            vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
-            vescData.tachometer = readInt32ValueFromBuffer(16 + offset, isProxyRequest);
-            vescData.tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
-            vescData.fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
+            vescData->mosfetTemp = readInt16ValueFromBuffer(4 + offset, isProxyRequest) / 10.0;
+            vescData->motorTemp = readInt16ValueFromBuffer(6 + offset, isProxyRequest) / 10.0;
+            vescData->dutyCycle = readInt16ValueFromBuffer(8 + offset, isProxyRequest) / 1000.0;
+            vescData->erpm = readInt32ValueFromBuffer(10 + offset, isProxyRequest);
+            vescData->inputVoltage = readInt16ValueFromBuffer(14 + offset, isProxyRequest) / 10.0;
+            vescData->inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
+            vescData->tachometer = readInt32ValueFromBuffer(16 + offset, isProxyRequest);
+            vescData->tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
+            vescData->fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
             lastRealtimeData = millis();
         }  else if (command == 0x33) { //0x33 = 51 DEC
             frametype += "COMM_GET_VALUES_SETUP_SELECTIVE";
@@ -283,11 +284,11 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             uint32_t bitmask = readInt32ValueFromBuffer(0 + offset, isProxyRequest);
             startbyte += 4;
             if(bitmask & ((uint32_t) 1 << 0)) {
-                vescData.mosfetTemp = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
+                vescData->mosfetTemp = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
                 startbyte += 2;
             }
             if(bitmask & ((uint32_t) 1 << 1)) {
-                vescData.motorTemp = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
+                vescData->motorTemp = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
                 startbyte += 2;
             }
             if(bitmask & ((uint32_t) 1 << 2)) {
@@ -299,11 +300,11 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
                 startbyte += 4;
             }
             if(bitmask & ((uint32_t) 1 << 4)) {
-                vescData.dutyCycle = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 1000.0;
+                vescData->dutyCycle = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 1000.0;
                 startbyte += 2;
             }
             if(bitmask & ((uint32_t) 1 << 5)) {
-                vescData.erpm = readInt32ValueFromBuffer(startbyte + offset, isProxyRequest);
+                vescData->erpm = readInt32ValueFromBuffer(startbyte + offset, isProxyRequest);
                 startbyte += 4;
             }
             if(bitmask & ((uint32_t) 1 << 6)) {
@@ -311,8 +312,8 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
                 startbyte += 4;
             }
             if(bitmask & ((uint32_t) 1 << 7)) {
-                vescData.inputVoltage = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
-                vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
+                vescData->inputVoltage = readInt16ValueFromBuffer(startbyte + offset, isProxyRequest) / 10.0;
+                vescData->inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
                 startbyte += 2;
             }
             if(bitmask & ((uint32_t) 1 << 8)) {
@@ -336,38 +337,38 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
                 startbyte += 4;
             }
             if(bitmask & ((uint32_t) 1 << 13)) {
-                vescData.tachometer = readInt32ValueFromBuffer(16 + offset, isProxyRequest);
+                vescData->tachometer = readInt32ValueFromBuffer(16 + offset, isProxyRequest);
                 startbyte += 4;
             }
             if(bitmask & ((uint32_t) 1 << 14)) {
-                vescData.tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
+                vescData->tachometerAbsolut = readInt32ValueFromBuffer(20 + offset, isProxyRequest);
                 startbyte += 4;
             }
             if(bitmask & ((uint32_t) 1 << 16)) {
-                vescData.fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
+                vescData->fault = readInt8ValueFromBuffer(24 + offset, isProxyRequest);
                 startbyte += 1;
             }
             lastRealtimeData = millis();
         } else if (command == 0x04) {
             frametype += "COMM_GET_VALUES";
             int offset = 1;
-            vescData.mosfetTemp = readInt16ValueFromBuffer(0 + offset, isProxyRequest) / 10.0;
-            vescData.motorTemp = readInt16ValueFromBuffer(2 + offset, isProxyRequest) / 10.0;
-            vescData.motorCurrent = readInt32ValueFromBuffer(4 + offset, isProxyRequest) / 100.0;
-            vescData.current = readInt32ValueFromBuffer(8 + offset, isProxyRequest) / 100.0;
-            // id = vescData.readInt32ValueFromBuffer(12 + offset, isProxyRequest) / 100.0;
-            // iq = vescData.readInt32ValueFromBuffer(16 + offset, isProxyRequest) / 100.0;
-            vescData.dutyCycle = readInt16ValueFromBuffer(20 + offset, isProxyRequest) / 1000.0;
-            vescData.erpm = readInt32ValueFromBuffer(22 + offset, isProxyRequest);
-            vescData.inputVoltage = readInt16ValueFromBuffer(26 + offset, isProxyRequest) / 10.0;
-            vescData.inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
-            vescData.ampHours =  readInt32ValueFromBuffer(28 + offset, isProxyRequest) / 10000.0;
-            vescData.ampHoursCharged = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 10000.0;
-            vescData.wattHours =  readInt32ValueFromBuffer(46 + offset, isProxyRequest) / 10000.0;
-            vescData.wattHoursCharged = readInt32ValueFromBuffer(40 + offset, isProxyRequest) / 10000.0;
-            vescData.tachometer = readInt32ValueFromBuffer(44 + offset, isProxyRequest);
-            vescData.tachometerAbsolut = readInt32ValueFromBuffer(58 + offset, isProxyRequest);
-            vescData.fault = readInt8ValueFromBuffer(52 + offset, isProxyRequest);
+            vescData->mosfetTemp = readInt16ValueFromBuffer(0 + offset, isProxyRequest) / 10.0;
+            vescData->motorTemp = readInt16ValueFromBuffer(2 + offset, isProxyRequest) / 10.0;
+            vescData->motorCurrent = readInt32ValueFromBuffer(4 + offset, isProxyRequest) / 100.0;
+            vescData->current = readInt32ValueFromBuffer(8 + offset, isProxyRequest) / 100.0;
+            // id = vescData->readInt32ValueFromBuffer(12 + offset, isProxyRequest) / 100.0;
+            // iq = vescData->readInt32ValueFromBuffer(16 + offset, isProxyRequest) / 100.0;
+            vescData->dutyCycle = readInt16ValueFromBuffer(20 + offset, isProxyRequest) / 1000.0;
+            vescData->erpm = readInt32ValueFromBuffer(22 + offset, isProxyRequest);
+            vescData->inputVoltage = readInt16ValueFromBuffer(26 + offset, isProxyRequest) / 10.0;
+            vescData->inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
+            vescData->ampHours =  readInt32ValueFromBuffer(28 + offset, isProxyRequest) / 10000.0;
+            vescData->ampHoursCharged = readInt32ValueFromBuffer(32 + offset, isProxyRequest) / 10000.0;
+            vescData->wattHours =  readInt32ValueFromBuffer(46 + offset, isProxyRequest) / 10000.0;
+            vescData->wattHoursCharged = readInt32ValueFromBuffer(40 + offset, isProxyRequest) / 10000.0;
+            vescData->tachometer = readInt32ValueFromBuffer(44 + offset, isProxyRequest);
+            vescData->tachometerAbsolut = readInt32ValueFromBuffer(58 + offset, isProxyRequest);
+            vescData->fault = readInt8ValueFromBuffer(52 + offset, isProxyRequest);
             lastRealtimeData = millis();
         } else if (command == 0x0E) {  //0x0E = 14 DEC
             frametype += "COMM_GET_MCCONF";
@@ -407,73 +408,73 @@ void CanBus::dumpVescValues() {
     char val[size];
     std::string bufferString;
     bufferString += "name=";
-    snprintf(val, size, "%s, ", vescData.name.c_str());
+    snprintf(val, size, "%s, ", vescData->name.c_str());
     bufferString += val;
     bufferString += "dutycycle=";
-    snprintf(val, size, "%f", vescData.dutyCycle);
+    snprintf(val, size, "%f", vescData->dutyCycle);
     bufferString += val;
     bufferString += ", erpm=";
-    snprintf(val, size, "%f", vescData.erpm);
+    snprintf(val, size, "%f", vescData->erpm);
     bufferString += val;
     bufferString += ", current=";
-    snprintf(val, size, "%f", vescData.current);
+    snprintf(val, size, "%f", vescData->current);
     bufferString += val;
     bufferString += ", ampHours=";
-    snprintf(val, size, "%f", vescData.ampHours);
+    snprintf(val, size, "%f", vescData->ampHours);
     bufferString += val;
     bufferString += ", ampHoursCharged=";
-    snprintf(val, size, "%f", vescData.ampHoursCharged);
+    snprintf(val, size, "%f", vescData->ampHoursCharged);
     bufferString += val;
     bufferString += ", wattHours=";
-    snprintf(val, size, "%f", vescData.wattHours);
+    snprintf(val, size, "%f", vescData->wattHours);
     bufferString += val;
     bufferString += ", wattHoursCharged=";
-    snprintf(val, size, "%f", vescData.wattHoursCharged);
+    snprintf(val, size, "%f", vescData->wattHoursCharged);
     bufferString += val;
     bufferString += ", mosfetTemp=";
-    snprintf(val, size, "%f", vescData.mosfetTemp);
+    snprintf(val, size, "%f", vescData->mosfetTemp);
     bufferString += val;
     bufferString += ", motorTemp=";
-    snprintf(val, size, "%f", vescData.motorTemp);
+    snprintf(val, size, "%f", vescData->motorTemp);
     bufferString += val;
     bufferString += ", inputVoltage=";
-    snprintf(val, size, "%f", vescData.inputVoltage);
+    snprintf(val, size, "%f", vescData->inputVoltage);
     bufferString += val;
     bufferString += ", tachometer=";
-    snprintf(val, size, "%f", vescData.tachometer);
+    snprintf(val, size, "%f", vescData->tachometer);
     bufferString += val;
     bufferString += ", pidOutput=";
-    snprintf(val, size, "%f", vescData.pidOutput);
+    snprintf(val, size, "%f", vescData->pidOutput);
     bufferString += val;
     bufferString += ", pitch=";
-    snprintf(val, size, "%f", vescData.pitch);
+    snprintf(val, size, "%f", vescData->pitch);
     bufferString += val;
     bufferString += ", roll=";
-    snprintf(val, size, "%f", vescData.roll);
+    snprintf(val, size, "%f", vescData->roll);
     bufferString += val;
     bufferString += ", loopTime=";
-    snprintf(val, size, "%d", vescData.loopTime);
+    snprintf(val, size, "%d", vescData->loopTime);
     bufferString += val;
     bufferString += ", motorCurrent=";
-    snprintf(val, size, "%f", vescData.motorCurrent);
+    snprintf(val, size, "%f", vescData->motorCurrent);
     bufferString += val;
     bufferString += ", motorPosition=";
-    snprintf(val, size, "%f", vescData.motorPosition);
+    snprintf(val, size, "%f", vescData->motorPosition);
     bufferString += val;
     bufferString += ", balanceState=";
-    snprintf(val, size, "%d", vescData.balanceState);
+    snprintf(val, size, "%d", vescData->balanceState);
     bufferString += val;
     bufferString += ", switchState=";
-    snprintf(val, size, "%d", vescData.switchState);
+    snprintf(val, size, "%d", vescData->switchState);
     bufferString += val;
     bufferString += ", adc1=";
-    snprintf(val, size, "%f", vescData.adc1);
+    snprintf(val, size, "%f", vescData->adc1);
     bufferString += val;
     bufferString += ", adc2=";
-    snprintf(val, size, "%f", vescData.adc2);
+    snprintf(val, size, "%f", vescData->adc2);
     bufferString += val;
     bufferString += ", fault=";
-    snprintf(val, size, "%d", vescData.fault);
+    snprintf(val, size, "%d", vescData->fault);
     bufferString += val;
     Logger::verbose(LOG_TAG_CANBUS, bufferString.c_str());
     lastDump = millis();

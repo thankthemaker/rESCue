@@ -42,20 +42,12 @@
 
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
-// The name this controller should advertise for BLE
 #define CANBUS_ENABLED
-#define BLYNK_ENABLED
 
 #ifdef CANBUS_ENABLED
  #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
  #define CANBUS_ONLY
 #endif //CANBUS_ENABLED
-
-#ifdef BLYNK_ENABLED
-  // Blynk token for BLE
-  //#define BLYNK_AUTH_TOKEN "l7b1ongYuGiRcnDHufxwnazMH6hAn3Xl"
-  #define BLYNK_AUTH_TOKEN "bb48a7193d764ea7a90dbffb54ffcb76"
-#endif
 
 ////#define FAKE_VESC_ENABLED
 
