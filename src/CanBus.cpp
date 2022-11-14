@@ -1,6 +1,4 @@
 #include "CanBus.h"
-#include "../lib/ESP32-Arduino-CAN/src/CAN_config.h"
-#include "../lib/ESP32-Arduino-CAN/src/CAN.h"
 
 #ifdef CANBUS_ENABLED
 
@@ -42,14 +40,14 @@ void CanBus::init() {
 */
 void CanBus::loop() {
     int frameCount = 0;
-
+    twai_message_t rx_frame;
     if (initialized) {
         if (millis() - lastRealtimeData > interval && !proxy->processing) {
-            //requestRealtimeData();
+            requestRealtimeData();
         }
 
         if (millis() - lastBalanceData > interval && !proxy->processing) {
-            //requestBalanceData();
+            requestBalanceData();
         }
     } else if(initRetryCounter > 0 && millis() - lastRetry > 500) {
         requestFirmwareVersion();
@@ -61,15 +59,14 @@ void CanBus::loop() {
     }
 
     //receive next CAN frame from queue
-    CAN_frame_t rx_frame;
-    while (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 3 * portTICK_PERIOD_MS) == pdTRUE) {
+    while (twai_receive( &rx_frame, 3 * portTICK_PERIOD_MS) == ESP_OK) {
         if (!initialized) {
             Logger::notice(LOG_TAG_CANBUS, "CANBUS is now initialized");
             initialized = true;
         }
         frameCount++;
         //VESC only uses ext packages, so skip std packages
-        if (rx_frame.FIR.B.FF == CAN_frame_ext) {
+        if (rx_frame.extd) {
             if (Logger::getLogLevel() == Logger::VERBOSE) {
                 printFrame(rx_frame, frameCount);
             }
@@ -90,64 +87,64 @@ void CanBus::loop() {
 
 void CanBus::requestFirmwareVersion() {
     Logger::notice(LOG_TAG_CANBUS, "requestFirmwareVersion");
-    CAN_frame_t tx_frame = {};
+    twai_message_t tx_frame = {};
 
-    tx_frame.FIR.B.FF = CAN_frame_ext;
-    tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
-    tx_frame.FIR.B.DLC = 0x03;
-    tx_frame.data.u8[0] = esp_can_id;
-    tx_frame.data.u8[1] = 0x00;
-    tx_frame.data.u8[2] = 0x00;  // COMM_FW_VERSION
+    tx_frame.extd = 1;
+    tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
+    tx_frame.data_length_code = 0x03;
+    tx_frame.data[0] = esp_can_id;
+    tx_frame.data[1] = 0x00;
+    tx_frame.data[2] = 0x00;  // COMM_FW_VERSION
     candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::requestRealtimeData() {
     Logger::notice(LOG_TAG_CANBUS, "requestRealtimeData");
-    CAN_frame_t tx_frame = {};
+    twai_message_t tx_frame = {};
 
-    tx_frame.FIR.B.FF = CAN_frame_ext;
-    tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
-    tx_frame.FIR.B.DLC = 0x07;
-    tx_frame.data.u8[0] = esp_can_id;
-    tx_frame.data.u8[1] = 0x00;
-    tx_frame.data.u8[2] = 0x32;      // COMM_GET_VALUES_SELECTIVE
+    tx_frame.extd = 1;
+    tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
+    tx_frame.data_length_code = 0x07;
+    tx_frame.data[0] = esp_can_id;
+    tx_frame.data[1] = 0x00;
+    tx_frame.data[2] = 0x32;      // COMM_GET_VALUES_SELECTIVE
     // mask
-    tx_frame.data.u8[3] = 0x00;      // Byte1 of mask (Bits 24-31)
-    tx_frame.data.u8[4] = 0x00;      // Byte2 of mask (Bits 16-23)
-    tx_frame.data.u8[5] = B10000111; // Byte3 of mask (Bits 8-15)
-    tx_frame.data.u8[6] = B11000011; // Byte4 of mask (Bits 0-7)
+    tx_frame.data[3] = 0x00;      // Byte1 of mask (Bits 24-31)
+    tx_frame.data[4] = 0x00;      // Byte2 of mask (Bits 16-23)
+    tx_frame.data[5] = B10000111; // Byte3 of mask (Bits 8-15)
+    tx_frame.data[6] = B11000011; // Byte4 of mask (Bits 0-7)
     candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::requestBalanceData() {
     Logger::notice(LOG_TAG_CANBUS, "requestBalanceData");
-    CAN_frame_t tx_frame = {};
+    twai_message_t tx_frame = {};
 
-    tx_frame.FIR.B.FF = CAN_frame_ext;
-    tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
-    tx_frame.FIR.B.DLC = 0x03;
-    tx_frame.data.u8[0] = esp_can_id;
-    tx_frame.data.u8[1] = 0x00;
-    tx_frame.data.u8[2] = 0x4F;  // COMM_GET_DECODED_BALANCE
+    tx_frame.extd = 1;
+    tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
+    tx_frame.data_length_code = 0x03;
+    tx_frame.data[0] = esp_can_id;
+    tx_frame.data[1] = 0x00;
+    tx_frame.data[2] = 0x4F;  // COMM_GET_DECODED_BALANCE
     candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::ping() {
-    CAN_frame_t tx_frame = {};
-    tx_frame.FIR.B.FF = CAN_frame_ext;
-    tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PING) << 8) + vesc_id;
-    tx_frame.FIR.B.DLC = 0x01;
-    tx_frame.data.u8[0] = esp_can_id;
+    twai_message_t tx_frame = {};
+    tx_frame.extd = 1;
+    tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PING) << 8) + vesc_id;
+    tx_frame.data_length_code = 0x01;
+    tx_frame.data[0] = esp_can_id;
     candevice->sendCanFrame(&tx_frame);
 }
 
-void CanBus::printFrame(CAN_frame_t rx_frame, int frameCount) {
-    if (rx_frame.FIR.B.RTR == CAN_RTR)
-        printf("#%d RTR from 0x%08x, DLC %d\r\n", frameCount, rx_frame.MsgID, rx_frame.FIR.B.DLC);
+void CanBus::printFrame(twai_message_t rx_frame, int frameCount) {
+    if (rx_frame.rtr)
+        printf("#%d RTR from 0x%08x, DLC %d\r\n", frameCount, rx_frame.identifier, rx_frame.data_length_code);
     else {
-        printf("#%d from 0x%08x, DLC %d, data [", frameCount, rx_frame.MsgID, rx_frame.FIR.B.DLC);
+        printf("#%d from 0x%08x, DLC %d, data [", frameCount, rx_frame.identifier, rx_frame.data_length_code);
         for (int i = 0; i < 8; i++) {
-            printf("%d", (uint8_t) rx_frame.data.u8[i]);
+            printf("%d", (uint8_t) rx_frame.data[i]);
             if (i != 7) {
                 printf("\t");
             }
@@ -156,25 +153,22 @@ void CanBus::printFrame(CAN_frame_t rx_frame, int frameCount) {
     }
 }
 
-void CanBus::clearFrame(CAN_frame_t rx_frame) {
-    rx_frame.MsgID=0;
-    rx_frame.FIR.B.DLC=0;
-    rx_frame.data.u8[0]=0;
-    rx_frame.data.u8[1]=0;
-    rx_frame.data.u8[2]=0;
-    rx_frame.data.u8[3]=0;
-    rx_frame.data.u8[4]=0;
-    rx_frame.data.u8[5]=0;
-    rx_frame.data.u8[6]=0;
-    rx_frame.data.u8[7]=0;
-    rx_frame.data.u32[0]=0;
-    rx_frame.data.u32[1]=0;
-    rx_frame.data.u64=0;
+void CanBus::clearFrame(twai_message_t rx_frame) {
+    rx_frame.identifier=0;
+    rx_frame.data_length_code=0;
+    rx_frame.data[0]=0;
+    rx_frame.data[1]=0;
+    rx_frame.data[2]=0;
+    rx_frame.data[3]=0;
+    rx_frame.data[4]=0;
+    rx_frame.data[5]=0;
+    rx_frame.data[6]=0;
+    rx_frame.data[7]=0;
 }
 
-void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
+void CanBus::processFrame(twai_message_t rx_frame, int frameCount) {
     String frametype = "";
-    uint32_t ID = rx_frame.MsgID;
+    uint32_t ID = rx_frame.identifier;
     if (RECV_STATUS_1 == ID) {
         frametype = "status1";
         vescData->erpm = readInt32Value(rx_frame, 0);
@@ -207,26 +201,25 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
 
     if (RECV_PROCESS_SHORT_BUFFER_PROXY == ID) {
         frametype = "process short buffer for <<BLE proxy>>";
-        for (int i = 2; i < rx_frame.FIR.B.DLC; i++) {
-            proxybuffer.push_back(rx_frame.data.u8[i]);
+        for (int i = 1; i < rx_frame.data_length_code; i++) {
+            proxybuffer.push_back(rx_frame.data[i]);
         }
-        proxybuffer.push_back(1);
-        proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), 54, 187);
+        proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data[4], rx_frame.data[5]);
         proxybuffer.clear();
     }
 
     if (RECV_FILL_RX_BUFFER == ID) {
         frametype = "fill rx buffer";
-        for (int i = 1; i < rx_frame.FIR.B.DLC; i++) {
-            buffer.push_back(rx_frame.data.u8[i]);
+        for (int i = 1; i < rx_frame.data_length_code; i++) {
+            buffer.push_back(rx_frame.data[i]);
         }
     }
 
     if (RECV_FILL_RX_BUFFER_PROXY == ID || RECV_FILL_RX_BUFFER_LONG_PROXY == ID) {
         boolean longBuffer = RECV_FILL_RX_BUFFER_LONG_PROXY == ID;
         frametype = longBuffer ? "fill rx long buffer" : "fill rx buffer";
-        for (int i = (longBuffer ? 2 : 1); i < rx_frame.FIR.B.DLC; i++) {
-            proxybuffer.push_back(rx_frame.data.u8[i]);
+        for (int i = (longBuffer ? 2 : 1); i < rx_frame.data_length_code; i++) {
+            proxybuffer.push_back(rx_frame.data[i]);
         }
     }
 
@@ -386,7 +379,7 @@ void CanBus::processFrame(CAN_frame_t rx_frame, int frameCount) {
             frametype += command;
         }
         if (isProxyRequest) {
-            proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data.u8[4], rx_frame.data.u8[5]);
+            proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data[4], rx_frame.data[5]);
             proxybuffer.clear();
         } else {
             buffer.clear();
@@ -480,19 +473,19 @@ void CanBus::dumpVescValues() {
     lastDump = millis();
 }
 
-int32_t CanBus::readInt32Value(CAN_frame_t rx_frame, int startbyte) {
+int32_t CanBus::readInt32Value(twai_message_t rx_frame, int startbyte) {
     int32_t intVal = (
-            ((int32_t) rx_frame.data.u8[startbyte] << 24) +
-            ((int32_t) rx_frame.data.u8[startbyte + 1] << 16) +
-            ((int32_t) rx_frame.data.u8[startbyte + 2] << 8) +
-            ((int32_t) rx_frame.data.u8[startbyte + 3]));
+            ((int32_t) rx_frame.data[startbyte] << 24) +
+            ((int32_t) rx_frame.data[startbyte + 1] << 16) +
+            ((int32_t) rx_frame.data[startbyte + 2] << 8) +
+            ((int32_t) rx_frame.data[startbyte + 3]));
     return intVal;
 }
 
-int16_t CanBus::readInt16Value(CAN_frame_t rx_frame, int startbyte) {
+int16_t CanBus::readInt16Value(twai_message_t rx_frame, int startbyte) {
     int16_t intVal = (
-            ((int16_t) rx_frame.data.u8[startbyte] << 8) +
-            ((int16_t) rx_frame.data.u8[startbyte + 1]));
+            ((int16_t) rx_frame.data[startbyte] << 8) +
+            ((int16_t) rx_frame.data[startbyte + 1]));
     return intVal;
 }
 

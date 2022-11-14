@@ -8,12 +8,9 @@
 
 #ifdef CANBUS_ENABLED
 
-#include <ESP32CAN.h>
 #include "AppConfiguration.h"
 #include <LoopbackStream.h>
 #include <Logger.h>
-#include "CAN.h"
-#include "CAN_config.h"
 #include "VescCanConstants.h"
 #include "BleCanProxy.h"
 #include "CanDevice.h"
@@ -40,11 +37,11 @@ class CanBus {
       void requestRealtimeData();
       void requestBalanceData();
       void ping();
-      static void printFrame(CAN_frame_t rx_frame, int frameCount);
-      void processFrame(CAN_frame_t rx_frame, int frameCount);
-      void clearFrame(CAN_frame_t rx_frame);
-      static int32_t readInt32Value(CAN_frame_t rx_frame, int startbyte);
-      static int16_t readInt16Value(CAN_frame_t rx_frame, int startbyte);
+      static void clearFrame(twai_message_t rx_frame);
+      static void printFrame(twai_message_t rx_frame, int frameCount);
+      void processFrame(twai_message_t rx_frame, int frameCount);
+      static int32_t readInt32Value(twai_message_t rx_frame, int startbyte);
+      static int16_t readInt16Value(twai_message_t rx_frame, int startbyte);
       int32_t readInt32ValueFromBuffer(int startbyte, boolean isProxyRequest);
       int16_t readInt16ValueFromBuffer(int startbyte, boolean isProxyRequest);
       int8_t readInt8ValueFromBuffer(int startbyte, boolean isProxyRequest);

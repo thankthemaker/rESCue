@@ -38,15 +38,15 @@ void BleCanProxy::proxyIn(std::string in) {
     }
 
     if (length <= 6) {
-        CAN_frame_t tx_frame = {};
-        tx_frame.FIR.B.FF = CAN_frame_ext;
-        tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
-        tx_frame.FIR.B.DLC = 0x02 + length;
-        tx_frame.data.u8[0] = ble_proxy_can_id;
-        tx_frame.data.u8[1] = 0x00;
-        tx_frame.data.u8[2] = command;
+        twai_message_t tx_frame = {};
+        tx_frame.extd = 1;
+        tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
+        tx_frame.data_length_code = 0x02 + length;
+        tx_frame.data[0] = ble_proxy_can_id;
+        tx_frame.data[1] = 0x00;
+        tx_frame.data[2] = command;
         for (int i = 3; i < length + 2; i++) {
-            tx_frame.data.u8[i] = (uint8_t) in.at(i);
+            tx_frame.data[i] = (uint8_t) in.at(i);
         }
         candevice->sendCanFrame(&tx_frame);
     } else {
@@ -71,16 +71,16 @@ void BleCanProxy::proxyIn(std::string in) {
             int sendLen = (length >= byteNum+ 7) ? 7 : length - byteNum;
             //Serial.printf("bufLen %d, byteNum %d, sendlen %d\n", length, byteNum , sendLen);
 
-            CAN_frame_t tx_frame = {};
-            tx_frame.FIR.B.FF = CAN_frame_ext;
-            tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + vesc_id;
-            tx_frame.FIR.B.DLC = sendLen + 1;
-            tx_frame.data.u8[0] = byteNum; //startbyte counter of frame
+            twai_message_t tx_frame = {};
+            tx_frame.extd = 1;
+            tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + vesc_id;
+            tx_frame.data_length_code = sendLen + 1;
+            tx_frame.data[0] = byteNum; //startbyte counter of frame
 
 
             for (int i = 1; i < sendLen+1; i++) {
                 //Serial.printf("Reading byte %d, length %d, index %d, sendlen %d\n", byteNum + i, bufLen, i, sendLen);
-                tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum-1 + i);
+                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum-1 + i);
             }
             candevice->sendCanFrame(&tx_frame);
         }
@@ -89,31 +89,31 @@ void BleCanProxy::proxyIn(std::string in) {
             int sendLen = (length >= byteNum + 6) ? 6 : length - byteNum ;
             //Serial.printf("bufLen %d, byteNum %d, sendlen %d\n", length, byteNum , sendLen);
 
-            CAN_frame_t tx_frame = {};
-            tx_frame.FIR.B.FF = CAN_frame_ext;
-            tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + vesc_id;
-            tx_frame.FIR.B.DLC = sendLen + 2;
-            tx_frame.data.u8[0] = byteNum >> 8;
-            tx_frame.data.u8[1] = byteNum & 0xFF;
+            twai_message_t tx_frame = {};
+            tx_frame.extd = 1;
+            tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + vesc_id;
+            tx_frame.data_length_code= sendLen + 2;
+            tx_frame.data[0] = byteNum >> 8;
+            tx_frame.data[1] = byteNum & 0xFF;
 
             for (int i = 2; i < sendLen+2; i++) {
                 //Serial.printf("Reading byte %d, length %d, index %d, sendlen %d\n", byteNum + i, bufLen, i, sendLen);
-                tx_frame.data.u8[i] = (uint8_t) longPackBuffer.at(byteNum-2 + i);
+                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum-2 + i);
             }
 
             candevice->sendCanFrame(&tx_frame);
         }
 
-        CAN_frame_t tx_frame = {};
-        tx_frame.FIR.B.FF = CAN_frame_ext;
-        tx_frame.MsgID = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + vesc_id;
-        tx_frame.FIR.B.DLC = 6;
-        tx_frame.data.u8[0] = ble_proxy_can_id;
-        tx_frame.data.u8[1] = 0; // IS THIS CORRECT?????
-        tx_frame.data.u8[2] = length >> 8;
-        tx_frame.data.u8[3] = length & 0xFF;
-        tx_frame.data.u8[4] = longPackBuffer.at(longPackBuffer.size() - 3);
-        tx_frame.data.u8[5] = longPackBuffer.at(longPackBuffer.size() - 2);
+        twai_message_t tx_frame = {};
+        tx_frame.extd = 1;
+        tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + vesc_id;
+        tx_frame.data_length_code = 6;
+        tx_frame.data[0] = ble_proxy_can_id;
+        tx_frame.data[1] = 0; // IS THIS CORRECT?????
+        tx_frame.data[2] = length >> 8;
+        tx_frame.data[3] = length & 0xFF;
+        tx_frame.data[4] = longPackBuffer.at(longPackBuffer.size() - 3);
+        tx_frame.data[5] = longPackBuffer.at(longPackBuffer.size() - 2);
         candevice->sendCanFrame(&tx_frame);
 
     }

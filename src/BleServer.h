@@ -53,7 +53,7 @@ class BleServer :
 
     private:
 #if defined(CANBUS_ENABLED)
-      CanBus *canbus{};
+      CanBus *canbus;
 #endif
       struct sendConfigValue;
       void dumpBuffer(std::string header, std::string buffer);

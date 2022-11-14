@@ -5,8 +5,6 @@
 #include "config.h"
 #include <Logger.h>
 #include "VescCanConstants.h"
-#include "CAN.h"
-#include "CAN_config.h"
 #include "LoopbackStream.h"
 #include "CanDevice.h"
 

@@ -1,4 +1,5 @@
 # Changelog for rESCue firmware
+rESCue now uses Github releases, so you can see the changes in Github : https://github.com/thankthemaker/rESCue/releases
 
 ## Release 1.3.8 (not yet released)
 
