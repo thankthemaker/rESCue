@@ -150,7 +150,7 @@ void BleServer::init(Stream *vesc) {
     char buf[128];
     snprintf(buf, 128, "Initial MTU size %d", mtu_size);
     Logger::notice(LOG_TAG_BLESERVER, buf);
-#if defined(CANBUD_ENABLED)
+#if defined(CANBUS_ENABLED)
     this->canbus = canbus;
 #endif
 
