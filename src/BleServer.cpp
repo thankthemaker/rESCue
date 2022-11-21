@@ -375,6 +375,10 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.lightColorSecondary = atoi(value.c_str());
                 snprintf(buf, 128, "Updated param \"lightColorSecondary\" to %s (%d", value.c_str(),
                          AppConfiguration::getInstance()->config.lightColorSecondary);
+            } else if (key == "lightbarMaxBrightness") {
+                AppConfiguration::getInstance()->config.lightbarMaxBrightness = atoi(value.c_str());
+            } else if (key == "lightbarTurnOffErpm") {
+                AppConfiguration::getInstance()->config.lightbarTurnOffErpm = atoi(value.c_str());
             } else if (key == "brakeLightEnabled") {
                 AppConfiguration::getInstance()->config.brakeLightEnabled = atoi(value.c_str());
             } else if (key == "brakeLightMinAmp") {
@@ -451,23 +455,6 @@ void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, i
 void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
     this->sendValue("loopTime", loopTime);
     this->sendValue("maxLoopTime", maxLoopTime);
-
-/*
-   Blynk.setProperty(VPIN_VESC_DUTY_CYCLE, "color",
-     vescData->dutyCycle > 0 ? BLINK_COLOR_GREEN : BLINK_COLOR_RED);
-   if(AppConfiguration::getInstance()->config.isNotificationEnabled){
-     if(millis() - lastNotification > 60000) { // Notification only all once a minutes
-       if(vescData->inputVoltage > AppConfiguration::getInstance()->config.maxBatteryVoltage) {
-         Blynk.notify("Battery too high: " + String(vescData->inputVoltage) + "V");
-       }
-       if(vescData->inputVoltage < AppConfiguration::getInstance()->config.minBatteryVoltage) {
-         Blynk.notify("Battery dropped below: " + String(vescData->inputVoltage) + "V");
-       }  
-       lastBatteryValue = vescData->inputVoltage;
-       lastNotification = millis();
-     }
-   }
-*/
 }
 
 #endif //CANBUS_ENABLED
@@ -477,7 +464,7 @@ void BleServer::sendValue(std::string key, TYPE value) {
     std::stringstream ss;
     ss << key << "=" << value;
     pCharacteristicConf->setValue(ss.str());
-    pCharacteristicConf->notify();
+    pCharacteristicConf->indicate();
     ss.str("");
     delay(5);
 }

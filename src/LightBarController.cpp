@@ -37,14 +37,12 @@ LightBarController *LightBarController::getInstance() {
 
 // updates the light bar, depending on the LED count
 void LightBarController::updateLightBar(float voltage, AdcState adcState, double erpm) {
-    /*
-    if(abs(erpm) > 10000) {
+    if(abs(erpm) > AppConfiguration::getInstance()->config.lightbarTurnOffErpm) {
         for(int i=0; i<pixel_count; i++) 
           lightPixels.setPixelColor(i, 0, 0, 0);
         lightPixels.show();
         return;
     }
-    */
     int used = max_voltage - voltage * 100; // calculate how much the voltage has dropped
     int value = voltage_range - used; // calculate the remaining value to lowest voltage
     float diffPerPixel =
@@ -92,7 +90,7 @@ void LightBarController::updateLightBar(float voltage, AdcState adcState, double
                 // the last pixel, the battery voltage somewhere in the range of this pixel
                 // the lower the remaining value the more the pixel goes from green to red
                 int val = calcVal(remainder);
-                lightPixels.setPixelColor(i, MAX_BRIGHTNESS - val, val, 0);
+                lightPixels.setPixelColor(i, AppConfiguration::getInstance()->config.lightbarMaxBrightness - val, val, 0);
             }
             if (i > whole) {
                 // these pixels must be turned off, we already reached a lower battery voltage
@@ -100,11 +98,11 @@ void LightBarController::updateLightBar(float voltage, AdcState adcState, double
             }
             if (i < whole) {
                 // turn on this pixel completely green, the battery voltage is still above this value
-                lightPixels.setPixelColor(i, 0, MAX_BRIGHTNESS, 0);
+                lightPixels.setPixelColor(i, 0, AppConfiguration::getInstance()->config.lightbarMaxBrightness, 0);
             }
             if (value < 0) {
                 // ohhh, we already hit the absolute minimum, set all pixel to full red.
-                lightPixels.setPixelColor(i, MAX_BRIGHTNESS, 0, 0);
+                lightPixels.setPixelColor(i, AppConfiguration::getInstance()->config.lightbarMaxBrightness, 0, 0);
             }
         }
     }
@@ -116,5 +114,5 @@ void LightBarController::updateLightBar(float voltage, AdcState adcState, double
 
 // map the remaining value to a value between 0 and MAX_BRIGHTNESS
 int LightBarController::calcVal(int value) {
-    return map(value, 0, 100, 0, MAX_BRIGHTNESS);
+    return map(value, 0, 100, 0, AppConfiguration::getInstance()->config.lightbarMaxBrightness);
 }
