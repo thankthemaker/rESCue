@@ -39,6 +39,8 @@ struct Config {
     VISITABLE(int, lightColorSecondaryRed);
     VISITABLE(int, lightColorSecondaryGreen);
     VISITABLE(int, lightColorSecondaryBlue);
+    VISITABLE(int, lightbarTurnOffErpm);
+    VISITABLE(int, lightbarMaxBrightness);
     VISITABLE(boolean, brakeLightEnabled);
     VISITABLE(int, numberPixelLight);
     VISITABLE(int, numberPixelBatMon);

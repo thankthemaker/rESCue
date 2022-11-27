@@ -56,6 +56,8 @@ void AppConfiguration::readPreferences() {
     config.lightColorSecondaryRed = (config.lightColorSecondary >> 16) & 0x0ff;
     config.lightColorSecondaryGreen = (config.lightColorSecondary >> 8) & 0x0ff;
     config.lightColorSecondaryBlue = config.lightColorSecondary & 0x0ff;
+    config.lightbarMaxBrightness =  doc["lightbarMaxBrightness"] | 100;
+    config.lightbarTurnOffErpm =  doc["lightbarTurnOffErpm"] | 1000;
     config.ledType = doc["ledType"] | "RGB";
     config.ledFrequency = doc["ledFrequency"] | "KHZ800";
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
