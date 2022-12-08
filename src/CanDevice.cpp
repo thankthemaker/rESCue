@@ -41,7 +41,7 @@ void CanDevice::sendCanFrame(const twai_message_t *p_frame) {
     }
     xSemaphoreTake(mutex_v, portMAX_DELAY);
     //Queue message for transmission
-    if (twai_transmit(p_frame, pdMS_TO_TICKS(1000)) != ESP_OK) {
+    if (twai_transmit(p_frame, pdMS_TO_TICKS(10)) != ESP_OK) {
         printf("Failed to queue message for transmission\n");
     }
     xSemaphoreGive(mutex_v);

@@ -44,6 +44,7 @@ void startUpdate() {
     Serial.println("partition size:" + String(partition->size));
     esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &otaHandler);
     updateFlag = true;
+    AppConfiguration::getInstance()->config.otaUpdateActive = true;
     Serial.println("Update started");
 }
 
