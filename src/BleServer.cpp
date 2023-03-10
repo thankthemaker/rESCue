@@ -178,7 +178,8 @@ void BleServer::init(Stream *vesc) {
     // Create a BLE Characteristic for VESC RX
     pCharacteristicVescRx = pServiceVesc->createCharacteristic(
             VESC_CHARACTERISTIC_UUID_RX,
-            NIMBLE_PROPERTY::WRITE
+            NIMBLE_PROPERTY::WRITE |
+            NIMBLE_PROPERTY::WRITE_NR
     );
     //pCharacteristicVescRx->setValue("VESC RX");
     pCharacteristicVescRx->setCallbacks(this);
