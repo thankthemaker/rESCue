@@ -28,15 +28,21 @@ uint8_t LedControllerFactory::determineLedType() {
     uint8_t ledType = 0;
     std::string ledTypeStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
     if (ledTypeStr == "RGB") {
-        ledType = 6;
+        ledType = NEO_RGB;
+    } else if (ledTypeStr == "RBG") {
+        ledType = NEO_RBG;
     } else if (ledTypeStr == "GRB") {
-        ledType = 82;
+        ledType = NEO_GRB;
     } else if (ledTypeStr == "RGBW") {
-        ledType = 198;
+        ledType = NEO_RGBW;
+    } else if (ledTypeStr == "RGWB") {
+        ledType = NEO_RGWB;
     } else if (ledTypeStr == "GRBW" ) {
-        ledType = 210;
+        ledType = NEO_GRBW;
+    } else if (ledTypeStr == "GRWB") {
+        ledType = NEO_GRWB;
     } else {
-        ledType = 6;
+        ledType = NEO_RGB;
     }
 
     std::string ledFreqStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());

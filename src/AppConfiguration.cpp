@@ -105,4 +105,3 @@ void AppConfiguration::savePreferences() {
     preferences.putString("config", json);
     preferences.end();
 }
-
