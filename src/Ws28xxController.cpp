@@ -217,25 +217,25 @@ void Ws28xxController::flashLightUpdate() {
 #ifdef LED_MODE_ODD_EVEN
                 if (i % 2 == 0) {
 #endif
-                    setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness));
+                    setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness, maxBrightness));
 #ifdef LED_MODE_ODD_EVEN
                 } else {
-                    setPixelColor(i, Color(0, 0, 0));
+                    setPixelColor(i, Color(0, 0, 0, 0));
                 }
 #endif
             } else {
-                setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0));
+                setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0, 0));
             }
         else if (direction == FORWARD) {
-            setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0));
+            setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0, 0));
         } else {
 #ifdef LED_MODE_ODD_EVEN
             if (i % 2 == 0) {
 #endif
-                setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness));
+                setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness, maxBrightness));
 #ifdef LED_MODE_ODD_EVEN
             } else {
-                setPixelColor(i, Color(0, 0, 0));
+                setPixelColor(i, Color(0, 0, 0, 0));
             }
 #endif
         }
@@ -270,9 +270,9 @@ void Ws28xxController::pulsatingLight(uint8_t timeinterval) {
 void Ws28xxController::pulsatingLightUpdate() {
     for (int i = 0; i < numPixels(); i++) {
         if(i<numPixels()/2) {
-            setPixelColor(i, Color(index, index, index));
+            setPixelColor(i, Color(index, index, index, index));
         } else {
-            setPixelColor(i, Color(index, 0, 0));
+            setPixelColor(i, Color(index, 0, 0, 0));
         }
     }
 }
@@ -365,22 +365,22 @@ void Ws28xxController::batteryIndicatorUpdate() {
     Serial.println();
     for(int i=0; i<numPixels();i++) {
         if(value<0) {
-            setPixelColor(i, MAX_BRIGHTNESS, 0, 0);
+            setPixelColor(i, MAX_BRIGHTNESS, 0, 0, 0);
             continue;
         }
         if (i < numPixels() / 2) {
             if (i <= whole) {
                 int val = calcVal(remainder);
-                setPixelColor(i, MAX_BRIGHTNESS - val, val, 0);
+                setPixelColor(i, MAX_BRIGHTNESS - val, val, 0, 0);
             } else {
-                setPixelColor(i, 0, 0, 0);
+                setPixelColor(i, 0, 0, 0, 0);
             }
         } else {
             if (i <= whole+numPixels()/2) {
                 int val = calcVal(remainder);
-                setPixelColor(i, MAX_BRIGHTNESS - val, val, 0);
+                setPixelColor(i, MAX_BRIGHTNESS - val, val, 0, 0);
             } else {
-                setPixelColor(i, 0, 0, 0);
+                setPixelColor(i, 0, 0, 0, 0);
             }
         }
     }
@@ -412,7 +412,7 @@ void Ws28xxController::stop() {
     Logger::verbose("stop");
     activePattern = NONE;
     for (int i = 0; i < numPixels(); i++) {
-        setPixelColor(i, Color(0, 0, 0));
+        setPixelColor(i, Color(0, 0, 0, 0));
     }
     show();
 }
@@ -422,33 +422,33 @@ void Ws28xxController::setLight(boolean forward, int brightness) {
     int calc_even = forward ? brightness : brightness - 1;
     int calc_odd = totalSteps - brightness - 1;
     for (int i = 0; i < numPixels() / 2; i++) {
-        setPixelColor(i, Color(0, 0, 0));
+        setPixelColor(i, Color(0, 0, 0, 0));
         if (i % 2 == 0) {
-            setPixelColor(i, Color(calc_even, calc_even, calc_even));
+            setPixelColor(i, Color(calc_even, calc_even, calc_even, calc_even));
         } else if (i % 2 != 0) {
-            setPixelColor(i, Color(calc_odd, 0, 0));
+            setPixelColor(i, Color(calc_odd, 0, 0, 0));
         }
     }
     for (int i = numPixels() / 2; i < numPixels(); i++) {
-        setPixelColor(i, Color(0, 0, 0));
+        setPixelColor(i, Color(0, 0, 0, 0));
         if (i % 2 == 0) {
-            setPixelColor(i, Color(calc_even, 0, 0));
+            setPixelColor(i, Color(calc_even, 0, 0, 0));
         } else if (i % 2 != 0) {
-            setPixelColor(i, Color(calc_odd, calc_odd, calc_odd));
+            setPixelColor(i, Color(calc_odd, calc_odd, calc_odd, calc_odd));
         }
     }
 #else
     for(int i = 0; i < numPixels(); i++ ) {
       if(i < numPixels()/2){
         if(forward)
-          setPixelColor(i, Color(brightness, brightness, brightness));
+          setPixelColor(i, Color(brightness, brightness, brightness, brightness));
         else
-          setPixelColor(i, Color(maxBrightness-brightness, 0, 0));
+          setPixelColor(i, Color(maxBrightness-brightness, 0, 0, 0));
       } else {
         if(forward)
-          setPixelColor(i, Color(brightness, 0, 0));
+          setPixelColor(i, Color(brightness, 0, 0, 0));
         else
-          setPixelColor(i, Color(maxBrightness-brightness, maxBrightness-brightness, maxBrightness-brightness));
+          setPixelColor(i, Color(maxBrightness-brightness, maxBrightness-brightness, maxBrightness-brightness, maxBrightness-brightness));
       }
     }
 #endif
