@@ -413,6 +413,8 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 }
             } else if (key == "wifiPassword") {
                 wifiPassword = value.c_str();
+            } else if(key == "lightsSwitch") {
+                AppConfiguration::getInstance()->config.lightsSwitch = ("true" == value);
             }
             Logger::notice(LOG_TAG_BLESERVER, buf);
         } else if (pCharacteristic->getUUID().equals(pOtaCharacteristic->getUUID())) {

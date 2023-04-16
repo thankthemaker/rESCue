@@ -53,6 +53,7 @@ struct Config {
     VISITABLE(String , ledFrequency);
     VISITABLE(int , idleLightTimeout);
     VISITABLE(int , mtuSize);
+    VISITABLE(boolean, lightsSwitch);
   END_VISITABLES;
 };
 

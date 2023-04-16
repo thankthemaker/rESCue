@@ -63,6 +63,7 @@ void AppConfiguration::readPreferences() {
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.logLevel = doc["logLevel"] | Logger::WARNING;
     config.mtuSize = doc["mtuSize"] | 512;
+    config.lightsSwitch = true;
     config.saveConfig = false;
     config.sendConfig = false;
     preferences.end();
