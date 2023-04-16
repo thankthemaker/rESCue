@@ -1,9 +1,8 @@
-#include "config.h"
 #include "ILedController.h"
 #include "AppConfiguration.h"
 #include <Logger.h>
 
-int idleTimer = 0;
+unsigned long idleTimer = 0;
 
 void ILedController::loop(const int *new_forward, const int *new_backward, const int *new_idle, const int *new_brake) {
 

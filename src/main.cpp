@@ -5,10 +5,10 @@
 #include "Buzzer.h"
 ////#include "SoundController.h"
 #include "ILedController.h"
-#include "Ws28xxController.h"
 #include "BleServer.h"
 #include "CanBus.h"
 #include "AppConfiguration.h"
+#include "LightBarController.h"
 
 unsigned long mainLoop = 0;
 unsigned long loopTime = 0;
@@ -19,7 +19,7 @@ int new_brake = LOW;
 int idle = LOW;
 double idle_erpm = 10.0;
 
-int lastFake = 4000;
+unsigned long lastFake = 4000;
 int lastFakeCount = 0;
 VescData vescData;
 
@@ -27,17 +27,13 @@ HardwareSerial vesc(2);
 
 ILedController *ledController;
 
-#if defined(CANBUS_ENABLED)
 CanBus *canbus = new CanBus(&vescData);
-#endif //CANBUS_ENABLED
 BatteryMonitor *batMonitor = new BatteryMonitor(&vescData);
-
 BleServer *bleServer = new BleServer();
-
+LightBarController *lightbar = new LightBarController();
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char *module, const char *message);
 
-#if defined(CANBUS_ENABLED)
 
 void fakeCanbusValues() {
     if (millis() - lastFake > 3000) {
@@ -61,13 +57,11 @@ void fakeCanbusValues() {
     }
 }
 
-#endif
-
 void setup() {
     Logger::setOutputFunction(localLogger);
 
     AppConfiguration::getInstance()->readPreferences();
-    delay(3);
+    delay(10);
     AppConfiguration::getInstance()->config.sendConfig = false;
     Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
     if (Logger::getLogLevel() != Logger::SILENT) {
@@ -78,7 +72,7 @@ void setup() {
         return;
     }
 
-    ledController = LedControllerFactory::getInstance()->createLedController(&vescData);
+    ledController = LedControllerFactory::createLedController(&vescData);
 
     pinMode(PIN_FORWARD, INPUT);
     pinMode(PIN_BACKWARD, INPUT);
@@ -86,10 +80,8 @@ void setup() {
 
     vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
     delay(50);
-#ifdef CANBUS_ENABLED
     // initializes the CANBUS
     canbus->init();
-#endif //CANBUS_ENABLED
 
     // initializes the battery monitor
     batMonitor->init();
@@ -102,7 +94,7 @@ void setup() {
     // initialize the LED (either COB or Neopixel)
     ledController->init();
 
-    Buzzer::getInstance()->startSequence();
+    Buzzer::startSequence();
     ledController->startSequence();
 
     char buf[128];
@@ -123,7 +115,7 @@ void loop() {
         return;
     }
     if (AppConfiguration::getInstance()->config.sendConfig) {
-        bleServer->sendConfig();
+        BleServer::sendConfig();
         AppConfiguration::getInstance()->config.sendConfig = false;
     }
     if (AppConfiguration::getInstance()->config.saveConfig) {
@@ -131,7 +123,6 @@ void loop() {
         AppConfiguration::getInstance()->config.saveConfig = false;
     }
 
-#ifdef CANBUS_ENABLED
 #ifdef FAKE_VESC_ENABLED
     fakeCanbusValues();
 #endif
@@ -140,17 +131,9 @@ void loop() {
     new_backward = vescData.erpm < -idle_erpm ? HIGH : LOW;
     idle = (abs(vescData.erpm) < idle_erpm && vescData.switchState == 0) ? HIGH : LOW;
     new_brake = (abs(vescData.erpm) > idle_erpm && vescData.current < -4.0) ? HIGH : LOW;
-#else
-    new_forward  = digitalRead(PIN_FORWARD);
-    new_backward = digitalRead(PIN_BACKWARD);
-    new_brake    = digitalRead(PIN_BRAKE);
-    idle         = new_forward == LOW && new_backward == LOW;
-#endif
 
-#ifdef CANBUS_ENABLED
 #ifndef FAKE_VESC_ENABLED
     canbus->loop();
-#endif
 #endif
 
     // call the led controller loop
@@ -159,12 +142,10 @@ void loop() {
     // measure and check voltage
     batMonitor->checkValues();
 
+    lightbar->updateLightBar(vescData.inputVoltage, vescData.switchState, vescData.adc1, vescData.adc2, vescData.erpm);  // update the WS28xx battery bar
+
     // call the VESC UART-to-Bluetooth bridge
-#ifdef CANBUS_ENABLED
     bleServer->loop(&vescData, loopTime, maxLoopTime);
-#else
-    bleServer->loop();
-#endif
 }
 
 void localLogger(Logger::Level level, const char *module, const char *message) {

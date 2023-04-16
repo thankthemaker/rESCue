@@ -1,5 +1,4 @@
 #include "BleServer.h"
-#include "BlynkPins.h"
 #include <Logger.h>
 #include <sstream>
 #include "esp_bt_main.h"
@@ -27,7 +26,7 @@ Stream *vescSerial;
 std::string bufferString;
 int bleLoop = 0;
 
-BleServer::BleServer() {}
+BleServer::BleServer() = default;
 
 esp_ota_handle_t otaHandler = 0;
 bool updateFlag = false;
@@ -117,7 +116,7 @@ void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
     Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
     deviceConnected = true;
     NimBLEDevice::startAdvertising();
-};
+}
 
 // NimBLEServerCallbacks::onDisconnect
 inline
@@ -137,11 +136,7 @@ void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
     BLE_PACKET_SIZE = MTU_SIZE - 3;
 }
 
-#if defined(CANBUS_ENABLED)
 void BleServer::init(Stream *vesc, CanBus *canbus) {
-#else
-void BleServer::init(Stream *vesc) {
-#endif
     vescSerial = vesc;
 
     // Create the BLE Device
@@ -151,9 +146,7 @@ void BleServer::init(Stream *vesc) {
     char buf[128];
     snprintf(buf, 128, "Initial MTU size %d", mtu_size);
     Logger::notice(LOG_TAG_BLESERVER, buf);
-#if defined(CANBUS_ENABLED)
     this->canbus = canbus;
-#endif
 
     // Create the BLE Server
     pServer = NimBLEDevice::createServer();
@@ -230,12 +223,7 @@ void BleServer::init(Stream *vesc) {
     Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
 }
 
-#ifdef CANBUS_ENABLED
-
-void BleServer::loop(VescData *vescData, long loopTime, long maxLoopTime) {
-#else
-    void BleServer::loop() {
-#endif
+void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long maxLoopTime) {
     if (vescSerial->available()) {
         int oneByte;
         while (vescSerial->available()) {
@@ -273,22 +261,20 @@ void BleServer::loop(VescData *vescData, long loopTime, long maxLoopTime) {
         oldDeviceConnected = deviceConnected;
     }
 
-#ifdef CANBUS_ENABLED
     if (millis() - bleLoop > 500) {
         updateRescueApp(loopTime, maxLoopTime);
         bleLoop = millis();
     }
-#endif //CANBUS_ENABLED
 }
 
 void BleServer::dumpBuffer(std::string header, std::string buffer) {
-    if(!Logger::getLogLevel() == Logger::VERBOSE) {
+    if(Logger::getLogLevel() != Logger::VERBOSE) {
         return;
     }
     char tmpbuf[1024];
     int length = snprintf(tmpbuf, 50, "%s : len = %d / ", header.c_str(), buffer.length());
-    for (int i = 0; i < buffer.size(); i++) {
-        length += snprintf(tmpbuf+length, 1024-length, "%02x ", buffer.at(i));
+    for (char i : buffer) {
+        length += snprintf(tmpbuf+length, 1024-length, "%02x ", i);
     }
     Logger::verbose(LOG_TAG_BLESERVER, tmpbuf);
 }
@@ -313,10 +299,10 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
 #endif
         } else if (pCharacteristic->getUUID().equals(pCharacteristicConf->getUUID())) {
             char buf[128];
-            std::string str(rxValue.c_str());
+            const std::string& str(rxValue);
             std::string::size_type middle = str.find('='); // Find position of '='
-            std::string key = "";
-            std::string value = "";
+            std::string key;
+            std::string value;
             if (middle != std::string::npos) {
                 key = str.substr(0, middle);
                 value = str.substr(middle + 1, str.size() - (middle + 1));
@@ -335,72 +321,70 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             } else if (key == "isNotificationEnabled") {
                 AppConfiguration::getInstance()->config.isNotificationEnabled = value.c_str();
             } else if (key == "minBatteryVoltage") {
-                AppConfiguration::getInstance()->config.minBatteryVoltage = atof(value.c_str());
+                AppConfiguration::getInstance()->config.minBatteryVoltage = parseDouble(value);
             } else if (key == "lowBatteryVoltage") {
-                AppConfiguration::getInstance()->config.lowBatteryVoltage = atof(value.c_str());
+                AppConfiguration::getInstance()->config.lowBatteryVoltage = parseDouble(value);
             } else if (key == "maxBatteryVoltage") {
-                AppConfiguration::getInstance()->config.maxBatteryVoltage = atof(value.c_str());
+                AppConfiguration::getInstance()->config.maxBatteryVoltage = parseDouble(value);
             } else if (key == "batteryDrift") {
-                AppConfiguration::getInstance()->config.batteryDrift = atof(value.c_str());
+                AppConfiguration::getInstance()->config.batteryDrift = parseDouble(value);
             } else if (key == "startSoundIndex") {
-                AppConfiguration::getInstance()->config.startSoundIndex = atoi(value.c_str());
-                Buzzer::getInstance()->stopSound();
-                Buzzer::getInstance()->playSound(RTTTL_MELODIES(atoi(value.c_str())));
+                AppConfiguration::getInstance()->config.startSoundIndex = parseInt(value);
+                Buzzer::stopSound();
+                Buzzer::playSound(RTTTL_MELODIES(strtol(value.c_str(), nullptr, 10)));
                 snprintf(buf, 128, "Updated param \"StartSoundIndex\" to %s", value.c_str());
             } else if (key == "startLightIndex") {
-                AppConfiguration::getInstance()->config.startLightIndex = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.startLightIndex = parseInt(value);
             } else if (key == "batteryWarningSoundIndex") {
-                AppConfiguration::getInstance()->config.batteryWarningSoundIndex = atoi(value.c_str());
-                Buzzer::getInstance()->stopSound();
-                Buzzer::getInstance()->playSound(RTTTL_MELODIES(atoi(value.c_str())));
+                AppConfiguration::getInstance()->config.batteryWarningSoundIndex = parseInt(value);
+                Buzzer::stopSound();
+                Buzzer::playSound(RTTTL_MELODIES(parseInt(value)));
                 snprintf(buf, 128, "Updated param \"BatteryWarningSoundIndex\" to %s", value.c_str());
             } else if (key == "batteryAlarmSoundIndex") {
-                AppConfiguration::getInstance()->config.batteryAlarmSoundIndex = atoi(value.c_str());
-                Buzzer::getInstance()->stopSound();
-                Buzzer::getInstance()->playSound(RTTTL_MELODIES(atoi(value.c_str())));
+                AppConfiguration::getInstance()->config.batteryAlarmSoundIndex = parseInt(value);
+                Buzzer::stopSound();
+                Buzzer::playSound(RTTTL_MELODIES(parseInt(value)));
                 snprintf(buf, 128, "Updated param \"BatteryAlarmSoundIndex\" to %s", value.c_str());
             } else if (key == "startLightDuration") {
-                AppConfiguration::getInstance()->config.startLightDuration = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.startLightDuration = parseInt(value);
             } else if (key == "idleLightIndex") {
-                AppConfiguration::getInstance()->config.idleLightIndex = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.idleLightIndex = parseInt(value);
             } else if (key == "idleLightTimeout") {
-                AppConfiguration::getInstance()->config.idleLightTimeout = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.idleLightTimeout = parseInt(value);
             } else if (key == "lightFadingDuration") {
-                AppConfiguration::getInstance()->config.lightFadingDuration = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.lightFadingDuration = parseInt(value);
             } else if (key == "lightMaxBrightness") {
-                AppConfiguration::getInstance()->config.lightMaxBrightness = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.lightMaxBrightness = parseInt(value);
             } else if (key == "lightColorPrimary") {
-                AppConfiguration::getInstance()->config.lightColorPrimary = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.lightColorPrimary = parseInt(value);
                 snprintf(buf, 128, "Updated param \"lightColorPrimary\" to %s (%d)", value.c_str(),
                          AppConfiguration::getInstance()->config.lightColorPrimary);
             } else if (key == "lightColorSecondary") {
-                AppConfiguration::getInstance()->config.lightColorSecondary = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.lightColorSecondary = parseInt(value);
                 snprintf(buf, 128, "Updated param \"lightColorSecondary\" to %s (%d", value.c_str(),
                          AppConfiguration::getInstance()->config.lightColorSecondary);
             } else if (key == "lightbarMaxBrightness") {
-                AppConfiguration::getInstance()->config.lightbarMaxBrightness = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.lightbarMaxBrightness = parseInt(value);
             } else if (key == "lightbarTurnOffErpm") {
-                AppConfiguration::getInstance()->config.lightbarTurnOffErpm = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.lightbarTurnOffErpm = parseInt(value);
             } else if (key == "brakeLightEnabled") {
-                AppConfiguration::getInstance()->config.brakeLightEnabled = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.brakeLightEnabled = parseInt(value);
             } else if (key == "brakeLightMinAmp") {
-                AppConfiguration::getInstance()->config.brakeLightMinAmp = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.brakeLightMinAmp = parseInt(value);
             } else if (key == "numberPixelLight") {
-                AppConfiguration::getInstance()->config.numberPixelLight = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.numberPixelLight = parseInt(value);
             } else if (key == "numberPixelBatMon") {
-                AppConfiguration::getInstance()->config.numberPixelBatMon = atoi(value.c_str());
+                AppConfiguration::getInstance()->config.numberPixelBatMon = parseInt(value);
             } else if (key == "vescId") {
-                AppConfiguration::getInstance()->config.vescId = atoi(value.c_str());
-            } else if (key == "authToken") {
-                AppConfiguration::getInstance()->config.authToken = value.c_str();
+                AppConfiguration::getInstance()->config.vescId = parseInt(value);
             } else if (key == "ledType") {
                 AppConfiguration::getInstance()->config.ledType = value.c_str();
             } else if (key == "ledFrequency") {
                 AppConfiguration::getInstance()->config.ledFrequency = value.c_str();
             } else if (key == "logLevel") {
-                AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(atoi(value.c_str()));
+                AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(strtol(value.c_str(), nullptr, 10));
             } else if (key == "mtuSize") {
-                uint16_t mtu = atoi(value.c_str());
+                uint16_t mtu = strtol(value.c_str(), nullptr, 10);
                 AppConfiguration::getInstance()->config.mtuSize = mtu;
                 if (mtu != 0 && mtu < MTU_SIZE) {
                     NimBLEDevice::setMTU(mtu);
@@ -454,14 +438,10 @@ void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, i
     }
 }
 
-#ifdef CANBUS_ENABLED
-
 void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
     this->sendValue("loopTime", loopTime);
     this->sendValue("maxLoopTime", maxLoopTime);
 }
-
-#endif //CANBUS_ENABLED
 
 template<typename TYPE>
 void BleServer::sendValue(std::string key, TYPE value) {
@@ -473,21 +453,29 @@ void BleServer::sendValue(std::string key, TYPE value) {
     delay(5);
 }
 
-boolean isStringType(String a) { return true; }
+static boolean isStringType(String a) { return true; }
 
-boolean isStringType(std::string a) { return true; }
+static boolean isStringType(std::string a) { return true; }
 
-boolean isStringType(int a) { return false; }
+static boolean isStringType(int a) { return false; }
 
-boolean isStringType(double a) { return false; }
+static boolean isStringType(double a) { return false; }
 
-boolean isStringType(boolean a) { return false; }
+static boolean isStringType(boolean a) { return false; }
+
+int BleServer::parseInt(const std::string& strValue) {
+    return strtol(strValue.c_str(), nullptr, 10);
+}
+
+double BleServer::parseDouble(const std::string& strValue) {
+    return strtod(strValue.c_str(), nullptr);
+}
 
 struct BleServer::sendConfigValue {
     NimBLECharacteristic *pCharacteristic;
     std::stringstream ss;
 
-    sendConfigValue(NimBLECharacteristic *pCharacteristic) {
+    explicit sendConfigValue(NimBLECharacteristic *pCharacteristic) {
         this->pCharacteristic = pCharacteristic;
     }
 

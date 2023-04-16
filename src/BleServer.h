@@ -26,37 +26,30 @@ class BleServer :
   public BLECharacteristicCallbacks  {
     public:
       BleServer();
-#ifdef CANBUS_ENABLED
     void init(Stream *vesc, CanBus *canbus);
-    void loop(VescData *vescData, long loopTime, long maxLoopTime);
-#else
-    void init(Stream *vesc);
-    void loop();
-#endif
+    void loop(VescData *vescData, unsigned long loopTime, unsigned long maxLoopTime);
 
       // NimBLEServerCallbacks
-      void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc);
-      void onDisconnect(NimBLEServer* pServer);
-      void onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc);
+      void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) override;
+      void onDisconnect(NimBLEServer* pServer) override;
+      void onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) override;
 
       // NimBLECharacteristicCallbacks
-      void onWrite(NimBLECharacteristic* pCharacteristic);
-      void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue);
-      void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code);
-      void sendConfig();
+      void onWrite(NimBLECharacteristic* pCharacteristic) override;
+      void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue) override;
+      void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code) override;
+      static void sendConfig();
       template<typename TYPE>
       void sendValue(std::string key, TYPE value);
 
-#if defined(CANBUS_ENABLED)
     void updateRescueApp(long loopTime, long maxLoopTime);
-#endif
 
     private:
-#if defined(CANBUS_ENABLED)
-      CanBus *canbus;
-#endif
+      CanBus *canbus{};
       struct sendConfigValue;
-      void dumpBuffer(std::string header, std::string buffer);
+      static void dumpBuffer(std::string header, std::string buffer);
+      static int parseInt(const std::string& strValue);
+      static double parseDouble(const std::string& strValue);
 };
 
 #endif

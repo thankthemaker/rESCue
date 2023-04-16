@@ -45,7 +45,6 @@ struct Config {
     VISITABLE(int, numberPixelLight);
     VISITABLE(int, numberPixelBatMon);
     VISITABLE(int, vescId);
-    VISITABLE(String, authToken);
     VISITABLE(Logger::Level, logLevel);
     VISITABLE(boolean, sendConfig);
     VISITABLE(boolean, saveConfig);
@@ -53,6 +52,7 @@ struct Config {
     VISITABLE(String , ledFrequency);
     VISITABLE(int , idleLightTimeout);
     VISITABLE(int , mtuSize);
+    VISITABLE(boolean , oddevenActive);
     VISITABLE(boolean, lightsSwitch);
   END_VISITABLES;
 };

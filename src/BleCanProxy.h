@@ -8,7 +8,6 @@
 #include "LoopbackStream.h"
 #include "CanDevice.h"
 
-#ifdef CANBUS_ENABLED
 #define LOG_TAG_BLE_CAN_PROXY "BleCanProxy"
 
 class BleCanProxy {
@@ -29,5 +28,4 @@ class BleCanProxy {
     uint8_t ble_proxy_can_id;
 };
 
-#endif //CANBUS_ENABLED
 #endif //RESCUE_BLECANPROXY_H

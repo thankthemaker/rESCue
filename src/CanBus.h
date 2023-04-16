@@ -1,12 +1,8 @@
 #ifndef __CANBUS_H__
 #define __CANBUS_H__
 
-
 #include "Arduino.h"
 #include "config.h"
-
-
-#ifdef CANBUS_ENABLED
 
 #include "AppConfiguration.h"
 #include <LoopbackStream.h>
@@ -71,5 +67,4 @@ class CanBus {
       std::vector<uint8_t> proxybuffer = {};
 };
 
-#endif //CANBUS_ENABLED
 #endif //__CANBUS_H__

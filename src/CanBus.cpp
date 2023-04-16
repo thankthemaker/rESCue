@@ -1,8 +1,5 @@
 #include "CanBus.h"
 
-#ifdef CANBUS_ENABLED
-
-
 CanBus::CanBus(VescData *vescData) {
     this->vescData = vescData;
     this->stream = new LoopbackStream(BUFFER_SIZE);
@@ -516,5 +513,3 @@ std::string CanBus::readStringValueFromBuffer(int startbyte, int length, boolean
     }
     return name;
 }
-
-#endif //CANBUS_ENABLED

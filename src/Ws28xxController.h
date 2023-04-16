@@ -59,15 +59,17 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         void onComplete();
 
     private:
-        uint32_t wheel(byte wheelPos);
+        static uint32_t wheel(byte wheelPos);
         void setLight(boolean forward, int brightness);
-        uint32_t dimColor(uint32_t color, uint8_t width);
-        int calcVal(int value);
+        static uint32_t dimColor(uint32_t color, uint8_t width);
+        static int calcVal(int value);
         uint8_t pulse = 0;
         uint32_t lastPulse = 0;
         boolean up = false;
         int maxBrightness = MAX_BRIGHTNESS;
         Config config = AppConfiguration::getInstance()->config;
         VescData *vescData;
+        void flashLightUpdateAll();
+        void flashLightUpdateOddEven();
 };
 #endif //__LED_CONTROLLER_H__

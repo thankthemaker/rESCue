@@ -13,25 +13,11 @@
 
 /**** Definition for control of front- and backlight ****/
 
-// Choose either WS28xx compatible stripe or COB-LED stripe
-#define LED_WS28xx // enables the light controller for WS28xx (Neopixel)
-//#define LED_COB    // enables the light controller for tri-color COB-stripes
-
-#ifdef LED_WS28xx
- #define NUMPIXELS    16  // the number of LEDs if WS28xx is used
- #define LED_MODE_ODD_EVEN
- #define MAX_BRIGHTNESS       100 // max brightness of LEDs, allowed values 1-255
- #define MAX_BRIGHTNESS_BRAKE 255 // max brightness of LEDs for brake signal, allowed values 1-255
-#endif //LED_WS28xx
-#ifdef LED_COB
- #define MAX_BRIGHTNESS       230 // max brightness of LEDs, allowed values 1-255
- #define MAX_BRIGHTNESS_BRAKE 255 // max brightness of LEDs for brake signal, allowed values 1-255
- #define NUMPIXELS    0  // We don't have single pi
- #define DUAL_MOSFET     // uncomment if you use two MOSFET to activate color switching
-#endif //LED_COB
+#define NUMPIXELS    16  // the number of LEDs if WS28xx is used
+#define MAX_BRIGHTNESS       100 // max brightness of LEDs, allowed values 1-255
+#define MAX_BRIGHTNESS_BRAKE 255 // max brightness of LEDs for brake signal, allowed values 1-255
 
 // optional WS28xx lightbar & battery-monitor params
-#define LIGHT_BAR_ENABLED            // activates a visual WS28xx battery bar, if connected
 #define LIGHT_BAR_NUMPIXELS    5     // the number of LEDS of the battery bar
 
 #define LIGHT_BAR_ADC_ENABLED        // Enables the lightbar support for ADC-Footpad
@@ -42,12 +28,8 @@
 
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
-#define CANBUS_ENABLED
-
-#ifdef CANBUS_ENABLED
- #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
- #define CANBUS_ONLY
-#endif //CANBUS_ENABLED
+#define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
+#define CANBUS_ONLY
 
 ////#define FAKE_VESC_ENABLED
 

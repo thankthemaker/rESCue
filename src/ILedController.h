@@ -33,7 +33,7 @@ class LedControllerFactory {
     public:
         static LedControllerFactory* getInstance();
         static uint8_t determineLedType();
-        ILedController* createLedController(VescData *vescData);
+        static ILedController* createLedController(VescData *vescData);
 
     private:
         LedControllerFactory();    

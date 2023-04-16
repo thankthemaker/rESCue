@@ -44,9 +44,7 @@ void AppConfiguration::readPreferences() {
     config.lightFadingDuration = doc["lightFadingDuration"] | 220;
     config.lightMaxBrightness = doc["lightMaxBrightness"] | MAX_BRIGHTNESS;
     config.brakeLightEnabled = doc["brakeLightEnabled"] | true;
-#if defined(CANBUS_ENABLED)
     config.vescId = doc["vescId"] | VESC_CAN_ID;
-#endif
     config.numberPixelLight = doc["numberPixelLight"] | NUMPIXELS;
     config.numberPixelBatMon = doc["numberPixelBatMon"] | LIGHT_BAR_NUMPIXELS;
     // calculate RGB values for primary and secondary color
@@ -63,6 +61,7 @@ void AppConfiguration::readPreferences() {
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.logLevel = doc["logLevel"] | Logger::WARNING;
     config.mtuSize = doc["mtuSize"] | 512;
+    config.oddevenActive = doc["oddevenActive"] | true;
     config.lightsSwitch = true;
     config.saveConfig = false;
     config.sendConfig = false;

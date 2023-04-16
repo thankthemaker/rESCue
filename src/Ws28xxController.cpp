@@ -71,9 +71,9 @@ void Ws28xxController::increment() {
 // Reverse pattern direction
 void Ws28xxController::reverse() {
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-      char buf[128];
-      snprintf(buf, 128, "reversing pattern %d, direction %d", activePattern, direction);
-      Logger::warning(LOG_TAG_WS28XX, buf);
+        char buf[128];
+        snprintf(buf, 128, "reversing pattern %d, direction %d", activePattern, direction);
+        Logger::warning(LOG_TAG_WS28XX, buf);
     }
     if (direction == FORWARD) {
         direction = REVERSE;
@@ -86,24 +86,24 @@ void Ws28xxController::reverse() {
 
 void Ws28xxController::onComplete() {
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-      char buf[128];
-      snprintf(buf, 128, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
-             activePattern, isStartSequence, reverseOnComplete, repeat);
-      Logger::verbose(LOG_TAG_WS28XX, buf);
+        char buf[128];
+        snprintf(buf, 128, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
+                 activePattern, isStartSequence, reverseOnComplete, repeat);
+        Logger::verbose(LOG_TAG_WS28XX, buf);
     }
     stopPattern = true;
     blockChange = false;
-    if(isStartSequence) {
+    if (isStartSequence) {
         isStartSequence = false;
         idleSequence();
         return;
     }
-    if(reverseOnComplete){
+    if (reverseOnComplete) {
         reverse();
         stopPattern = false;
         return;
     }
-    if(repeat) {
+    if (repeat) {
         changePattern(activePattern, true, repeat);
         return;
     }
@@ -139,7 +139,7 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
                           (config.lightColorPrimaryBlue * maxBrightness) >> 8),
                     Color((config.lightColorSecondaryRed * maxBrightness) >> 8,
                           (config.lightColorSecondaryGreen * maxBrightness) >> 8,
-                          (config.lightColorSecondaryBlue * maxBrightness) >> 8), (uint8_t)400);
+                          (config.lightColorSecondaryBlue * maxBrightness) >> 8), (uint8_t) 400);
             break;
         case COLOR_WIPE:
             break;
@@ -212,33 +212,49 @@ void Ws28xxController::flashLight(uint8_t timeinterval, Direction dir) {
 }
 
 void Ws28xxController::flashLightUpdate() {
+    if (AppConfiguration::getInstance()->config.oddevenActive) {
+        this->flashLightUpdateOddEven();
+    } else {
+        this->flashLightUpdateAll();
+    }
+}
+
+void Ws28xxController::flashLightUpdateAll() {
     for (int i = 0; i < numPixels(); i++) {
         if (i < numPixels() / 2)
             if (direction == FORWARD) {
-#ifdef LED_MODE_ODD_EVEN
-                if (i % 2 == 0) {
-#endif
-                    setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness, maxBrightness));
-#ifdef LED_MODE_ODD_EVEN
-                } else {
-                    setPixelColor(i, Color(0, 0, 0, 0));
-                }
-#endif
+                setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness, maxBrightness));
             } else {
                 setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0, 0));
             }
         else if (direction == FORWARD) {
             setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0, 0));
         } else {
-#ifdef LED_MODE_ODD_EVEN
+            setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness, maxBrightness));
+        }
+    }
+}
+
+void Ws28xxController::flashLightUpdateOddEven() {
+    for (int i = 0; i < numPixels(); i++) {
+        if (i < numPixels() / 2)
+            if (direction == FORWARD) {
+                if (i % 2 == 0) {
+                    setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness, maxBrightness));
+                } else {
+                    setPixelColor(i, Color(0, 0, 0, 0));
+                }
+            } else {
+                setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0, 0));
+            }
+        else if (direction == FORWARD) {
+            setPixelColor(i, Color(index % 2 == 0 ? MAX_BRIGHTNESS_BRAKE : maxBrightness, 0, 0, 0));
+        } else {
             if (i % 2 == 0) {
-#endif
                 setPixelColor(i, Color(maxBrightness, maxBrightness, maxBrightness, maxBrightness));
-#ifdef LED_MODE_ODD_EVEN
             } else {
                 setPixelColor(i, Color(0, 0, 0, 0));
             }
-#endif
         }
     }
 }
@@ -270,7 +286,7 @@ void Ws28xxController::pulsatingLight(uint8_t timeinterval) {
 
 void Ws28xxController::pulsatingLightUpdate() {
     for (int i = 0; i < numPixels(); i++) {
-        if(i<numPixels()/2) {
+        if (i < numPixels() / 2) {
             setPixelColor(i, Color(index, index, index, index));
         } else {
             setPixelColor(i, Color(index, 0, 0, 0));
@@ -335,9 +351,9 @@ void Ws28xxController::slidingLight(uint32_t col1, uint32_t col2, uint16_t timei
 
 void Ws28xxController::slidingLightUpdate() {
     setPixelColor(index, color1);
-    setPixelColor(numPixels()/2 - 1 - index, color1);
-    setPixelColor(numPixels()/2 + index, color2);
-    setPixelColor(numPixels()-1 - index, color2);
+    setPixelColor(numPixels() / 2 - 1 - index, color1);
+    setPixelColor(numPixels() / 2 + index, color2);
+    setPixelColor(numPixels() - 1 - index, color2);
 }
 
 void Ws28xxController::batteryIndicator(uint16_t timeinterval) {
@@ -349,23 +365,24 @@ void Ws28xxController::batteryIndicator(uint16_t timeinterval) {
 }
 
 void Ws28xxController::batteryIndicatorUpdate() {
-    float voltage = vescData->inputVoltage;
-    int min_voltage = AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
-    int max_voltage = AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
+    double voltage = vescData->inputVoltage;
+    int min_voltage = (int) AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
+    int max_voltage = (int) AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
     int voltage_range = max_voltage - min_voltage;
-    int used = max_voltage - voltage * 100; // calculate how much the voltage has dropped
+    int used = (int) (max_voltage - voltage * 100); // calculate how much the voltage has dropped
     int value = voltage_range - used; // calculate the remaining value to lowest voltage
-    float diffPerPixel = voltage_range / (numPixels() / 2); // calculate how much voltage a single pixel shall represent
-    float count = value / diffPerPixel; // calculate how many pixels must shine
+    double diffPerPixel = voltage_range / (numPixels() / 2); // calculate how much voltage a single pixel shall represent
+    double count = value / diffPerPixel; // calculate how many pixels must shine
 
-    int whole = count; // number of "full" green pixels
-    int remainder = value*100 / voltage_range; // percentage of usage of current pixel
+    int whole = (int) count; // number of "full" green pixels
+    int remainder = value * 100 / voltage_range; // percentage of usage of current pixel
 
-    Serial.printf("batteryIndicatorUpdate: voltage %f, voltage_range %d, diffPerPixel %f, pixel %d, count %f, used %d, value %d, remainder %d",
-                  voltage, voltage_range, diffPerPixel, numPixels(), count, used, value, remainder);
+    Serial.printf(
+            "batteryIndicatorUpdate: voltage %f, voltage_range %d, diffPerPixel %f, pixel %d, count %f, used %d, value %d, remainder %d",
+            voltage, voltage_range, diffPerPixel, numPixels(), count, used, value, remainder);
     Serial.println();
-    for(int i=0; i<numPixels();i++) {
-        if(value<0) {
+    for (int i = 0; i < numPixels(); i++) {
+        if (value < 0) {
             setPixelColor(i, MAX_BRIGHTNESS, 0, 0, 0);
             continue;
         }
@@ -377,7 +394,7 @@ void Ws28xxController::batteryIndicatorUpdate() {
                 setPixelColor(i, 0, 0, 0, 0);
             }
         } else {
-            if (i <= whole+numPixels()/2) {
+            if (i <= whole + numPixels() / 2) {
                 int val = calcVal(remainder);
                 setPixelColor(i, MAX_BRIGHTNESS - val, val, 0, 0);
             } else {
@@ -419,40 +436,41 @@ void Ws28xxController::stop() {
 }
 
 void Ws28xxController::setLight(boolean forward, int brightness) {
-#ifdef LED_MODE_ODD_EVEN
-    int calc_even = forward ? brightness : brightness - 1;
-    int calc_odd = totalSteps - brightness - 1;
-    for (int i = 0; i < numPixels() / 2; i++) {
-        setPixelColor(i, Color(0, 0, 0, 0));
-        if (i % 2 == 0) {
-            setPixelColor(i, Color(calc_even, calc_even, calc_even, calc_even));
-        } else if (i % 2 != 0) {
-            setPixelColor(i, Color(calc_odd, 0, 0, 0));
+    if (AppConfiguration::getInstance()->config.oddevenActive) {
+        int calc_even = forward ? brightness : brightness - 1;
+        int calc_odd = totalSteps - brightness - 1;
+        for (int i = 0; i < numPixels() / 2; i++) {
+            setPixelColor(i, Color(0, 0, 0, 0));
+            if (i % 2 == 0) {
+                setPixelColor(i, Color(calc_even, calc_even, calc_even, calc_even));
+            } else if (i % 2 != 0) {
+                setPixelColor(i, Color(calc_odd, 0, 0, 0));
+            }
+        }
+        for (int i = numPixels() / 2; i < numPixels(); i++) {
+            setPixelColor(i, Color(0, 0, 0, 0));
+            if (i % 2 == 0) {
+                setPixelColor(i, Color(calc_even, 0, 0, 0));
+            } else if (i % 2 != 0) {
+                setPixelColor(i, Color(calc_odd, calc_odd, calc_odd, calc_odd));
+            }
+        }
+    } else {
+        for (int i = 0; i < numPixels(); i++) {
+            if (i < numPixels() / 2) {
+                if (forward)
+                    setPixelColor(i, Color(brightness, brightness, brightness, brightness));
+                else
+                    setPixelColor(i, Color(maxBrightness - brightness, 0, 0, 0));
+            } else {
+                if (forward)
+                    setPixelColor(i, Color(brightness, 0, 0, 0));
+                else
+                    setPixelColor(i, Color(maxBrightness - brightness, maxBrightness - brightness,
+                                           maxBrightness - brightness, maxBrightness - brightness));
+            }
         }
     }
-    for (int i = numPixels() / 2; i < numPixels(); i++) {
-        setPixelColor(i, Color(0, 0, 0, 0));
-        if (i % 2 == 0) {
-            setPixelColor(i, Color(calc_even, 0, 0, 0));
-        } else if (i % 2 != 0) {
-            setPixelColor(i, Color(calc_odd, calc_odd, calc_odd, calc_odd));
-        }
-    }
-#else
-    for(int i = 0; i < numPixels(); i++ ) {
-      if(i < numPixels()/2){
-        if(forward)
-          setPixelColor(i, Color(brightness, brightness, brightness, brightness));
-        else
-          setPixelColor(i, Color(maxBrightness-brightness, 0, 0, 0));
-      } else {
-        if(forward)
-          setPixelColor(i, Color(brightness, 0, 0, 0));
-        else
-          setPixelColor(i, Color(maxBrightness-brightness, maxBrightness-brightness, maxBrightness-brightness, maxBrightness-brightness));
-      }
-    }
-#endif
     show();
 }
 
@@ -460,20 +478,20 @@ void Ws28xxController::idleSequence() {
     Pattern pattern;
     switch (config.idleLightIndex) {
         case 1:
-          pattern = Pattern::THEATER_CHASE;
-          break;
+            pattern = Pattern::THEATER_CHASE;
+            break;
         case 2:
-          pattern = Pattern::CYLON;
-          break;
+            pattern = Pattern::CYLON;
+            break;
         case 3:
-          pattern = Pattern::RAINBOW_CYCLE;
-          break;
+            pattern = Pattern::RAINBOW_CYCLE;
+            break;
         case 4:
-          pattern = Pattern::PULSE;
-          break;
+            pattern = Pattern::PULSE;
+            break;
         case 5:
-          pattern = Pattern::BATTERY_INDICATOR;
-          break;
+            pattern = Pattern::BATTERY_INDICATOR;
+            break;
         default:
             pattern = Pattern::PULSE;
     }
@@ -510,11 +528,11 @@ void Ws28xxController::startSequence() {
         case 4:
             timeinterval = config.startLightDuration / (numPixels() / 4);
             slidingLight(Color((config.lightColorPrimaryRed * maxBrightness) >> 8,
-                          (config.lightColorPrimaryGreen * maxBrightness) >> 8,
-                          (config.lightColorPrimaryBlue * maxBrightness) >> 8),
-                    Color((config.lightColorSecondaryRed * maxBrightness) >> 8,
-                          (config.lightColorSecondaryGreen * maxBrightness) >> 8,
-                          (config.lightColorSecondaryBlue * maxBrightness) >> 8), timeinterval);
+                               (config.lightColorPrimaryGreen * maxBrightness) >> 8,
+                               (config.lightColorPrimaryBlue * maxBrightness) >> 8),
+                         Color((config.lightColorSecondaryRed * maxBrightness) >> 8,
+                               (config.lightColorSecondaryGreen * maxBrightness) >> 8,
+                               (config.lightColorSecondaryBlue * maxBrightness) >> 8), timeinterval);
             break;
     }
 }

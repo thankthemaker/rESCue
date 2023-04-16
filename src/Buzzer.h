@@ -15,12 +15,12 @@
 class Buzzer {
     public:
         static Buzzer* getInstance();
-        void startSequence();
-        void warning();
-        void alarm();
-        void playSound(RTTTL_MELODIES selection);
-        void stopSound();
-        boolean isPlayingSound();
+        static void startSequence();
+        static void warning();
+        static void alarm();
+        static void playSound(RTTTL_MELODIES selection);
+        static void stopSound();
+        static boolean isPlayingSound();
 
     private:
         Buzzer() {}
