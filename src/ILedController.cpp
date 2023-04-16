@@ -5,8 +5,19 @@
 
 int idleTimer = 0;
 
-void ILedController::loop(int *new_forward, int *new_backward, int *new_idle) {
+void ILedController::loop(const int *new_forward, const int *new_backward, const int *new_idle, const int *new_brake) {
+
+    if(!AppConfiguration::getInstance()->config.lightsSwitch) {
+        this->changePattern(Pattern::NONE, *(new_forward) == HIGH, false);
+    }
+    // is motor brake active?
+    if (*(new_brake) == HIGH) {
+        // flash backlights
+        this->changePattern(Pattern::RESCUE_FLASH_LIGHT, *(new_forward) == HIGH, false);
+    }
+
     this->update();
+
     // is there a change detected
     if (old_forward != *(new_forward) || old_backward != *(new_backward)) {
         if (Logger::getLogLevel() == Logger::VERBOSE) {

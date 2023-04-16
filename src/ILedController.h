@@ -21,7 +21,7 @@ class ILedController {
         virtual void startSequence() = 0;
         virtual void changePattern(Pattern pattern, boolean isForward, boolean repeatPattern ) = 0;
         virtual void update() = 0;
-        void loop(int* new_forward, int* new_backward, int* idle);
+        void loop(const int* new_forward, const int* new_backward, const int* idle, const int* new_brake);
 
     private:
       int old_forward  = LOW;

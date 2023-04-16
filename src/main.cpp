@@ -10,9 +10,9 @@
 #include "CanBus.h"
 #include "AppConfiguration.h"
 
-long mainLoop = 0;
-long loopTime = 0;
-long maxLoopTime = 0;
+unsigned long mainLoop = 0;
+unsigned long loopTime = 0;
+unsigned long maxLoopTime = 0;
 int new_forward = LOW;
 int new_backward = LOW;
 int new_brake = LOW;
@@ -153,14 +153,8 @@ void loop() {
 #endif
 #endif
 
-    // is motor brake active?
-    if (new_brake == HIGH) {
-        // flash backlights
-        ledController->changePattern(Pattern::RESCUE_FLASH_LIGHT, new_forward == HIGH, false);
-    }
-
     // call the led controller loop
-    ledController->loop(&new_forward, &new_backward, &idle);
+    ledController->loop(&new_forward, &new_backward, &idle, &new_brake);
 
     // measure and check voltage
     batMonitor->checkValues();
@@ -174,7 +168,7 @@ void loop() {
 }
 
 void localLogger(Logger::Level level, const char *module, const char *message) {
-    Serial.print(F("FWC: ["));
+    Serial.print(F("["));
     Serial.print(Logger::asString(level));
     Serial.print(F("] "));
     if (strlen(module) > 0) {

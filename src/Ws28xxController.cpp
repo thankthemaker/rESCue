@@ -14,6 +14,7 @@ void Ws28xxController::update() {
 
     if ((millis() - lastUpdate) > interval) { // time to update
         lastUpdate = millis();
+
         switch (activePattern) {
             case RAINBOW_CYCLE:
                 rainbowCycleUpdate();
