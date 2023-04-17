@@ -19,8 +19,6 @@ int new_brake = LOW;
 int idle = LOW;
 double idle_erpm = 10.0;
 
-unsigned long lastFake = 4000;
-int lastFakeCount = 0;
 VescData vescData;
 
 HardwareSerial vesc(2);
@@ -33,29 +31,6 @@ BleServer *bleServer = new BleServer();
 LightBarController *lightbar = new LightBarController();
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char *module, const char *message);
-
-
-void fakeCanbusValues() {
-    if (millis() - lastFake > 3000) {
-        vescData.tachometer = random(0, 30);
-        vescData.inputVoltage = random(43, 50);
-        vescData.dutyCycle = random(0, 100);
-        if (lastFakeCount > 10) {
-            vescData.erpm = random(-100, 200);
-        } else {
-            vescData.erpm = 0;//random(-100, 200);
-        }
-        vescData.current = random(0, 10);
-        vescData.ampHours = random(0, 100);
-        vescData.mosfetTemp = random(20, 60);
-        vescData.motorTemp = random(20, 40);
-        vescData.adc1 = 0.5;
-        vescData.adc2 = 0.5;
-        vescData.switchState = 0;
-        lastFake = millis();
-        lastFakeCount++;
-    }
-}
 
 void setup() {
     Logger::setOutputFunction(localLogger);
@@ -123,18 +98,12 @@ void loop() {
         AppConfiguration::getInstance()->config.saveConfig = false;
     }
 
-#ifdef FAKE_VESC_ENABLED
-    fakeCanbusValues();
-#endif
-
     new_forward = vescData.erpm > idle_erpm ? HIGH : LOW;
     new_backward = vescData.erpm < -idle_erpm ? HIGH : LOW;
     idle = (abs(vescData.erpm) < idle_erpm && vescData.switchState == 0) ? HIGH : LOW;
     new_brake = (abs(vescData.erpm) > idle_erpm && vescData.current < -4.0) ? HIGH : LOW;
 
-#ifndef FAKE_VESC_ENABLED
     canbus->loop();
-#endif
 
     // call the led controller loop
     ledController->loop(&new_forward, &new_backward, &idle, &new_brake);

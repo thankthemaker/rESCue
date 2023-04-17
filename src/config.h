@@ -31,8 +31,6 @@
 #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
 #define CANBUS_ONLY
 
-////#define FAKE_VESC_ENABLED
-
 #endif //__CONFIG_H__
 
 /**** Calibration / Calculation of VOLTAGE_DIVIDER_CONSTANT ****
