@@ -71,8 +71,7 @@ void Ws28xxController::increment() {
 // Reverse pattern direction
 void Ws28xxController::reverse() {
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[128];
-        snprintf(buf, 128, "reversing pattern %d, direction %d", activePattern, direction);
+        snprintf(buf, bufSize, "reversing pattern %d, direction %d", activePattern, direction);
         Logger::warning(LOG_TAG_WS28XX, buf);
     }
     if (direction == FORWARD) {
@@ -86,8 +85,7 @@ void Ws28xxController::reverse() {
 
 void Ws28xxController::onComplete() {
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[128];
-        snprintf(buf, 128, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
+        snprintf(buf, bufSize, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
                  activePattern, isStartSequence, reverseOnComplete, repeat);
         Logger::verbose(LOG_TAG_WS28XX, buf);
     }
@@ -119,8 +117,7 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
     }
 
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[128];
-        snprintf(buf, 128, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
+        snprintf(buf, bufSize, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
         Logger::verbose(LOG_TAG_WS28XX, buf);
     }
 
@@ -205,8 +202,7 @@ void Ws28xxController::flashLight(uint8_t timeinterval, Direction dir) {
     index = 0;
     direction = dir;
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[64];
-        snprintf(buf, 64, "flash %s", direction == FORWARD ? "forward" : "backward");
+        snprintf(buf, bufSize, "flash %s", direction == FORWARD ? "forward" : "backward");
         Logger::verbose(LOG_TAG_WS28XX, buf);
     }
 }
@@ -266,8 +262,7 @@ void Ws28xxController::fadeLight(uint8_t timeinterval, Direction dir) {
     direction = dir;
     index = dir == Direction::FORWARD ? 0 : totalSteps - 1;
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[64];
-        snprintf(buf, 64, "fade %s", direction == FORWARD ? "forward" : "backward");
+        snprintf(buf, bufSize, "fade %s", direction == FORWARD ? "forward" : "backward");
         Logger::verbose(LOG_TAG_WS28XX, buf);
     }
 }

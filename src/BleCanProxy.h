@@ -18,6 +18,8 @@ class BleCanProxy {
     boolean processing = false;
 
   private:
+    const static int bufSize = 64;
+    char buf[bufSize];
     CanDevice *candevice;
     Stream *stream;
     uint16_t length = 0;

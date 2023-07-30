@@ -28,6 +28,8 @@ class CanBus {
       void loop();
       void dumpVescValues();
     private:
+      const static int bufSize = 128;
+      char buf[bufSize];
       CanDevice *candevice;
       void requestFirmwareVersion();
       void requestRealtimeData();

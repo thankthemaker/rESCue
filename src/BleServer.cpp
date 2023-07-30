@@ -1,117 +1,39 @@
 #include "BleServer.h"
 #include <Logger.h>
 #include <sstream>
-#include "esp_bt_main.h"
-#include "esp_ota_ops.h"
-#include <ESPAsyncWebServer.h>
 
-#define FULL_PACKET 512
-
-int MTU_SIZE = FULL_PACKET;
-int BLE_PACKET_SIZE = MTU_SIZE - 3;
+int MTU_SIZE = 128;
+int PACKET_SIZE = MTU_SIZE-3;
 NimBLEServer *pServer = nullptr;
 NimBLEService *pServiceVesc = nullptr;
 NimBLEService *pServiceRescue = nullptr;
 NimBLECharacteristic *pCharacteristicVescTx = nullptr;
 NimBLECharacteristic *pCharacteristicVescRx = nullptr;
 NimBLECharacteristic *pCharacteristicConf = nullptr;
-NimBLECharacteristic *pOtaCharacteristic = nullptr;
+NimBLECharacteristic *pCharacteristicFw = nullptr;
+NimBLECharacteristic *pCharacteristicLoop = nullptr;
 NimBLECharacteristic *pCharacteristicId = nullptr;
 NimBLECharacteristic *pCharacteristicVersion = nullptr;
+char tmpbuf[1024]; // CAUTION: always use a global buffer, local buffer will flood the stack
+
 
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t value = 0;
 Stream *vescSerial;
-std::string bufferString;
+std::string vescBuffer;
+std::string updateBuffer;
 int bleLoop = 0;
 
 BleServer::BleServer() = default;
 
-esp_ota_handle_t otaHandler = 0;
-bool updateFlag = false;
 uint32_t frameNumber = 0;
-AsyncWebServer server(80);
-boolean wifiActive = false;
-const char *wifiPassword;
 
-void startUpdate() {
-    Serial.println("\nBeginOTA");
-    const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
-    Serial.println("Selected OTA partiton:");
-    Serial.println("partition label:" + String(partition->label));
-    Serial.println("partition size:" + String(partition->size));
-    esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &otaHandler);
-    updateFlag = true;
-    AppConfiguration::getInstance()->config.otaUpdateActive = true;
-    Serial.println("Update started");
-}
-
-void handleUpdate(const std::string &data) {
-/*
-  Serial.printf("\nhandleUpdate incoming data (size %d):\n", data.length());
-  for(int i=0; i<data.length();i++) {
-    Serial.print(data[i], HEX);
-    Serial.print(" ");
-  }
-*/
-    esp_ota_write(otaHandler, data.c_str(), data.length());
-    if (data.length() != FULL_PACKET) {
-        esp_ota_end(otaHandler);
-        Serial.println("\nEndOTA");
-        const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
-        if (ESP_OK == esp_ota_set_boot_partition(partition)) {
-            Serial.println("Activate partiton:");
-            Serial.println("partition label:" + String(partition->label));
-            Serial.println("partition size:" + String(partition->size));
-            AppConfiguration::getInstance()->config.otaUpdateActive = false;
-            AppConfiguration::getInstance()->savePreferences();
-            delay(2000);
-            esp_restart();
-        } else {
-            Serial.println("Upload Error");
-        }
-    }
-}
-
-void activateWiFiAp(const char *password) {
-    WiFi.softAP("rESCue OTA Updates", password);
-    IPAddress myIP = WiFi.softAPIP();
-    Serial.print("AP IP address: ");
-    Serial.println(myIP);
-    server.on("/ping", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "alive");
-        response->addHeader("Access-Control-Allow-Origin", "*");
-        request->send(response);
-    });
-    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request) {
-        int params = request->params();
-        for (int i = 0; i < params; i++) {
-            AsyncWebParameter *p = request->getParam(i);
-            if (p->isPost() && p->name().compareTo("data") != -1) {
-                const char *value = p->value().c_str();
-                //Serial.printf("\nPOST[%s]: bytes %d\n", p->name().c_str(), p->value().length());
-                if (!updateFlag) {
-                    startUpdate();
-                }
-                if (p->value().length() > 0) {
-                    handleUpdate(base64_decode(value, false));
-                }
-            }
-        }
-        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "ok");
-        response->addHeader("Access-Control-Allow-Origin", "*");
-        request->send(response);
-    });
-    server.begin();
-    wifiActive = true;
-}
 
 // NimBLEServerCallbacks::onConnect
 inline
 void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
-    char buf[128];
-    snprintf(buf, 128, "Client connected: %s",  NimBLEAddress(desc->peer_ota_addr).toString().c_str());
+    snprintf(buf, bufSize, "Client connected: %s",  NimBLEAddress(desc->peer_ota_addr).toString().c_str());
     Logger::notice(LOG_TAG_BLESERVER, buf);
     Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
     deviceConnected = true;
@@ -129,11 +51,10 @@ void BleServer::onDisconnect(NimBLEServer *pServer) {
 // NimBLEServerCallbacks::onMTUChange
 inline
 void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
-    char buf[128];
-    snprintf(buf, 128, "MTU changed - new size %d, peer %s", MTU, NimBLEAddress(desc->peer_ota_addr).toString().c_str());
+    snprintf(buf, bufSize, "MTU changed - new size %d, peer %s", MTU, NimBLEAddress(desc->peer_ota_addr).toString().c_str());
     Logger::notice(LOG_TAG_BLESERVER, buf);
     MTU_SIZE = MTU;
-    BLE_PACKET_SIZE = MTU_SIZE - 3;
+    PACKET_SIZE = MTU_SIZE - 3;
 }
 
 void BleServer::init(Stream *vesc, CanBus *canbus) {
@@ -143,8 +64,9 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
     NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
     int mtu_size = AppConfiguration::getInstance()->config.mtuSize;
     NimBLEDevice::setMTU(mtu_size);
-    char buf[128];
-    snprintf(buf, 128, "Initial MTU size %d", mtu_size);
+    NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+
+    snprintf(buf, bufSize, "Initial MTU size %d", mtu_size);
     Logger::notice(LOG_TAG_BLESERVER, buf);
     this->canbus = canbus;
 
@@ -186,16 +108,35 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
 
     pCharacteristicConf = pServiceRescue->createCharacteristic(
             RESCUE_CHARACTERISTIC_UUID_CONF,
-            NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE
+            NIMBLE_PROPERTY::NOTIFY | 
+            NIMBLE_PROPERTY::WRITE |
+            NIMBLE_PROPERTY::WRITE_NR
     );
     pCharacteristicConf->setCallbacks(this);
 
-    pOtaCharacteristic = pServiceRescue->createCharacteristic(
+    pCharacteristicFw = pServiceRescue->createCharacteristic(
             RESCUE_CHARACTERISTIC_UUID_FW,
-            NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE
+            NIMBLE_PROPERTY::NOTIFY | 
+            NIMBLE_PROPERTY::WRITE |
+            NIMBLE_PROPERTY::WRITE_NR
     );
+    pCharacteristicConf->setCallbacks(this);
 
-    pOtaCharacteristic->setCallbacks(this);
+    pCharacteristicLoop = pServiceRescue->createCharacteristic(
+            RESCUE_CHARACTERISTIC_UUID_FW,
+            NIMBLE_PROPERTY::NOTIFY | 
+            NIMBLE_PROPERTY::WRITE |
+            NIMBLE_PROPERTY::WRITE_NR
+    );
+    pCharacteristicLoop->setCallbacks(this);
+
+    pCharacteristicLoop = pServiceRescue->createCharacteristic(
+            RESCUE_CHARACTERISTIC_UUID_LOOP,
+            NIMBLE_PROPERTY::NOTIFY | 
+            NIMBLE_PROPERTY::WRITE |
+            NIMBLE_PROPERTY::WRITE_NR
+    );
+    pCharacteristicLoop->setCallbacks(this);
 
     uint8_t hardwareVersion[5] = {HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR, SOFTWARE_VERSION_MAJOR,
                                   SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH};
@@ -228,22 +169,22 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
         int oneByte;
         while (vescSerial->available()) {
             oneByte = vescSerial->read();
-            bufferString.push_back(oneByte);
+            vescBuffer.push_back(oneByte);
         }
 
         if (deviceConnected) {
-            while (bufferString.length() > 0) {
-                if (bufferString.length() > BLE_PACKET_SIZE) {
-                    dumpBuffer("VESC => BLE/UART", bufferString.substr(0, BLE_PACKET_SIZE));
-                    pCharacteristicVescTx->setValue(bufferString.substr(0, BLE_PACKET_SIZE));
-                    bufferString = bufferString.substr(BLE_PACKET_SIZE);
+            while (vescBuffer.length() > 0) {
+                if (vescBuffer.length() > PACKET_SIZE) {
+                    dumpBuffer("VESC => BLE/UART", vescBuffer.substr(0, PACKET_SIZE));
+                    pCharacteristicVescTx->setValue(vescBuffer.substr(0, PACKET_SIZE));
+                    vescBuffer = vescBuffer.substr(PACKET_SIZE);
                 } else {
-                    dumpBuffer("VESC => BLE/UART", bufferString);
-                    pCharacteristicVescTx->setValue(bufferString);
-                    bufferString.clear();
+                    dumpBuffer("VESC => BLE/UART", vescBuffer);
+                    pCharacteristicVescTx->setValue(vescBuffer);
+                    vescBuffer.clear();
                 }
                 pCharacteristicVescTx->notify();
-                delay(10); // bluetooth stack will go into congestion, if too many packets are sent
+                delay(1); // bluetooth stack will go into congestion, if too many packets are sent
             }
         }
     }
@@ -267,11 +208,14 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
     }
 }
 
+void BleServer::stop() {
+    NimBLEDevice::deinit(true);
+}
+
 void BleServer::dumpBuffer(std::string header, std::string buffer) {
     if(Logger::getLogLevel() != Logger::VERBOSE) {
         return;
     }
-    char tmpbuf[1024];
     int length = snprintf(tmpbuf, 50, "%s : len = %d / ", header.c_str(), buffer.length());
     for (char i : buffer) {
         length += snprintf(tmpbuf+length, 1024-length, "%02x ", i);
@@ -281,24 +225,21 @@ void BleServer::dumpBuffer(std::string header, std::string buffer) {
 
 //NimBLECharacteristicCallbacks::onWrite
 void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
-    char buffer[128];
-    snprintf(buffer, 128, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
-    Logger::notice(LOG_TAG_BLESERVER, buffer);
+    snprintf(buf, bufSize, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
+    Logger::verbose(LOG_TAG_BLESERVER, buf);
     std::string rxValue = pCharacteristic->getValue();
-    Logger::notice(LOG_TAG_BLESERVER, buffer);
     if (rxValue.length() > 0) {
         if (pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
             dumpBuffer("BLE/UART => VESC: ", rxValue);
 
 #ifdef CANBUS_ONLY
-            canbus->proxy->proxyIn(rxValue);
+          canbus->proxy->proxyIn(rxValue);
 #else
             for (int i = 0; i < rxValue.length(); i++) {
-              vescSerial->write(rxValue[i]);
+                vescSerial->write(rxValue[i]);
             }
 #endif
         } else if (pCharacteristic->getUUID().equals(pCharacteristicConf->getUUID())) {
-            char buf[128];
             const std::string& str(rxValue);
             std::string::size_type middle = str.find('='); // Find position of '='
             std::string key;
@@ -308,7 +249,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 value = str.substr(middle + 1, str.size() - (middle + 1));
             }
 
-            Serial.println(String(key.c_str()) + String("=") + String(value.c_str()));
+            //Serial.println(String(key.c_str()) + String("=") + String(value.c_str()));
 
             if (key == "config") {
                 AppConfiguration::getInstance()->config.sendConfig = true;
@@ -332,19 +273,19 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.startSoundIndex = parseInt(value);
                 Buzzer::stopSound();
                 Buzzer::playSound(RTTTL_MELODIES(strtol(value.c_str(), nullptr, 10)));
-                snprintf(buf, 128, "Updated param \"StartSoundIndex\" to %s", value.c_str());
+                snprintf(buf, bufSize, "Updated param \"StartSoundIndex\" to %s", value.c_str());
             } else if (key == "startLightIndex") {
                 AppConfiguration::getInstance()->config.startLightIndex = parseInt(value);
             } else if (key == "batteryWarningSoundIndex") {
                 AppConfiguration::getInstance()->config.batteryWarningSoundIndex = parseInt(value);
                 Buzzer::stopSound();
                 Buzzer::playSound(RTTTL_MELODIES(parseInt(value)));
-                snprintf(buf, 128, "Updated param \"BatteryWarningSoundIndex\" to %s", value.c_str());
+                snprintf(buf, bufSize, "Updated param \"BatteryWarningSoundIndex\" to %s", value.c_str());
             } else if (key == "batteryAlarmSoundIndex") {
                 AppConfiguration::getInstance()->config.batteryAlarmSoundIndex = parseInt(value);
                 Buzzer::stopSound();
                 Buzzer::playSound(RTTTL_MELODIES(parseInt(value)));
-                snprintf(buf, 128, "Updated param \"BatteryAlarmSoundIndex\" to %s", value.c_str());
+                snprintf(buf, bufSize, "Updated param \"BatteryAlarmSoundIndex\" to %s", value.c_str());
             } else if (key == "startLightDuration") {
                 AppConfiguration::getInstance()->config.startLightDuration = parseInt(value);
             } else if (key == "idleLightIndex") {
@@ -357,11 +298,11 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.lightMaxBrightness = parseInt(value);
             } else if (key == "lightColorPrimary") {
                 AppConfiguration::getInstance()->config.lightColorPrimary = parseInt(value);
-                snprintf(buf, 128, "Updated param \"lightColorPrimary\" to %s (%d)", value.c_str(),
+                snprintf(buf, bufSize, "Updated param \"lightColorPrimary\" to %s (%d)", value.c_str(),
                          AppConfiguration::getInstance()->config.lightColorPrimary);
             } else if (key == "lightColorSecondary") {
                 AppConfiguration::getInstance()->config.lightColorSecondary = parseInt(value);
-                snprintf(buf, 128, "Updated param \"lightColorSecondary\" to %s (%d", value.c_str(),
+                snprintf(buf, bufSize, "Updated param \"lightColorSecondary\" to %s (%d", value.c_str(),
                          AppConfiguration::getInstance()->config.lightColorSecondary);
             } else if (key == "lightbarMaxBrightness") {
                 AppConfiguration::getInstance()->config.lightbarMaxBrightness = parseInt(value);
@@ -388,69 +329,53 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.mtuSize = mtu;
                 if (mtu != 0 && mtu < MTU_SIZE) {
                     NimBLEDevice::setMTU(mtu);
-                    snprintf(buf, 128, "New MTU-size: %d", mtu);
+                    snprintf(buf, bufSize, "New MTU-size: %d", mtu);
                     Logger::warning(LOG_TAG_BLESERVER, buf);
                 }
-            } else if (key == "wifiActive") {
-                if (value.compare("true") != -1) {
-                    activateWiFiAp(wifiPassword);
-                }
-            } else if (key == "wifiPassword") {
-                wifiPassword = value.c_str();
             } else if(key == "lightsSwitch") {
                 AppConfiguration::getInstance()->config.lightsSwitch = ("true" == value);
+            } else if(key == "update"){
+                if (value == "start") { // && !updateFlag) { //If it's the first packet of OTA since bootup, begin OTA
+                    AppConfiguration::getInstance()->config.otaUpdateActive = true;
+                    snprintf(buf, bufSize, "startUpdate");
+                }
             }
             Logger::notice(LOG_TAG_BLESERVER, buf);
-        } else if (pCharacteristic->getUUID().equals(pOtaCharacteristic->getUUID())) {
-            if (!updateFlag) { //If it's the first packet of OTA since bootup, begin OTA
-                startUpdate();
-            }
-
-            Serial.print("Got frame " + String(frameNumber) + ", Bytes " + String(rxValue.length()));
-            handleUpdate(rxValue);
-
-            delay(5); // needed to give BLE stack some time
-            uint8_t txdata[4] = {(uint8_t) (frameNumber >> 24), (uint8_t) (frameNumber >> 16),
-                                 (uint8_t) (frameNumber >> 8),
-                                 (uint8_t) frameNumber};
-            pCharacteristic->setValue((uint8_t *) txdata, 4);
-            pCharacteristic->notify();
-            Serial.println(", Ack. frame no. " + String(frameNumber++));
         }
     }
+    delay(1); // needed to give BLE stack some time
 }
 
 //NimBLECharacteristicCallbacks::onSubscribe
 void BleServer::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
-    char buf[256];
-    snprintf(buf, 256, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
+    snprintf(buf, bufSize, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
              desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue,
              pCharacteristic->getUUID().toString().c_str());
     Logger::notice(LOG_TAG_BLESERVER, buf);
 }
 
-//NimBLECharacteristicCallbacks::onSubscribe
+//NimBLECharacteristicCallbacks::onStatus
 void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code) {
     if(Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[256];
-        snprintf(buf, 256, "Notification/Indication status code: %d, return code: %d", status, code);
+        snprintf(buf, bufSize, "Notification/Indication characteristics: %s, status code: %d, return code: %d", 
+        pCharacteristic->getUUID().toString().c_str(), status, code);
         Logger::verbose(LOG_TAG_BLESERVER, buf);
     }
 }
 
 void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
-    this->sendValue("loopTime", loopTime);
-    this->sendValue("maxLoopTime", maxLoopTime);
+   this->sendValue(pCharacteristicLoop, "loopTime", loopTime);
+    this->sendValue(pCharacteristicLoop, "maxLoopTime", maxLoopTime);
 }
 
 template<typename TYPE>
-void BleServer::sendValue(std::string key, TYPE value) {
+void BleServer::sendValue(NimBLECharacteristic *pCharacteristic, std::string key, TYPE value) {
     std::stringstream ss;
     ss << key << "=" << value;
-    pCharacteristicConf->setValue(ss.str());
-    pCharacteristicConf->indicate();
+    pCharacteristic->setValue(ss.str());
+    pCharacteristic->notify();
     ss.str("");
-    delay(5);
+    delay(1);
 }
 
 static boolean isStringType(String a) { return true; }
@@ -488,9 +413,9 @@ struct BleServer::sendConfigValue {
         }
         Serial.println("Sending: " + String(ss.str().c_str()));
         pCharacteristic->setValue(ss.str());
-        pCharacteristic->indicate();
+        pCharacteristic->notify();
         ss.str("");
-        delay(5);
+        delay(1);
     }
 };
 

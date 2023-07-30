@@ -59,6 +59,8 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         void onComplete();
 
     private:
+        const static int bufSize = 128;
+        char buf[bufSize];
         static uint32_t wheel(byte wheelPos);
         void setLight(boolean forward, int brightness);
         static uint32_t dimColor(uint32_t color, uint8_t width);

@@ -18,6 +18,8 @@
 
 class CanDevice {
   private:
+    const static int bufSize = 128;
+    char buf[bufSize];
     SemaphoreHandle_t mutex_v = xSemaphoreCreateMutex();
   public:
     void init();

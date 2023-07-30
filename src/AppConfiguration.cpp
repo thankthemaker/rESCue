@@ -22,7 +22,7 @@ void AppConfiguration::readPreferences() {
     deserializeJson(doc, json);
     log_n("readPreferences: %s", json.c_str());
     config.deviceName = doc["deviceName"] | "rESCue";
-    config.otaUpdateActive = doc["otaUpdateActive"] | false;
+    config.otaUpdateActive = false;
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
     config.isBatteryNotificationEnabled = doc["isBatteryNotificationEnabled"] | false;
     config.isCurrentNotificationEnabled = doc["isCurrentNotificationEnabled"] | false;

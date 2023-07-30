@@ -20,14 +20,16 @@
 #define RESCUE_CHARACTERISTIC_UUID_CONF       "99EB1513-A9E9-4024-B0A4-3DC4B4FABFB0"
 #define RESCUE_CHARACTERISTIC_UUID_FW         "99EB1514-A9E9-4024-B0A4-3DC4B4FABFB0"
 #define RESCUE_CHARACTERISTIC_UUID_HW_VERSION "99EB1515-A9E9-4024-B0A4-3DC4B4FABFB0"
+#define RESCUE_CHARACTERISTIC_UUID_LOOP       "99EB1516-A9E9-4024-B0A4-3DC4B4FABFB0"
 
 class BleServer :
   public NimBLEServerCallbacks,
   public BLECharacteristicCallbacks  {
     public:
       BleServer();
-    void init(Stream *vesc, CanBus *canbus);
-    void loop(VescData *vescData, unsigned long loopTime, unsigned long maxLoopTime);
+      void init(Stream *vesc, CanBus *canbus);
+      void loop(VescData *vescData, unsigned long loopTime, unsigned long maxLoopTime);
+      void stop();
 
       // NimBLEServerCallbacks
       void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) override;
@@ -40,11 +42,12 @@ class BleServer :
       void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code) override;
       static void sendConfig();
       template<typename TYPE>
-      void sendValue(std::string key, TYPE value);
-
-    void updateRescueApp(long loopTime, long maxLoopTime);
+      void sendValue(NimBLECharacteristic *pCharacteristic, std::string key, TYPE value);
+      void updateRescueApp(long loopTime, long maxLoopTime);
 
     private:
+      const static int bufSize = 256;
+      char buf[bufSize];
       CanBus *canbus{};
       struct sendConfigValue;
       static void dumpBuffer(std::string header, std::string buffer);

@@ -25,8 +25,7 @@ void CanDevice::init() {
 
 void CanDevice::sendCanFrame(const twai_message_t *p_frame) {
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[128];
-        snprintf(buf, 128, "Sending CAN frame %" PRIu32 " DLC %d, [%d, %d, %d, %d, %d, %d, %d, %d]",
+        snprintf(buf, bufSize, "Sending CAN frame %" PRIu32 " DLC %d, [%d, %d, %d, %d, %d, %d, %d, %d]",
                 p_frame->identifier,
                 p_frame->data_length_code,
                 p_frame->data[0],

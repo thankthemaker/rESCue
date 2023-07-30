@@ -9,6 +9,10 @@
 #include "CanBus.h"
 #include "AppConfiguration.h"
 #include "LightBarController.h"
+#include <ble_ota_dfu.hpp>
+
+const int mainBufSize = 128;
+char mainBuf[mainBufSize];
 
 unsigned long mainLoop = 0;
 unsigned long loopTime = 0;
@@ -18,6 +22,9 @@ int new_backward = LOW;
 int new_brake = LOW;
 int idle = LOW;
 double idle_erpm = 10.0;
+boolean updateInProgress = false;
+
+BLE_OTA_DFU ota_dfu_ble;
 
 VescData vescData;
 
@@ -38,7 +45,8 @@ void setup() {
     AppConfiguration::getInstance()->readPreferences();
     delay(10);
     AppConfiguration::getInstance()->config.sendConfig = false;
-    Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
+    //Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
+    Logger::setLogLevel(Logger::VERBOSE);
     if (Logger::getLogLevel() != Logger::SILENT) {
         Serial.begin(VESC_BAUD_RATE);
     }
@@ -72,11 +80,10 @@ void setup() {
     Buzzer::startSequence();
     ledController->startSequence();
 
-    char buf[128];
-    snprintf(buf, 128, " sw-version %d.%d.%d is happily running on hw-version %d.%d",
+    snprintf(mainBuf, mainBufSize, " sw-version %d.%d.%d is happily running on hw-version %d.%d",
              SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH,
              HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
-    Logger::notice("rESCue", buf);
+    Logger::notice("rESCue", mainBuf);
 }
 
 void loop() {
@@ -87,8 +94,14 @@ void loop() {
     }
 
     if (AppConfiguration::getInstance()->config.otaUpdateActive) {
+        if(!updateInProgress) {
+            bleServer->stop();
+            ota_dfu_ble.begin(AppConfiguration::getInstance()->config.deviceName.c_str()); 
+            updateInProgress = true;
+        }
         return;
     }
+
     if (AppConfiguration::getInstance()->config.sendConfig) {
         BleServer::sendConfig();
         AppConfiguration::getInstance()->config.sendConfig = false;
@@ -103,15 +116,15 @@ void loop() {
     idle = (abs(vescData.erpm) < idle_erpm && vescData.switchState == 0) ? HIGH : LOW;
     new_brake = (abs(vescData.erpm) > idle_erpm && vescData.current < -4.0) ? HIGH : LOW;
 
-    canbus->loop();
+    //canbus->loop();
 
     // call the led controller loop
-    ledController->loop(&new_forward, &new_backward, &idle, &new_brake);
+    //ledController->loop(&new_forward, &new_backward, &idle, &new_brake);
 
     // measure and check voltage
-    batMonitor->checkValues();
+    //batMonitor->checkValues();
 
-    lightbar->updateLightBar(vescData.inputVoltage, vescData.switchState, vescData.adc1, vescData.adc2, vescData.erpm);  // update the WS28xx battery bar
+    //lightbar->updateLightBar(vescData.inputVoltage, vescData.switchState, vescData.adc1, vescData.adc2, vescData.erpm);  // update the WS28xx battery bar
 
     // call the VESC UART-to-Bluetooth bridge
     bleServer->loop(&vescData, loopTime, maxLoopTime);
