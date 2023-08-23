@@ -1,7 +1,7 @@
 #include "CanDevice.h"
 
 void CanDevice::init() {
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_26, GPIO_NUM_27, TWAI_MODE_NORMAL);
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_CAN_TX_PIN, GPIO_CAN_RX_PIN, TWAI_MODE_NORMAL);
     g_config.rx_queue_len=1000;
     g_config.tx_queue_len=10;
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
