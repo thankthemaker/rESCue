@@ -16,6 +16,12 @@
 #define CAN_RX_PIN 27
 #endif //CAN_RX_PIN
 
+//Macros to fix actually being able to map the CAN GPIO pins in platformio.ini instead of them being hard coded in init() for TWAI_GENERAL_CONFIG_DEFAULT();
+#define GPIO_NUM_HELPER(x) GPIO_NUM##x
+#define GPIO_NUM(x) GPIO_NUM_HELPER(x)
+#define GPIO_CAN_TX_PIN GPIO_NUM(CAN_TX_PIN)
+#define GPIO_CAN_RX_PIN GPIO_NUM(CAN_RX_PIN)
+
 class CanDevice {
   private:
     SemaphoreHandle_t mutex_v = xSemaphoreCreateMutex();

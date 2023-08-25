@@ -64,6 +64,13 @@ void fakeCanbusValues() {
 #endif
 
 void setup() {
+
+//Debug LED on board
+#ifdef PIN_BOARD_LED
+    pinMode(PIN_BOARD_LED,OUTPUT);
+    digitalWrite(PIN_BOARD_LED,LOW);
+#endif
+
     Logger::setOutputFunction(localLogger);
 
     AppConfiguration::getInstance()->readPreferences();
@@ -78,12 +85,16 @@ void setup() {
         return;
     }
 
+
+
     ledController = LedControllerFactory::getInstance()->createLedController(&vescData);
 
+    #if defined(PIN_FORWARD) && defined(PIN_BACKWARD) && defined(PIN_BRAKE)
     pinMode(PIN_FORWARD, INPUT);
     pinMode(PIN_BACKWARD, INPUT);
     pinMode(PIN_BRAKE, INPUT);
-
+    #endif
+    
     vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
     delay(50);
 #ifdef CANBUS_ENABLED
@@ -110,6 +121,10 @@ void setup() {
              SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH,
              HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
     Logger::notice("rESCue", buf);
+
+#ifdef PIN_BOARD_LED
+    digitalWrite(PIN_BOARD_LED,HIGH);
+#endif
 }
 
 void loop() {
