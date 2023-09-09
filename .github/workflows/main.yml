@@ -47,5 +47,8 @@ jobs:
         draft: true
         generate_release_notes: true
         files: | 
-          .pio/build/wemos_d1_mini32/firmware.bin
+          .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini.bin
+          .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32.bin
+          .pio/build/wemos_d1_mini32/firmware_nodemcu-32s.bin
           .pio/build/wemos_d1_mini32/partitions.bin
+          .pio/build/wemos_d1_mini32/bootloader.bin
