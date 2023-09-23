@@ -1,6 +1,6 @@
 #include "BleCanProxy.h"
 
-#if defined(CANBUS_ENABLED)
+
 BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, uint8_t ble_proxy_can_id) {
     this->candevice = candevice;
     this->stream = stream;
@@ -9,7 +9,7 @@ BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, 
 }
 
 void BleCanProxy::proxyIn(std::string in) {
-    uint8_t packet_type = (uint8_t) in.at(0);
+    auto packet_type = (uint8_t) in.at(0);
 
     if (!longPacket) {
         switch (packet_type) {
@@ -31,8 +31,7 @@ void BleCanProxy::proxyIn(std::string in) {
                 return;
         }
         if (Logger::getLogLevel() == Logger::VERBOSE) {
-            char buf[64];
-            snprintf(buf, 64, "Proxy in, command %d, length %d\n", command, length);
+            snprintf(buf, bufSize, "Proxy in, command %d, length %d\n", command, length);
             Logger::verbose(LOG_TAG_BLE_CAN_PROXY, buf);
         }
     }
@@ -131,8 +130,7 @@ void BleCanProxy::proxyOut(uint8_t *data, unsigned int size, uint8_t crc1, uint8
         return;
     }
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        char buf[32];
-        snprintf(buf, 32, "Proxy out, sending %d bytes\n", size);
+        snprintf(buf, bufSize, "Proxy out, sending %d bytes\n", size);
         Logger::verbose(LOG_TAG_BLE_CAN_PROXY, buf);
     }
     //Start bit, package size
@@ -180,4 +178,3 @@ void BleCanProxy::proxyOut(uint8_t *data, unsigned int size, uint8_t crc1, uint8
 
     //Serial.println("");
 }
-#endif

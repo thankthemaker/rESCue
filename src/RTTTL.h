@@ -3,6 +3,7 @@
 
 #include <map>
 
+/*
 // Themes and TV
 extern const char *rtttl_simpsons;
 extern const char *rtttl_topgun;
@@ -32,6 +33,7 @@ extern const char *rtttl_siren5;
 // Classic ringtones
 extern const char *rtttl_death_march;
 extern const char *rtttl_hey_baby;
+*/
 
 // Simple tones
 extern const char *rtttl_beep_two_short;

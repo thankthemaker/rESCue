@@ -4,10 +4,10 @@
 
 MelodyPlayer player(BUZPIN, HIGH);
 
-Buzzer* Buzzer::instance = 0;
+Buzzer* Buzzer::instance = nullptr;
 
 Buzzer* Buzzer::getInstance() {
-    if (instance == 0){
+    if (instance == nullptr){
         instance = new Buzzer();
     }
 
@@ -22,7 +22,7 @@ void Buzzer::playSound(RTTTL_MELODIES selection){
     Logger::notice(LOG_TAG_BUZZER, "Still playing melody, abort!");
     return;
   }
-  std::map<RTTTL_MELODIES, const char*>::iterator it = RTTTL_MELODIES_VALUES.find(selection);
+  auto it = RTTTL_MELODIES_VALUES.find(selection);
   if (it == RTTTL_MELODIES_VALUES.end()) {
       Logger::error(LOG_TAG_BUZZER, "Melody not found");
       return;
@@ -42,16 +42,16 @@ boolean Buzzer::isPlayingSound() {
 }
 
 void Buzzer::startSequence() {
-  RTTTL_MELODIES val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.startSoundIndex);
+  auto val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.startSoundIndex);
   playSound(val);
 }
 
 void Buzzer::warning() {
-  RTTTL_MELODIES val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.batteryWarningSoundIndex);
+  auto val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.batteryWarningSoundIndex);
   playSound(val);
 }
 
 void Buzzer::alarm() {
-  RTTTL_MELODIES val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.batteryAlarmSoundIndex);
+  auto val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.batteryAlarmSoundIndex);
   playSound(val);
 }

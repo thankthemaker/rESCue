@@ -1,12 +1,8 @@
 #ifndef __CANBUS_H__
 #define __CANBUS_H__
 
-
 #include "Arduino.h"
 #include "config.h"
-
-
-#ifdef CANBUS_ENABLED
 
 #include "AppConfiguration.h"
 #include <LoopbackStream.h>
@@ -32,10 +28,12 @@ class CanBus {
       void loop();
       void dumpVescValues();
     private:
+      const static int bufSize = 128;
+      char buf[bufSize];
       CanDevice *candevice;
-      void requestFirmwareVersion();
-      void requestRealtimeData();
-      void requestBalanceData();
+      boolean requestFirmwareVersion();
+      boolean requestRealtimeData();
+      boolean requestBalanceData();
       void ping();
       static void clearFrame(twai_message_t rx_frame);
       static void printFrame(twai_message_t rx_frame, int frameCount);
@@ -71,5 +69,4 @@ class CanBus {
       std::vector<uint8_t> proxybuffer = {};
 };
 
-#endif //CANBUS_ENABLED
 #endif //__CANBUS_H__

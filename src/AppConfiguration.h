@@ -45,7 +45,6 @@ struct Config {
     VISITABLE(int, numberPixelLight);
     VISITABLE(int, numberPixelBatMon);
     VISITABLE(int, vescId);
-    VISITABLE(String, authToken);
     VISITABLE(Logger::Level, logLevel);
     VISITABLE(boolean, sendConfig);
     VISITABLE(boolean, saveConfig);
@@ -53,6 +52,7 @@ struct Config {
     VISITABLE(String , ledFrequency);
     VISITABLE(int , idleLightTimeout);
     VISITABLE(int , mtuSize);
+    VISITABLE(boolean , oddevenActive);
     VISITABLE(boolean, lightsSwitch);
   END_VISITABLES;
 };
@@ -60,8 +60,10 @@ struct Config {
 class AppConfiguration {
   public: 
     static AppConfiguration* getInstance();
-    void readPreferences();
-    void savePreferences();
+    boolean readPreferences();
+    boolean savePreferences();
+    boolean readMelodies();
+    boolean saveMelodies();
     Config config;
 
   private:

@@ -10,3 +10,5 @@ extensions.json
 /cmake-build-**
 /CMakeLists.txt
 /CMakeListsPrivate.txt
+rESCue.code-workspace
+.vscode/settings.json

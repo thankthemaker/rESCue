@@ -9,6 +9,11 @@
 #include "BleServer.h"
 #include "CanBus.h"
 #include "AppConfiguration.h"
+#include "LightBarController.h"
+#include <ble_ota_dfu.hpp>
+
+const int mainBufSize = 128;
+char mainBuf[mainBufSize];
 
 unsigned long mainLoop = 0;
 unsigned long loopTime = 0;
@@ -18,12 +23,15 @@ int new_backward = LOW;
 int new_brake = LOW;
 int idle = LOW;
 double idle_erpm = 10.0;
+boolean updateInProgress = false;
 
-int lastFake = 4000;
-int lastFakeCount = 0;
+BLE_OTA_DFU ota_dfu_ble;
+
 VescData vescData;
 
-HardwareSerial vesc(2);
+#ifndef CANBUS_ENABLED
+  HardwareSerial vesc(2);
+#endif
 
 ILedController *ledController;
 
@@ -33,35 +41,9 @@ CanBus *canbus = new CanBus(&vescData);
 BatteryMonitor *batMonitor = new BatteryMonitor(&vescData);
 
 BleServer *bleServer = new BleServer();
-
+LightBarController *lightbar = new LightBarController();
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char *module, const char *message);
-
-#if defined(CANBUS_ENABLED)
-
-void fakeCanbusValues() {
-    if (millis() - lastFake > 3000) {
-        vescData.tachometer = random(0, 30);
-        vescData.inputVoltage = random(43, 50);
-        vescData.dutyCycle = random(0, 100);
-        if (lastFakeCount > 10) {
-            vescData.erpm = random(-100, 200);
-        } else {
-            vescData.erpm = 0;//random(-100, 200);
-        }
-        vescData.current = random(0, 10);
-        vescData.ampHours = random(0, 100);
-        vescData.mosfetTemp = random(20, 60);
-        vescData.motorTemp = random(20, 40);
-        vescData.adc1 = 0.5;
-        vescData.adc2 = 0.5;
-        vescData.switchState = 0;
-        lastFake = millis();
-        lastFakeCount++;
-    }
-}
-
-#endif
 
 void setup() {
 
@@ -74,7 +56,8 @@ void setup() {
     Logger::setOutputFunction(localLogger);
 
     AppConfiguration::getInstance()->readPreferences();
-    delay(3);
+ //   AppConfiguration::getInstance()->readMelodies();
+    delay(10);
     AppConfiguration::getInstance()->config.sendConfig = false;
     Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
     if (Logger::getLogLevel() != Logger::SILENT) {
@@ -85,7 +68,7 @@ void setup() {
         return;
     }
 
-
+Serial.println("before createLED");
 
     ledController = LedControllerFactory::getInstance()->createLedController(&vescData);
 
@@ -94,13 +77,18 @@ void setup() {
     pinMode(PIN_BACKWARD, INPUT);
     pinMode(PIN_BRAKE, INPUT);
     #endif
-    
-    vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
+
+Serial.println("after createLED");
+
+
+//    vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
     delay(50);
 #ifdef CANBUS_ENABLED
     // initializes the CANBUS
     canbus->init();
 #endif //CANBUS_ENABLED
+
+Serial.println("after canbis init");
 
     // initializes the battery monitor
     batMonitor->init();
@@ -113,14 +101,13 @@ void setup() {
     // initialize the LED (either COB or Neopixel)
     ledController->init();
 
-    Buzzer::getInstance()->startSequence();
+    Buzzer::startSequence();
     ledController->startSequence();
 
-    char buf[128];
-    snprintf(buf, 128, " sw-version %d.%d.%d is happily running on hw-version %d.%d",
+    snprintf(mainBuf, mainBufSize, " sw-version %d.%d.%d is happily running on hw-version %d.%d",
              SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH,
              HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
-    Logger::notice("rESCue", buf);
+    Logger::notice("rESCue", mainBuf);
 
 #ifdef PIN_BOARD_LED
     digitalWrite(PIN_BOARD_LED,HIGH);
@@ -135,22 +122,25 @@ void loop() {
     }
 
     if (AppConfiguration::getInstance()->config.otaUpdateActive) {
+        if(!updateInProgress) {
+            bleServer->stop();
+            ota_dfu_ble.begin(AppConfiguration::getInstance()->config.deviceName.c_str()); 
+            updateInProgress = true;
+        }
         return;
     }
+
     if (AppConfiguration::getInstance()->config.sendConfig) {
-        bleServer->sendConfig();
+        BleServer::sendConfig();
         AppConfiguration::getInstance()->config.sendConfig = false;
     }
     if (AppConfiguration::getInstance()->config.saveConfig) {
         AppConfiguration::getInstance()->savePreferences();
+        AppConfiguration::getInstance()->saveMelodies();
         AppConfiguration::getInstance()->config.saveConfig = false;
     }
 
 #ifdef CANBUS_ENABLED
-#ifdef FAKE_VESC_ENABLED
-    fakeCanbusValues();
-#endif
-
     new_forward = vescData.erpm > idle_erpm ? HIGH : LOW;
     new_backward = vescData.erpm < -idle_erpm ? HIGH : LOW;
     idle = (abs(vescData.erpm) < idle_erpm && vescData.switchState == 0) ? HIGH : LOW;
@@ -163,9 +153,7 @@ void loop() {
 #endif
 
 #ifdef CANBUS_ENABLED
-#ifndef FAKE_VESC_ENABLED
     canbus->loop();
-#endif
 #endif
 
     // call the led controller loop
@@ -174,12 +162,10 @@ void loop() {
     // measure and check voltage
     batMonitor->checkValues();
 
+    lightbar->updateLightBar(vescData.inputVoltage, vescData.switchState, vescData.adc1, vescData.adc2, vescData.erpm);  // update the WS28xx battery bar
+
     // call the VESC UART-to-Bluetooth bridge
-#ifdef CANBUS_ENABLED
     bleServer->loop(&vescData, loopTime, maxLoopTime);
-#else
-    bleServer->loop();
-#endif
 }
 
 void localLogger(Logger::Level level, const char *module, const char *message) {

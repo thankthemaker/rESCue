@@ -4,18 +4,13 @@
 #include <Logger.h>
 #include "config.h"
 #include "Buzzer.h"
-#ifdef CANBUS_ENABLED
- #include "CanBus.h"
-#endif
-#ifdef LIGHT_BAR_ENABLED
- #include "LightBarController.h"
-#endif
+#include "CanBus.h"
 
 class BatteryMonitor {
     public:
-        BatteryMonitor(VescData *vescData);
+        explicit BatteryMonitor(VescData *vescData);
         void init();
-        float readValues();
+        double readValues();
         void checkValues();
 
     private:
@@ -24,10 +19,8 @@ class BatteryMonitor {
         int warn_voltage = 0;
         double max_current = 0;
         VescData *vescData;
-        int smoothAnalogReading();
-        void updateCurrentArray(double value);
-        double getAverageCurrent();
-        AdcState mapSwitchState(uint16_t intState, boolean isAdc1Enabled);
+        static void updateCurrentArray(double value);
+        static double getAverageCurrent();
 };
 
 #endif //__BATTERY_CONTROLLER_H__

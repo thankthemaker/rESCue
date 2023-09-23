@@ -24,6 +24,8 @@ class ILedController {
         void loop(const int* new_forward, const int* new_backward, const int* idle, const int* new_brake);
 
     private:
+      const static int bufSize = 128;
+      char buf[bufSize];
       int old_forward  = LOW;
       int old_backward = LOW;
       int old_idle     = LOW;
@@ -33,7 +35,7 @@ class LedControllerFactory {
     public:
         static LedControllerFactory* getInstance();
         static uint8_t determineLedType();
-        ILedController* createLedController(VescData *vescData);
+        static ILedController* createLedController(VescData *vescData);
 
     private:
         LedControllerFactory();    

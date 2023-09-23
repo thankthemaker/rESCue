@@ -10,7 +10,7 @@ AppConfiguration* AppConfiguration::getInstance() {
 
     return instance;
 }
-void AppConfiguration::readPreferences() {
+boolean AppConfiguration::readPreferences() {
     String json = "";
     if(!preferences.begin("rESCue", true)) {
         log_e("no config file found");
@@ -20,9 +20,10 @@ void AppConfiguration::readPreferences() {
     }
     StaticJsonDocument<1024> doc;
     deserializeJson(doc, json);
+    preferences.end();
     log_n("readPreferences: %s", json.c_str());
     config.deviceName = doc["deviceName"] | "rESCue";
-    config.otaUpdateActive = doc["otaUpdateActive"] | false;
+    config.otaUpdateActive = false;
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
     config.isBatteryNotificationEnabled = doc["isBatteryNotificationEnabled"] | false;
     config.isCurrentNotificationEnabled = doc["isCurrentNotificationEnabled"] | false;
@@ -44,9 +45,7 @@ void AppConfiguration::readPreferences() {
     config.lightFadingDuration = doc["lightFadingDuration"] | 220;
     config.lightMaxBrightness = doc["lightMaxBrightness"] | MAX_BRIGHTNESS;
     config.brakeLightEnabled = doc["brakeLightEnabled"] | true;
-#if defined(CANBUS_ENABLED)
     config.vescId = doc["vescId"] | VESC_CAN_ID;
-#endif
     config.numberPixelLight = doc["numberPixelLight"] | NUMPIXELS;
     config.numberPixelBatMon = doc["numberPixelBatMon"] | LIGHT_BAR_NUMPIXELS;
     // calculate RGB values for primary and secondary color
@@ -63,14 +62,17 @@ void AppConfiguration::readPreferences() {
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.logLevel = doc["logLevel"] | Logger::WARNING;
     config.mtuSize = doc["mtuSize"] | 512;
+    config.oddevenActive = doc["oddevenActive"] | true;
     config.lightsSwitch = true;
     config.saveConfig = false;
     config.sendConfig = false;
-    preferences.end();
+    if(doc.overflowed()) {
+      return false;
+    } 
+    return true;
 }
 
-void AppConfiguration::savePreferences() {
-    preferences.begin("rESCue", false);
+boolean AppConfiguration::savePreferences() {
     StaticJsonDocument<1024> doc;
     doc["deviceName"] = config.deviceName;
     doc["otaUpdateActive"] = config.otaUpdateActive;
@@ -103,6 +105,19 @@ void AppConfiguration::savePreferences() {
     String json = "";
     serializeJson(doc, json);
     log_n("savePreferences: %s", json.c_str());
+
+    if(doc.overflowed()) {
+      return false;
+    } 
+
+    preferences.begin("rESCue", false);
     preferences.putString("config", json);
     preferences.end();
+    return true;
+}
+
+boolean AppConfiguration::readMelodies() {
+}
+
+boolean AppConfiguration::saveMelodies() {
 }

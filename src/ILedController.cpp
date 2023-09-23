@@ -1,9 +1,8 @@
-#include "config.h"
 #include "ILedController.h"
 #include "AppConfiguration.h"
 #include <Logger.h>
 
-int idleTimer = 0;
+unsigned long idleTimer = 0;
 
 void ILedController::loop(const int *new_forward, const int *new_backward, const int *new_idle, const int *new_brake) {
 
@@ -21,8 +20,7 @@ void ILedController::loop(const int *new_forward, const int *new_backward, const
     // is there a change detected
     if (old_forward != *(new_forward) || old_backward != *(new_backward)) {
         if (Logger::getLogLevel() == Logger::VERBOSE) {
-            char buf[128];
-            snprintf(buf, 128, "change detected: forward is %d was %d, backward is %d was %d",
+            snprintf(buf, bufSize, "change detected: forward is %d was %d, backward is %d was %d",
                      *(new_forward), old_forward, *(new_backward), old_backward);
             Logger::verbose(LOG_TAG_LED, buf);
         }

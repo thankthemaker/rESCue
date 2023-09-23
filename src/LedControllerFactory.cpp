@@ -4,7 +4,7 @@
 
 LedControllerFactory *LedControllerFactory::instance = 0;
 
-LedControllerFactory::LedControllerFactory() {}
+LedControllerFactory::LedControllerFactory() = default;
 
 LedControllerFactory *LedControllerFactory::getInstance() {
     if (instance == 0) {

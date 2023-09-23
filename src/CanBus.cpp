@@ -1,8 +1,5 @@
 #include "CanBus.h"
 
-#ifdef CANBUS_ENABLED
-
-
 CanBus::CanBus(VescData *vescData) {
     this->vescData = vescData;
     this->stream = new LoopbackStream(BUFFER_SIZE);
@@ -41,25 +38,37 @@ void CanBus::init() {
 void CanBus::loop() {
     int frameCount = 0;
     twai_message_t rx_frame;
+    unsigned long now = millis();
     if (initialized) {
-        if (millis() - lastRealtimeData > interval && !proxy->processing) {
-            requestRealtimeData();
+        if (lastRealtimeData <= now && now - lastRealtimeData > interval && !proxy->processing) {
+            if(!requestRealtimeData()) {
+                lastRealtimeData = (millis() + 500);
+                this->vescData->connected = false;
+            }
         }
 
-        if (millis() - lastBalanceData > interval && !proxy->processing) {
-            requestBalanceData();
+        if (lastBalanceData <= now && now - lastBalanceData > interval && !proxy->processing) {
+            if(!requestBalanceData()) {
+                lastBalanceData = (millis() + 500);
+                this->vescData->connected = false;
+            }
         }
-    } else if(initRetryCounter > 0 && millis() - lastRetry > 500) {
+    } else if(initRetryCounter > 0 && lastRetry <= now && now - lastRetry > 500) {
         requestFirmwareVersion();
         initRetryCounter--;
         lastRetry = millis();
         if(initRetryCounter == 0) {
             Logger::error("CANBUS initialization failed");
+            initRetryCounter = 1;
+            lastRetry = (millis() + 5000);
         }
     }
 
     //receive next CAN frame from queue
     while (twai_receive( &rx_frame, 3 * portTICK_PERIOD_MS) == ESP_OK) {
+        if(!this->vescData->connected) {
+            this->vescData->connected = true;
+        }
         if (!initialized) {
             Logger::notice(LOG_TAG_CANBUS, "CANBUS is now initialized");
             initialized = true;
@@ -85,7 +94,7 @@ void CanBus::loop() {
     }
 }
 
-void CanBus::requestFirmwareVersion() {
+boolean CanBus::requestFirmwareVersion() {
     Logger::notice(LOG_TAG_CANBUS, "requestFirmwareVersion");
     twai_message_t tx_frame = {};
 
@@ -95,10 +104,10 @@ void CanBus::requestFirmwareVersion() {
     tx_frame.data[0] = esp_can_id;
     tx_frame.data[1] = 0x00;
     tx_frame.data[2] = 0x00;  // COMM_FW_VERSION
-    candevice->sendCanFrame(&tx_frame);
+    return candevice->sendCanFrame(&tx_frame);
 }
 
-void CanBus::requestRealtimeData() {
+boolean CanBus::requestRealtimeData() {
     Logger::notice(LOG_TAG_CANBUS, "requestRealtimeData");
     twai_message_t tx_frame = {};
 
@@ -113,10 +122,10 @@ void CanBus::requestRealtimeData() {
     tx_frame.data[4] = 0x00;      // Byte2 of mask (Bits 16-23)
     tx_frame.data[5] = B10000111; // Byte3 of mask (Bits 8-15)
     tx_frame.data[6] = B11000011; // Byte4 of mask (Bits 0-7)
-    candevice->sendCanFrame(&tx_frame);
+    return candevice->sendCanFrame(&tx_frame);
 }
 
-void CanBus::requestBalanceData() {
+boolean CanBus::requestBalanceData() {
     Logger::notice(LOG_TAG_CANBUS, "requestBalanceData");
     twai_message_t tx_frame = {};
 
@@ -126,7 +135,7 @@ void CanBus::requestBalanceData() {
     tx_frame.data[0] = esp_can_id;
     tx_frame.data[1] = 0x00;
     tx_frame.data[2] = 0x4F;  // COMM_GET_DECODED_BALANCE
-    candevice->sendCanFrame(&tx_frame);
+    return candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::ping() {
@@ -387,9 +396,8 @@ void CanBus::processFrame(twai_message_t rx_frame, int frameCount) {
     }
 
     if (Logger::getLogLevel() <= Logger::NOTICE) {
-        char buf[128];
-        snprintf(buf, 128, "processed frame #%d, type %s", frameCount, frametype.c_str());
-        Logger::notice(LOG_TAG_CANBUS, buf);
+        snprintf(buf, bufSize, "processed frame #%d, type %s", frameCount, frametype.c_str());
+        Logger::verbose(LOG_TAG_CANBUS, buf);
     }
 }
 
@@ -397,78 +405,76 @@ void CanBus::dumpVescValues() {
     if (Logger::getLogLevel() != Logger::VERBOSE || millis() - lastDump < 1000) {
         return;
     }
-    int size = 25;
-    char val[size];
     std::string bufferString;
     bufferString += "name=";
-    snprintf(val, size, "%s, ", vescData->name.c_str());
-    bufferString += val;
+    snprintf(buf, bufSize, "%s, ", vescData->name.c_str());
+    bufferString += buf;
     bufferString += "dutycycle=";
-    snprintf(val, size, "%f", vescData->dutyCycle);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->dutyCycle);
+    bufferString += buf;
     bufferString += ", erpm=";
-    snprintf(val, size, "%f", vescData->erpm);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->erpm);
+    bufferString += buf;
     bufferString += ", current=";
-    snprintf(val, size, "%f", vescData->current);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->current);
+    bufferString += buf;
     bufferString += ", ampHours=";
-    snprintf(val, size, "%f", vescData->ampHours);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->ampHours);
+    bufferString += buf;
     bufferString += ", ampHoursCharged=";
-    snprintf(val, size, "%f", vescData->ampHoursCharged);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->ampHoursCharged);
+    bufferString += buf;
     bufferString += ", wattHours=";
-    snprintf(val, size, "%f", vescData->wattHours);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->wattHours);
+    bufferString += buf;
     bufferString += ", wattHoursCharged=";
-    snprintf(val, size, "%f", vescData->wattHoursCharged);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->wattHoursCharged);
+    bufferString += buf;
     bufferString += ", mosfetTemp=";
-    snprintf(val, size, "%f", vescData->mosfetTemp);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->mosfetTemp);
+    bufferString += buf;
     bufferString += ", motorTemp=";
-    snprintf(val, size, "%f", vescData->motorTemp);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->motorTemp);
+    bufferString += buf;
     bufferString += ", inputVoltage=";
-    snprintf(val, size, "%f", vescData->inputVoltage);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->inputVoltage);
+    bufferString += buf;
     bufferString += ", tachometer=";
-    snprintf(val, size, "%f", vescData->tachometer);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->tachometer);
+    bufferString += buf;
     bufferString += ", pidOutput=";
-    snprintf(val, size, "%f", vescData->pidOutput);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->pidOutput);
+    bufferString += buf;
     bufferString += ", pitch=";
-    snprintf(val, size, "%f", vescData->pitch);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->pitch);
+    bufferString += buf;
     bufferString += ", roll=";
-    snprintf(val, size, "%f", vescData->roll);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->roll);
+    bufferString += buf;
     bufferString += ", loopTime=";
-    snprintf(val, size, "%d", vescData->loopTime);
-    bufferString += val;
+    snprintf(buf, bufSize, "%d", vescData->loopTime);
+    bufferString += buf;
     bufferString += ", motorCurrent=";
-    snprintf(val, size, "%f", vescData->motorCurrent);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->motorCurrent);
+    bufferString += buf;
     bufferString += ", motorPosition=";
-    snprintf(val, size, "%f", vescData->motorPosition);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->motorPosition);
+    bufferString += buf;
     bufferString += ", balanceState=";
-    snprintf(val, size, "%d", vescData->balanceState);
-    bufferString += val;
+    snprintf(buf, bufSize, "%d", vescData->balanceState);
+    bufferString += buf;
     bufferString += ", switchState=";
-    snprintf(val, size, "%d", vescData->switchState);
-    bufferString += val;
+    snprintf(buf, bufSize, "%d", vescData->switchState);
+    bufferString += buf;
     bufferString += ", adc1=";
-    snprintf(val, size, "%f", vescData->adc1);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->adc1);
+    bufferString += buf;
     bufferString += ", adc2=";
-    snprintf(val, size, "%f", vescData->adc2);
-    bufferString += val;
+    snprintf(buf, bufSize, "%f", vescData->adc2);
+    bufferString += buf;
     bufferString += ", fault=";
-    snprintf(val, size, "%d", vescData->fault);
-    bufferString += val;
+    snprintf(buf, bufSize, "%d", vescData->fault);
+    bufferString += buf;
     Logger::verbose(LOG_TAG_CANBUS, bufferString.c_str());
     lastDump = millis();
 }
@@ -516,5 +522,3 @@ std::string CanBus::readStringValueFromBuffer(int startbyte, int length, boolean
     }
     return name;
 }
-
-#endif //CANBUS_ENABLED

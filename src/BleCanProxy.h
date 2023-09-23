@@ -8,7 +8,6 @@
 #include "LoopbackStream.h"
 #include "CanDevice.h"
 
-#ifdef CANBUS_ENABLED
 #define LOG_TAG_BLE_CAN_PROXY "BleCanProxy"
 
 class BleCanProxy {
@@ -19,6 +18,8 @@ class BleCanProxy {
     boolean processing = false;
 
   private:
+    const static int bufSize = 64;
+    char buf[bufSize];
     CanDevice *candevice;
     Stream *stream;
     uint16_t length = 0;
@@ -29,5 +30,4 @@ class BleCanProxy {
     uint8_t ble_proxy_can_id;
 };
 
-#endif //CANBUS_ENABLED
 #endif //RESCUE_BLECANPROXY_H

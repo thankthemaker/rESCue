@@ -31,9 +31,11 @@
 
 class CanDevice {
   private:
+    const static int bufSize = 128;
+    char buf[bufSize];
     SemaphoreHandle_t mutex_v = xSemaphoreCreateMutex();
   public:
-    void init();
-    void sendCanFrame(const twai_message_t *p_frame);
+    boolean init();
+    boolean sendCanFrame(const twai_message_t *p_frame);
 };
 #endif //RESCUE_CANDEVICE_H
