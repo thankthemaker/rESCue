@@ -29,7 +29,9 @@ BLE_OTA_DFU ota_dfu_ble;
 
 VescData vescData;
 
-//HardwareSerial vesc(2);
+#ifndef CANBUS_ENABLED
+  HardwareSerial vesc(2);
+#endif
 
 ILedController *ledController;
 
