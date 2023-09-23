@@ -23,7 +23,9 @@ uint32_t value = 0;
 Stream *vescSerial;
 std::string vescBuffer;
 std::string updateBuffer;
-int bleLoop = 0;
+unsigned long bleLoop = 0;
+unsigned long loopTimeSum = 0;
+unsigned long loopCount = 0;
 
 BleServer::BleServer() = default;
 
@@ -57,7 +59,11 @@ void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
     PACKET_SIZE = MTU_SIZE - 3;
 }
 
+#if defined(CANBUS_ENABLED)
 void BleServer::init(Stream *vesc, CanBus *canbus) {
+#else
+void BleServer::init(Stream *vesc) {
+#endif
     vescSerial = vesc;
 
     // Create the BLE Device
@@ -68,8 +74,9 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
 
     snprintf(buf, bufSize, "Initial MTU size %d", mtu_size);
     Logger::notice(LOG_TAG_BLESERVER, buf);
+#if defined(CANBUS_ENABLED)
     this->canbus = canbus;
-
+#endif
     // Create the BLE Server
     pServer = NimBLEDevice::createServer();
     pServer->setCallbacks(this);
@@ -123,14 +130,6 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
     pCharacteristicConf->setCallbacks(this);
 
     pCharacteristicLoop = pServiceRescue->createCharacteristic(
-            RESCUE_CHARACTERISTIC_UUID_FW,
-            NIMBLE_PROPERTY::NOTIFY | 
-            NIMBLE_PROPERTY::WRITE |
-            NIMBLE_PROPERTY::WRITE_NR
-    );
-    pCharacteristicLoop->setCallbacks(this);
-
-    pCharacteristicLoop = pServiceRescue->createCharacteristic(
             RESCUE_CHARACTERISTIC_UUID_LOOP,
             NIMBLE_PROPERTY::NOTIFY | 
             NIMBLE_PROPERTY::WRITE |
@@ -165,6 +164,9 @@ void BleServer::init(Stream *vesc, CanBus *canbus) {
 }
 
 void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long maxLoopTime) {
+    loopCount++;
+    loopTimeSum += loopTime;
+    
     if (vescSerial->available()) {
         int oneByte;
         while (vescSerial->available()) {
@@ -203,8 +205,10 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
     }
 
     if (millis() - bleLoop > 500) {
-        updateRescueApp(loopTime, maxLoopTime);
+        updateRescueApp(loopCount, loopTimeSum/loopCount, maxLoopTime);
         bleLoop = millis();
+        loopTimeSum = 0;
+        loopCount = 0;
     }
 }
 
@@ -363,9 +367,9 @@ void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, i
     }
 }
 
-void BleServer::updateRescueApp(long loopTime, long maxLoopTime) {
-   this->sendValue(pCharacteristicLoop, "loopTime", loopTime);
-    this->sendValue(pCharacteristicLoop, "maxLoopTime", maxLoopTime);
+void BleServer::updateRescueApp(long count, long loopTime, long maxLoopTime) {
+    snprintf(buf, bufSize, "%d;%d;%d", count, loopTime, maxLoopTime); 
+    this->sendValue(pCharacteristicLoop, "loopTime", buf);
 }
 
 template<typename TYPE>

@@ -16,6 +16,7 @@
 class Ws28xxController : public ILedController, Adafruit_NeoPixel {
     public:
         Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, VescData *vescData);
+        Ws28xxController(uint16_t pixels, uint8_t frontPin, uint8_t backPin, uint8_t type, VescData *vescData);
         void init() override;
         void stop() override;
         void startSequence() override;
@@ -61,7 +62,16 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
     private:
         const static int bufSize = 128;
         char buf[bufSize];
-        static uint32_t wheel(byte wheelPos);
+        //stuff for using seperate front and back pins. 
+        Adafruit_NeoPixel frontStrip;
+        Adafruit_NeoPixel backStrip;
+        bool useTwoPins;
+        // Private methods that replace calls to inherited Adafruit_NeoPixel methods
+        void setPixelColor(uint16_t n, uint32_t c);
+        void setPixelColor(uint16_t n, uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
+        void show();
+        uint16_t numPixels() const;
+        uint32_t wheel(byte wheelPos);
         void setLight(boolean forward, int brightness);
         static uint32_t dimColor(uint32_t color, uint8_t width);
         static int calcVal(int value);

@@ -13,6 +13,7 @@ struct VescData {
     std::string name;
     std::string uuid;
 
+    boolean connected = false;
     double dutyCycle = 0.0;
     double erpm = 0.0;
     double current = 0.0;

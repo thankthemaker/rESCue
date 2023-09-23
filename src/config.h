@@ -6,8 +6,8 @@
 // ###################################################################### //
 
 #define SOFTWARE_VERSION_MAJOR 2
-#define SOFTWARE_VERSION_MINOR 3
-#define SOFTWARE_VERSION_PATCH 3
+#define SOFTWARE_VERSION_MINOR 4
+#define SOFTWARE_VERSION_PATCH 0
 #define HARDWARE_VERSION_MAJOR 3
 #define HARDWARE_VERSION_MINOR 1
 
@@ -29,7 +29,6 @@
 #define VESC_BAUD_RATE 115200  // BAUD rate of the CF2
 
 #define VESC_CAN_ID 25 //VESC-ID as configured in VESC as decimal
-#define CANBUS_ONLY
 
 #endif //__CONFIG_H__
 

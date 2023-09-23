@@ -1,5 +1,6 @@
 #include "ILedController.h"
 #include "Ws28xxController.h"
+#include "CobController.h"
 
 LedControllerFactory *LedControllerFactory::instance = 0;
 
@@ -14,8 +15,18 @@ LedControllerFactory *LedControllerFactory::getInstance() {
 }
 
 ILedController *LedControllerFactory::createLedController(VescData *vescData) {
+#ifdef LED_WS28xx
     uint8_t ledType = LedControllerFactory::determineLedType();
-    return new Ws28xxController(AppConfiguration::getInstance()->config.numberPixelLight, PIN_NEOPIXEL, ledType, vescData);
+    //stuff for using seperate front and back pins. 
+    #if defined(PIN_NEOPIXEL_FRONT) && defined(PIN_NEOPIXEL_BACK)
+        return new Ws28xxController(AppConfiguration::getInstance()->config.numberPixelLight, PIN_NEOPIXEL_FRONT, PIN_NEOPIXEL_BACK, ledType, vescData);
+    #else
+        return new Ws28xxController(AppConfiguration::getInstance()->config.numberPixelLight, PIN_NEOPIXEL, ledType, vescData);
+    #endif //LED_WS28xx
+#endif
+#ifdef LED_COB
+    return new CobController();
+#endif //LED_COB
 }
 
 uint8_t LedControllerFactory::determineLedType() {

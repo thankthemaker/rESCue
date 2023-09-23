@@ -31,9 +31,9 @@ class CanBus {
       const static int bufSize = 128;
       char buf[bufSize];
       CanDevice *candevice;
-      void requestFirmwareVersion();
-      void requestRealtimeData();
-      void requestBalanceData();
+      boolean requestFirmwareVersion();
+      boolean requestRealtimeData();
+      boolean requestBalanceData();
       void ping();
       static void clearFrame(twai_message_t rx_frame);
       static void printFrame(twai_message_t rx_frame, int frameCount);

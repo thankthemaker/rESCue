@@ -1,7 +1,7 @@
 #include "CanDevice.h"
 
-void CanDevice::init() {
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_26, GPIO_NUM_27, TWAI_MODE_NORMAL);
+boolean CanDevice::init() {
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_CAN_TX_PIN, GPIO_CAN_RX_PIN, TWAI_MODE_NORMAL);
     g_config.rx_queue_len=1000;
     g_config.tx_queue_len=10;
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
@@ -12,20 +12,22 @@ void CanDevice::init() {
         printf("Driver installed\n");
     } else {
         printf("Failed to install driver\n");
-        return;
+        return false;
     }
     // Start TWAI driver
     if (twai_start() == ESP_OK) {
         printf("Driver started\n");
     } else {
         printf("Failed to start driver\n");
-        return;
+        return false;
     }
+    return true;
 }
 
-void CanDevice::sendCanFrame(const twai_message_t *p_frame) {
+boolean CanDevice::sendCanFrame(const twai_message_t *p_frame) {
     if (Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "Sending CAN frame %" PRIu32 " DLC %d, [%d, %d, %d, %d, %d, %d, %d, %d]",
+        char buf[128];
+        snprintf(buf, 128, "Sending CAN frame %" PRIu32 " DLC %d, [%d, %d, %d, %d, %d, %d, %d, %d]",
                 p_frame->identifier,
                 p_frame->data_length_code,
                 p_frame->data[0],
@@ -42,7 +44,9 @@ void CanDevice::sendCanFrame(const twai_message_t *p_frame) {
     //Queue message for transmission
     if (twai_transmit(p_frame, pdMS_TO_TICKS(10)) != ESP_OK) {
         printf("Failed to queue message for transmission\n");
+        return false;
     }
     xSemaphoreGive(mutex_v);
     delay(1); // This is needed, dunno why!
+    return true;
 }

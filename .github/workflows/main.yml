@@ -39,7 +39,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio run -e wemos_d1_mini32 -e nodemcu-32s
+      run: pio run -e wemos_d1_mini32 -e wemos_d1_mini32_cob -e wemos_d1_mini32_uart -e wemos_d1_mini32_cob_uart -e lolin_wemos_s3_mini -e lolin_wemos_s3_mini_cob -e lolin_wemos_s3_mini_uart -e lolin_wemos_s3_mini_cob_uart
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
@@ -47,5 +47,8 @@ jobs:
         draft: true
         generate_release_notes: true
         files: | 
-          .pio/build/wemos_d1_mini32/firmware.bin
+          .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini.bin
+          .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32.bin
+          .pio/build/wemos_d1_mini32/firmware_nodemcu-32s.bin
           .pio/build/wemos_d1_mini32/partitions.bin
+          .pio/build/wemos_d1_mini32/bootloader.bin

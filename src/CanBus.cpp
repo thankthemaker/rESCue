@@ -38,25 +38,37 @@ void CanBus::init() {
 void CanBus::loop() {
     int frameCount = 0;
     twai_message_t rx_frame;
+    unsigned long now = millis();
     if (initialized) {
-        if (millis() - lastRealtimeData > interval && !proxy->processing) {
-            requestRealtimeData();
+        if (lastRealtimeData <= now && now - lastRealtimeData > interval && !proxy->processing) {
+            if(!requestRealtimeData()) {
+                lastRealtimeData = (millis() + 500);
+                this->vescData->connected = false;
+            }
         }
 
-        if (millis() - lastBalanceData > interval && !proxy->processing) {
-            requestBalanceData();
+        if (lastBalanceData <= now && now - lastBalanceData > interval && !proxy->processing) {
+            if(!requestBalanceData()) {
+                lastBalanceData = (millis() + 500);
+                this->vescData->connected = false;
+            }
         }
-    } else if(initRetryCounter > 0 && millis() - lastRetry > 500) {
+    } else if(initRetryCounter > 0 && lastRetry <= now && now - lastRetry > 500) {
         requestFirmwareVersion();
         initRetryCounter--;
         lastRetry = millis();
         if(initRetryCounter == 0) {
             Logger::error("CANBUS initialization failed");
+            initRetryCounter = 1;
+            lastRetry = (millis() + 5000);
         }
     }
 
     //receive next CAN frame from queue
     while (twai_receive( &rx_frame, 3 * portTICK_PERIOD_MS) == ESP_OK) {
+        if(!this->vescData->connected) {
+            this->vescData->connected = true;
+        }
         if (!initialized) {
             Logger::notice(LOG_TAG_CANBUS, "CANBUS is now initialized");
             initialized = true;
@@ -82,7 +94,7 @@ void CanBus::loop() {
     }
 }
 
-void CanBus::requestFirmwareVersion() {
+boolean CanBus::requestFirmwareVersion() {
     Logger::notice(LOG_TAG_CANBUS, "requestFirmwareVersion");
     twai_message_t tx_frame = {};
 
@@ -92,10 +104,10 @@ void CanBus::requestFirmwareVersion() {
     tx_frame.data[0] = esp_can_id;
     tx_frame.data[1] = 0x00;
     tx_frame.data[2] = 0x00;  // COMM_FW_VERSION
-    candevice->sendCanFrame(&tx_frame);
+    return candevice->sendCanFrame(&tx_frame);
 }
 
-void CanBus::requestRealtimeData() {
+boolean CanBus::requestRealtimeData() {
     Logger::notice(LOG_TAG_CANBUS, "requestRealtimeData");
     twai_message_t tx_frame = {};
 
@@ -110,10 +122,10 @@ void CanBus::requestRealtimeData() {
     tx_frame.data[4] = 0x00;      // Byte2 of mask (Bits 16-23)
     tx_frame.data[5] = B10000111; // Byte3 of mask (Bits 8-15)
     tx_frame.data[6] = B11000011; // Byte4 of mask (Bits 0-7)
-    candevice->sendCanFrame(&tx_frame);
+    return candevice->sendCanFrame(&tx_frame);
 }
 
-void CanBus::requestBalanceData() {
+boolean CanBus::requestBalanceData() {
     Logger::notice(LOG_TAG_CANBUS, "requestBalanceData");
     twai_message_t tx_frame = {};
 
@@ -123,7 +135,7 @@ void CanBus::requestBalanceData() {
     tx_frame.data[0] = esp_can_id;
     tx_frame.data[1] = 0x00;
     tx_frame.data[2] = 0x4F;  // COMM_GET_DECODED_BALANCE
-    candevice->sendCanFrame(&tx_frame);
+    return candevice->sendCanFrame(&tx_frame);
 }
 
 void CanBus::ping() {
@@ -385,7 +397,7 @@ void CanBus::processFrame(twai_message_t rx_frame, int frameCount) {
 
     if (Logger::getLogLevel() <= Logger::NOTICE) {
         snprintf(buf, bufSize, "processed frame #%d, type %s", frameCount, frametype.c_str());
-        Logger::notice(LOG_TAG_CANBUS, buf);
+        Logger::verbose(LOG_TAG_CANBUS, buf);
     }
 }
 

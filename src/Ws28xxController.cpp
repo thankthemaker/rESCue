@@ -1,11 +1,42 @@
 #include "Ws28xxController.h"
 #include <Logger.h>
 
+//stuff for using seperate front and back pins. 
+Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t frontPin, uint8_t backPin, uint8_t type, VescData *vescData)
+        : frontStrip(pixels / 2, frontPin, type), backStrip(pixels / 2, backPin, type), useTwoPins(true), vescData(vescData) {
+} 
+// Constructor for single-pin configuration
 Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t pin, uint8_t type, VescData *vescData)
-        : Adafruit_NeoPixel(pixels, pin, type) {
-    this->vescData = vescData;
+        : frontStrip(pixels, pin, type), useTwoPins(false), vescData(vescData) {
+    backStrip = Adafruit_NeoPixel(); // Explicitly set backStrip to an empty instance
 }
 
+// setPixelColor method
+void Ws28xxController::setPixelColor(uint16_t n, uint32_t c) {
+    if (useTwoPins) {
+        if (n < frontStrip.numPixels()) {
+            frontStrip.Adafruit_NeoPixel::setPixelColor(n, c); // Correct call to the underlying library's method
+        } else {
+            backStrip.Adafruit_NeoPixel::setPixelColor(n - frontStrip.numPixels(), c); // Correct call to the underlying library's method
+        }
+    } else {
+        frontStrip.Adafruit_NeoPixel::setPixelColor(n, c); // Correct call to the underlying library's method
+    }
+}
+
+void Ws28xxController::show() {
+    frontStrip.show();
+    if (useTwoPins) backStrip.show();
+}
+
+void Ws28xxController::setPixelColor(uint16_t n, uint8_t red, uint8_t green, uint8_t blue, uint8_t white) {
+    uint32_t color = Color(red, green, blue, white);
+    setPixelColor(n, color);
+}
+
+uint16_t Ws28xxController::numPixels() const {
+    return useTwoPins ? frontStrip.numPixels() + backStrip.numPixels() : frontStrip.numPixels();
+}
 
 // Update the pattern
 void Ws28xxController::update() {

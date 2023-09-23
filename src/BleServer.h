@@ -27,8 +27,12 @@ class BleServer :
   public BLECharacteristicCallbacks  {
     public:
       BleServer();
+#ifdef CANBUS_ENABLED
       void init(Stream *vesc, CanBus *canbus);
-      void loop(VescData *vescData, unsigned long loopTime, unsigned long maxLoopTime);
+#else
+      void init(Stream *vesc);
+#endif      
+      void loop(VescData *vescData, unsigned long loopTime,  unsigned long maxLoopTime);
       void stop();
 
       // NimBLEServerCallbacks
@@ -43,7 +47,7 @@ class BleServer :
       static void sendConfig();
       template<typename TYPE>
       void sendValue(NimBLECharacteristic *pCharacteristic, std::string key, TYPE value);
-      void updateRescueApp(long loopTime, long maxLoopTime);
+      void updateRescueApp(long count, long loopTime, long maxLoopTime);
 
     private:
       const static int bufSize = 256;

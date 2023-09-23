@@ -60,8 +60,10 @@ struct Config {
 class AppConfiguration {
   public: 
     static AppConfiguration* getInstance();
-    void readPreferences();
-    void savePreferences();
+    boolean readPreferences();
+    boolean savePreferences();
+    boolean readMelodies();
+    boolean saveMelodies();
     Config config;
 
   private:
