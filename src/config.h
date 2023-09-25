@@ -8,8 +8,14 @@
 #define SOFTWARE_VERSION_MAJOR 2
 #define SOFTWARE_VERSION_MINOR 4
 #define SOFTWARE_VERSION_PATCH 0
-#define HARDWARE_VERSION_MAJOR 3
-#define HARDWARE_VERSION_MINOR 1
+
+#ifndef ESP32S3
+  #define HARDWARE_VERSION_MAJOR 3
+  #define HARDWARE_VERSION_MINOR 1
+#else
+  #define HARDWARE_VERSION_MAJOR 4
+  #define HARDWARE_VERSION_MINOR 0
+#endif
 
 /**** Definition for control of front- and backlight ****/
 
