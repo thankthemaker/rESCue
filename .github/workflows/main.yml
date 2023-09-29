@@ -42,14 +42,14 @@ jobs:
       run: pio run -e wemos_d1_mini32 -e wemos_d1_mini32_cob -e wemos_d1_mini32_uart -e wemos_d1_mini32_cob_uart -e lolin_wemos_s3_mini -e lolin_wemos_s3_mini_cob -e lolin_wemos_s3_mini_uart -e lolin_wemos_s3_mini_cob_uart
     - name: Rename firmware files
       run: |
-        mv .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini.bin                   .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini-v${{ github.GITHUB_REF_NAME }}.bin
-        mv .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob.bin           .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob-v${{ github.GITHUB_REF_NAME }}.bin
-        mv .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini_uart.bin         .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini_uart-v${{ github.GITHUB_REF_NAME }}.bin
-        mv .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini_cob_uart.bin .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini_cob_uart-v${{ github.GITHUB_REF_NAME }}.bin
-        mv .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32.bin                           .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.GITHUB_REF_NAME }}.bin
-        mv .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob.bin                   .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob-v${{ github.GITHUB_REF_NAME }}.bin
-        mv .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart.bin                 .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart-v${{ github.GITHUB_REF_NAME }}.bin
-        mv .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart.bin         .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart-v${{ github.GITHUB_REF_NAME }}.bin
+        mv .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini.bin                   .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini-v${{ github.ref_name }}.bin
+        mv .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob.bin           .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob-v${{ github.ref_name }}.bin
+        mv .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini_uart.bin         .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini_uart-v${{ github.ref_name }}.bin
+        mv .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini_cob_uart.bin .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini_cob_uart-v${{ github.ref_name }}.bin
+        mv .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32.bin                           .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.ref_name }}.bin
+        mv .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob.bin                   .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob-v${{ github.ref_name }}.bin
+        mv .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart.bin                 .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart-v${{ github.ref_name }}.bin
+        mv .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart.bin         .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart-v${{ github.ref_name }}.bin
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
@@ -57,13 +57,13 @@ jobs:
         draft: true
         generate_release_notes: true
         files: | 
-          .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini-v${{ github.GITHUB_REF_NAME }}.bin
-          .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob-v${{ github.GITHUB_REF_NAME }}.bin
-          .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini_uart-v${{ github.GITHUB_REF_NAME }}.bin
-          .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini_cob_uart-v${{ github.GITHUB_REF_NAME }}.bin
-          .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.GITHUB_REF_NAME }}.bin
-          .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob-v${{ github.GITHUB_REF_NAME }}.bin
-          .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart-v${{ github.GITHUB_REF_NAME }}.bin
-          .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart-v${{ github.GITHUB_REF_NAME }}.bin
+          .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini-v${{ github.ref_name }}.bin
+          .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob-v${{ github.ref_name }}.bin
+          .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini_uart-v${{ github.ref_name }}.bin
+          .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini_cob_uart-v${{ github.ref_name }}.bin
+          .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.ref_name }}.bin
+          .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob-v${{ github.ref_name }}.bin
+          .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart-v${{ github.ref_name }}.bin
+          .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart-v${{ github.ref_name }}.bin
           .pio/build/wemos_d1_mini32/partitions.bin
           .pio/build/wemos_d1_mini32/bootloader.bin
