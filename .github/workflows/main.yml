@@ -50,6 +50,11 @@ jobs:
         mv .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob.bin                   .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32-cob-v${{ github.ref_name }}.bin
         mv .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart.bin                 .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32-uart-v${{ github.ref_name }}.bin
         mv .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart.bin         .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32-cob_uart-v${{ github.ref_name }}.bin
+    - name: Calculate checksums
+      run: |
+        for file in $(ls .pio/build/wemos_d1_mini32*/*.bin .pio/build/lolin_wemos_s3_mini*/*.bin); do
+          sha256sum $file | cut -d " " -f 1 > $file.sha256
+        done
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
@@ -67,3 +72,13 @@ jobs:
           .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32-cob_uart-v${{ github.ref_name }}.bin
           .pio/build/wemos_d1_mini32/partitions.bin
           .pio/build/wemos_d1_mini32/bootloader.bin
+          .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini-v${{ github.ref_name }}.bin.sha256
+          .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini-cob-v${{ github.ref_name }}.bin.sha256
+          .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini-uart-v${{ github.ref_name }}.bin.sha256
+          .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini-cob_uart-v${{ github.ref_name }}.bin.sha256
+          .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.ref_name }}.bin.sha256
+          .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32-cob-v${{ github.ref_name }}.bin.sha256
+          .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32-uart-v${{ github.ref_name }}.bin.sha256
+          .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32-cob_uart-v${{ github.ref_name }}.bin.sha256
+          .pio/build/wemos_d1_mini32/partitions.bin.sha256
+          .pio/build/wemos_d1_mini32/bootloader.bin.sha256
