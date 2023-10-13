@@ -8,7 +8,7 @@
 #define LOG_TAG_LED "ILedController"
 
 // Pattern types supported:
-enum  Pattern { NONE, RAINBOW_CYCLE, THEATER_CHASE, COLOR_WIPE, CYLON, FADE, RESCUE_FLASH_LIGHT, PULSE, SLIDE, BATTERY_INDICATOR};
+enum  Pattern { NONE, RAINBOW_CYCLE, TRANS_PRIDE, THEATER_CHASE, COLOR_WIPE, CYLON, FADE, RESCUE_FLASH_LIGHT, PULSE, SLIDE, BATTERY_INDICATOR};
 // Patern directions supported:
 enum  Direction { FORWARD, REVERSE };
 
@@ -35,6 +35,7 @@ class LedControllerFactory {
     public:
         static LedControllerFactory* getInstance();
         static uint8_t determineLedType();
+        static uint8_t determineLedType(bool lightBar);
         static ILedController* createLedController(VescData *vescData);
 
     private:

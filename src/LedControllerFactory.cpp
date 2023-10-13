@@ -30,8 +30,18 @@ ILedController *LedControllerFactory::createLedController(VescData *vescData) {
 }
 
 uint8_t LedControllerFactory::determineLedType() {
+    return determineLedType(false);
+}
+
+uint8_t LedControllerFactory::determineLedType(bool lightBar) {
     uint8_t ledType = 0;
-    std::string ledTypeStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
+    std::string ledTypeStr="";
+    std::string ledFreqStr="";
+    if (lightBar) {
+        ledTypeStr = std::string(AppConfiguration::getInstance()->config.lightBarLedType.c_str());
+    } else {
+        ledTypeStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
+    }
     if (ledTypeStr == "RGB") {
         ledType = NEO_RGB;
     } else if (ledTypeStr == "RBG") {
@@ -49,8 +59,11 @@ uint8_t LedControllerFactory::determineLedType() {
     } else {
         ledType = NEO_RGB;
     }
-
-    std::string ledFreqStr = std::string(AppConfiguration::getInstance()->config.ledType.c_str());
+    if (lightBar) {
+        ledFreqStr = std::string(AppConfiguration::getInstance()->config.lightBarLedFrequency.c_str());
+    } else {
+        ledFreqStr = std::string(AppConfiguration::getInstance()->config.ledFrequency.c_str());
+    }
     if (ledFreqStr == "KHZ800") {
         ledType = ledType + 0x0000;
     } else {

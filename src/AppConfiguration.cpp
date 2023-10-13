@@ -58,9 +58,13 @@ boolean AppConfiguration::readPreferences() {
     config.lightbarMaxBrightness =  doc["lightbarMaxBrightness"] | 100;
     config.lightbarTurnOffErpm =  doc["lightbarTurnOffErpm"] | 1000;
     config.ledType = doc["ledType"] | "RGB";
+    config.lightBarLedType = doc["lightBarLedType"] | "GRB";
     config.ledFrequency = doc["ledFrequency"] | "KHZ800";
+    config.lightBarLedFrequency = doc["lightBarLedFrequency"] | "KHZ800";
+    config.isLightBarReversed = doc["isLightBarReversed"] | "false";
+    config.isLightBarReversed = doc["isLightBarLedTypeDifferent"] | "false";
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
-    config.logLevel = doc["logLevel"] | Logger::WARNING;
+    config.logLevel = doc["logLevel"] | Logger::SILENT;
     config.mtuSize = doc["mtuSize"] | 512;
     config.oddevenActive = doc["oddevenActive"] | true;
     config.lightsSwitch = true;
@@ -98,7 +102,11 @@ boolean AppConfiguration::savePreferences() {
     doc["numberPixelLight"] = config.numberPixelLight;
     doc["numberPixelBatMon"] = config.numberPixelBatMon;
     doc["ledType"] = config.ledType;
+    doc["lightBarLedType"] = config.lightBarLedType;
     doc["ledFrequency"] = config.ledFrequency;
+    doc["lightBarLedFrequency"] = config.lightBarLedFrequency;
+    doc["isLightBarReversed"] = config.isLightBarReversed;
+    doc["isLightBarLedTypeDifferent"] = config.isLightBarLedTypeDifferent;
     doc["idleLightTimeout"] = config.idleLightTimeout;
     doc["logLevel"] = config.logLevel;
     doc["mtuSize"] = config.mtuSize;
