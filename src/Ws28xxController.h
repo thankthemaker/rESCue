@@ -43,6 +43,8 @@ class Ws28xxController : public ILedController, Adafruit_NeoPixel {
         void reverse();
         void rainbowCycle(uint8_t interval, Direction dir = FORWARD);
         void rainbowCycleUpdate();
+        void transPride(uint8_t interval, Direction dir = FORWARD);
+        void transPrideUpdate();
         void flashLight(uint8_t interval = 80, Direction dir = FORWARD);
         void flashLightUpdate();
         void fadeLight(uint8_t interval = 80, Direction dir = FORWARD);
