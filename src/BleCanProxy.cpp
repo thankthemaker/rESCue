@@ -56,7 +56,7 @@ void BleCanProxy::proxyIn(std::string in) {
         }
         //Serial.printf("Buffer full now processing, needed %d, is %d\n", length +  5, longPackBuffer.size());
 
-        int pos = longPacket ? 3 : 2;
+        int pos = longPacket && length>>8 != 0 ? 3 : 2;
         longPackBuffer = longPackBuffer.substr(pos, longPackBuffer.length()-pos);
 
         unsigned int end_a = 0;
