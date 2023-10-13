@@ -15,6 +15,10 @@
 const int mainBufSize = 128;
 char mainBuf[mainBufSize];
 
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+  #include "BMSController.h"
+#endif
+
 unsigned long mainLoop = 0;
 unsigned long loopTime = 0;
 unsigned long maxLoopTime = 0;
@@ -44,6 +48,10 @@ BleServer *bleServer = new BleServer();
 LightBarController *lightbar = new LightBarController();
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char *module, const char *message);
+
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+  BMSController *bmsController = new BMSController();
+#endif
 
 void setup() {
 
@@ -89,6 +97,12 @@ Serial.println("after createLED");
 #endif //CANBUS_ENABLED
 
 Serial.println("after canbis init");
+
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+    bmsController->init(canbus);
+#endif
+
+Serial.println("after BMS init\n");
 
     // initializes the battery monitor
     batMonitor->init();
@@ -154,6 +168,10 @@ void loop() {
 
 #ifdef CANBUS_ENABLED
     canbus->loop();
+#endif
+
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+    bmsController->loop();
 #endif
 
     // call the led controller loop
