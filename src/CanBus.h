@@ -38,7 +38,7 @@ class CanBus {
       boolean bmsAHWHDischargeTotal(float,float);
       boolean bmsAHWHChargeTotal(float,float);
       boolean bmsSOCSOHTempStat(float,float,float,float,float,boolean,boolean,boolean,boolean);
-
+      boolean bmsState(bms_op_state op_state, bms_fault_state fault_state);
     private:
       const static int bufSize = 128;
       char buf[bufSize];

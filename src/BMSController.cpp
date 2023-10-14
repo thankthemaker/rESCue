@@ -114,6 +114,17 @@ void BMSController::broadcastVESCBMS()
 
   //maybe make this update only when there's an actual change
   canbus_->bmsBal(isBalancing);
+
+  bms_op_state op_state=BMS_OP_STATE_INIT;
+  bms_fault_state fault_state=BMS_FAULT_CODE_NONE;
+  if(relay->isCharging()) op_state=BMS_OP_STATE_CHARGING;
+  if(isBalancing) op_state=BMS_OP_STATE_BALANCING;
+  //if(relay->isBatteryEmpty()) op_state=BMS_OP_STATE_BATTERY_DEAD; //not sure if we want this if it's using the default SoC.
+  if(relay->isBatteryOvercharged()) fault_state=BMS_FAULT_CODE_PACK_OVER_VOLTAGE;
+  if(relay->isBatteryTempOutOfRange()) fault_state=BMS_FAULT_CODE_CHARGE_OVER_TEMP_CELLS;
+
+  //well that's all that can be done from the state flags sent from the BMS. For other BMS FAULT codes we'll have to calculate them manually I think.
+  canbus_->bmsState(op_state, fault_state);
 }
 
 String BMSController::uptimeString() {

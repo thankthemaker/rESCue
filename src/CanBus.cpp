@@ -323,6 +323,19 @@ boolean CanBus::bmsTemps(const int8_t* thermTemps) {
     return true;
 }
 
+boolean CanBus::bmsState(bms_op_state op_state, bms_fault_state fault_state) {
+    twai_message_t tx_frame = {};
+    // Configure CAN frame
+    tx_frame.extd = 1;
+    tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_BMS_STATE) << 8) + vesc_id;
+    tx_frame.data_length_code = 0x8;  //sending 8 bytes
+    uint8_t buffer[8];
+	int32_t send_index = 0;
+	buffer[send_index++] = op_state;
+	buffer[send_index++] = fault_state;
+    return candevice->sendCanFrame(&tx_frame);
+}
+
 boolean CanBus::requestFirmwareVersion() {
     Logger::notice(LOG_TAG_CANBUS, "requestFirmwareVersion");
     twai_message_t tx_frame = {};
