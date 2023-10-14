@@ -21,7 +21,7 @@ class ILedController {
         virtual void startSequence() = 0;
         virtual void changePattern(Pattern pattern, boolean isForward, boolean repeatPattern ) = 0;
         virtual void update() = 0;
-        void loop(const int* new_forward, const int* new_backward, const int* idle, const int* new_brake);
+        void loop(const int* new_forward, const int* new_backward, const int* idle, const int* new_brake, const int* mall_grab);
 
     private:
       const static int bufSize = 128;
@@ -29,6 +29,7 @@ class ILedController {
       int old_forward  = LOW;
       int old_backward = LOW;
       int old_idle     = LOW;
+      int old_mall_grab= LOW;
 };
 
 class LedControllerFactory {

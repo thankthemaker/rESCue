@@ -26,6 +26,7 @@ int new_forward = LOW;
 int new_backward = LOW;
 int new_brake = LOW;
 int idle = LOW;
+int mall_grab = LOW;
 double idle_erpm = 10.0;
 boolean updateInProgress = false;
 
@@ -159,11 +160,13 @@ void loop() {
     new_backward = vescData.erpm < -idle_erpm ? HIGH : LOW;
     idle = (abs(vescData.erpm) < idle_erpm && vescData.switchState == 0) ? HIGH : LOW;
     new_brake = (abs(vescData.erpm) > idle_erpm && vescData.current < -4.0) ? HIGH : LOW;
+    mall_grab = (vescData.pitch > 70.0) ? HIGH : LOW;
 #else
     new_forward  = digitalRead(PIN_FORWARD);
     new_backward = digitalRead(PIN_BACKWARD);
     new_brake    = digitalRead(PIN_BRAKE);
     idle         = new_forward == LOW && new_backward == LOW;
+    mall_grab    = LOW;
 #endif
 
 #ifdef CANBUS_ENABLED
@@ -175,7 +178,7 @@ void loop() {
 #endif
 
     // call the led controller loop
-    ledController->loop(&new_forward, &new_backward, &idle, &new_brake);
+    ledController->loop(&new_forward, &new_backward, &idle, &new_brake, &mall_grab);
 
     // measure and check voltage
     batMonitor->checkValues();

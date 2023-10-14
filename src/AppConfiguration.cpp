@@ -61,9 +61,10 @@ boolean AppConfiguration::readPreferences() {
     config.lightBarLedType = doc["lightBarLedType"] | "GRB";
     config.ledFrequency = doc["ledFrequency"] | "KHZ800";
     config.lightBarLedFrequency = doc["lightBarLedFrequency"] | "KHZ800";
-    config.isLightBarReversed = doc["isLightBarReversed"] | "false";
-    config.isLightBarReversed = doc["isLightBarLedTypeDifferent"] | "false";
+    config.isLightBarReversed = doc["isLightBarReversed"] | false;
+    config.isLightBarReversed = doc["isLightBarLedTypeDifferent"] | false;
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
+    config.mallGrab = doc["mallGrab"] | false;
     config.logLevel = doc["logLevel"] | Logger::SILENT;
     config.mtuSize = doc["mtuSize"] | 512;
     config.oddevenActive = doc["oddevenActive"] | true;
@@ -108,6 +109,7 @@ boolean AppConfiguration::savePreferences() {
     doc["isLightBarReversed"] = config.isLightBarReversed;
     doc["isLightBarLedTypeDifferent"] = config.isLightBarLedTypeDifferent;
     doc["idleLightTimeout"] = config.idleLightTimeout;
+    doc["mallGrab"] = config.mallGrab;
     doc["logLevel"] = config.logLevel;
     doc["mtuSize"] = config.mtuSize;
     String json = "";
