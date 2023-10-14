@@ -30,8 +30,8 @@ class CanBus {
       boolean isInitialized();
       int getInterval();
       boolean bmsVTOT(float,float);
-      boolean bmsVCell(const uint16_t*);
-      boolean bmsTemps(const int8_t*);
+      boolean bmsVCell(const uint16_t*,int);
+      boolean bmsTemps(const int8_t*,int);
       boolean bmsBal(boolean);
       boolean bmsI(float);
       boolean bmsAHWH(float,float);

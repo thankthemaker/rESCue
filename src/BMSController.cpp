@@ -72,7 +72,8 @@ void BMSController::broadcastVESCBMS()
 
 
   boolean isBalancing;
-  if (relay->isCharging() && relay->getBmsReportedSOC()>=99)
+  boolean isCharging=relay->isCharging();
+  if (isCharging && relay->getBmsReportedSOC()>=99)
   {
     isBalancing=true;
   }
@@ -92,7 +93,7 @@ void BMSController::broadcastVESCBMS()
   }
 
   boolean isChargeOk;
-  if(relay->isCharging() && !relay->isBatteryTempOutOfRange() && !relay->isBatteryOvercharged())
+  if(isCharging && !relay->isBatteryTempOutOfRange() && !relay->isBatteryOvercharged())
   {
     isChargeOk=true;
   }
@@ -100,31 +101,114 @@ void BMSController::broadcastVESCBMS()
     isChargeOk=false;
   }
 
-  canbus_->bmsSOCSOHTempStat(vCellMin,vCellMax,SOC,SOH,cellMaxTemp,relay->isCharging(),isBalancing,isChargeAllowed,isChargeOk);
+  canbus_->bmsSOCSOHTempStat(vCellMin,vCellMax,SOC,SOH,cellTempMax,isCharging,isBalancing,isChargeAllowed,isChargeOk);
 
   canbus_->bmsAHWHDischargeTotal(relay->getUsedChargeMah() / 1000.0,relay->getUsedChargeMah() / 1000.0*avgVoltage);
 
   canbus_->bmsAHWHChargeTotal(relay->getRegeneratedChargeMah() / 1000.0,relay->getRegeneratedChargeMah() / 1000.0*avgVoltage);
 
   const uint16_t *cellMillivolts = relay->getCellMillivolts();
-  canbus_->bmsVCell(cellMillivolts);
+  canbus_->bmsVCell(cellMillivolts,cellSeries);
 
   const int8_t *thermTemps = relay->getTemperaturesCelsius();
-  canbus_->bmsTemps(thermTemps);
+  canbus_->bmsTemps(thermTemps,cellThermistors);
 
   //maybe make this update only when there's an actual change
   canbus_->bmsBal(isBalancing);
 
   bms_op_state op_state=BMS_OP_STATE_INIT;
   bms_fault_state fault_state=BMS_FAULT_CODE_NONE;
-  if(relay->isCharging()) op_state=BMS_OP_STATE_CHARGING;
+  if(isCharging) op_state=BMS_OP_STATE_CHARGING;
   if(isBalancing) op_state=BMS_OP_STATE_BALANCING;
   //if(relay->isBatteryEmpty()) op_state=BMS_OP_STATE_BATTERY_DEAD; //not sure if we want this if it's using the default SoC.
   if(relay->isBatteryOvercharged()) fault_state=BMS_FAULT_CODE_PACK_OVER_VOLTAGE;
-  if(relay->isBatteryTempOutOfRange()) fault_state=BMS_FAULT_CODE_CHARGE_OVER_TEMP_CELLS;
+  if(relay->isBatteryTempOutOfRange()) fault_state = (isCharging) ? BMS_FAULT_CODE_CHARGE_OVER_TEMP_CELLS : BMS_FAULT_CODE_DISCHARGE_OVER_TEMP_CELLS;
 
-  //well that's all that can be done from the state flags sent from the BMS. For other BMS FAULT codes we'll have to calculate them manually I think.
+  if(isBatteryCellOvercharged(cellMillivolts,cellSeries)) fault_state=BMS_FAULT_CODE_CELL_SOFT_OVER_VOLTAGE;
+  if(isBatteryCellUndercharged(cellMillivolts,cellSeries)) fault_state=BMS_FAULT_CODE_CELL_SOFT_UNDER_VOLTAGE;
+  //FAULT CODE not yet finalized
+  //if(isBatteryCellImbalanced(cellMillivolts,cellSeries)) fault_state=BMS_FAULT_CODE_CELL_IMBALANCE;
+  if(isBatteryCellTempMax(thermTemps,cellThermistors)) fault_state = (isCharging) ? BMS_FAULT_CODE_CHARGE_OVER_TEMP_CELLS : BMS_FAULT_CODE_DISCHARGE_OVER_TEMP_CELLS;
+  if(isBatteryCellTempMin(thermTemps,cellThermistors)) fault_state = (isCharging) ? BMS_FAULT_CODE_CHARGE_UNDER_TEMP_CELLS : BMS_FAULT_CODE_DISCHARGE_UNDER_TEMP_CELLS;
+  const int8_t bmsTemp=thermTemps[4];
+  if(isBMSTempMax(bmsTemp)) fault_state=BMS_FAULT_CODE_OVER_TEMP_BMS;
+
   canbus_->bmsState(op_state, fault_state);
+}
+
+boolean BMSController::isBatteryCellOvercharged(const uint16_t* cellMillivolts, int cell_max)
+{
+	int cell_now = 0;
+	while (cell_now < cell_max) 
+  {
+    if (cellMillivolts[cell_now++]/1000.0f>=vCellMax) return true;
+  }
+  return false;
+}
+
+boolean BMSController::isBatteryCellUndercharged(const uint16_t* cellMillivolts, int cell_max)
+{
+	int cell_now = 0;
+	while (cell_now < cell_max) 
+  {
+    if (cellMillivolts[cell_now++]/1000.0f<=vCellMin) return true;
+  }
+  return false;
+}
+
+boolean BMSController::isBatteryCellImbalanced(const uint16_t* cellMillivolts, int numCells)
+{
+    // Calculate the mean
+    float sum = 0.0;
+    for (size_t i = 0; i < numCells; ++i) {
+        sum += cellMillivolts[i]/1000.0f;
+    }
+    float mean = sum / numCells;
+
+    // Calculate the variance
+    float variance = 0.0;
+    for (size_t i = 0; i < numCells; ++i) {
+        variance += (cellMillivolts[i]/1000.0f - mean) * (cellMillivolts[i]/1000.0f - mean);
+    }
+    variance /= numCells;
+
+    if(variance>=cellMaxVariance) return true;
+    return false;
+}
+
+boolean BMSController::isBatteryCellTempMax(const int8_t* thermTemps, int temp_max)
+{
+	int temp_now = 0;
+	while (temp_now < temp_max) 
+  {
+    if (thermTemps[temp_now++]>=cellTempMax) return true;
+  }
+  return false;
+}
+
+boolean BMSController::isBatteryCellTempMin(const int8_t* thermTemps, int temp_max)
+{
+	int temp_now = 0;
+	while (temp_now < temp_max) 
+  {
+    if (thermTemps[temp_now++]<=cellTempMin) return true;
+  }
+  return false;
+}
+
+
+boolean BMSController::isBMSTempMax(const int8_t bmsTemp)
+{
+
+  if (bmsTemp>=bmsTempMax) return true;
+  return false;
+}
+
+boolean BMSController::isBMSTempMin(const int8_t bmsTemp)
+{
+
+  if (bmsTemp<=bmsTempMin) return true;
+  return false;
 }
 
 String BMSController::uptimeString() {

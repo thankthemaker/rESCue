@@ -253,9 +253,8 @@ boolean CanBus::bmsBal(boolean isBalancing) {
     return candevice->sendCanFrame(&tx_frame);
 }
 
-boolean CanBus::bmsVCell(const uint16_t* cellMillivolts) {
+boolean CanBus::bmsVCell(const uint16_t* cellMillivolts, int cell_max) {
 	int cell_now = 0;
-	int cell_max = 15;
 	while (cell_now < cell_max) {
         twai_message_t tx_frame = {};
         // Configure CAN frame
@@ -282,9 +281,8 @@ boolean CanBus::bmsVCell(const uint16_t* cellMillivolts) {
     return true;
 }
 
-boolean CanBus::bmsTemps(const int8_t* thermTemps) {
+boolean CanBus::bmsTemps(const int8_t* thermTemps, int temp_max) {
     int temp_now = 0;
-    int temp_max = 4;
 	while (temp_now < temp_max) {
         twai_message_t tx_frame = {};
         // Configure CAN frame
