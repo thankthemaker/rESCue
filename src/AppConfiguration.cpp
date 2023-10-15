@@ -62,7 +62,7 @@ boolean AppConfiguration::readPreferences() {
     config.ledFrequency = doc["ledFrequency"] | "KHZ800";
     config.lightBarLedFrequency = doc["lightBarLedFrequency"] | "KHZ800";
     config.isLightBarReversed = doc["isLightBarReversed"] | false;
-    config.isLightBarReversed = doc["isLightBarLedTypeDifferent"] | false;
+    config.isLightBarLedTypeDifferent = doc["isLightBarLedTypeDifferent"] | false;
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.mallGrab = doc["mallGrab"] | false;
     config.logLevel = doc["logLevel"] | Logger::SILENT;

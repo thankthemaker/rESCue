@@ -51,7 +51,7 @@ LightBarController *lightbar = new LightBarController();
 void localLogger(Logger::Level level, const char *module, const char *message);
 
 #if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
-  BMSController *bmsController = new BMSController();
+  BMSController *bmsController = new BMSController(&vescData);
 #endif
 
 void setup() {

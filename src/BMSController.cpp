@@ -8,7 +8,10 @@
 #define BMS_ON_PIN 16 
 #endif
 
-BMSController::BMSController() {}
+BMSController::BMSController(VescData *vescData) 
+{
+  this->vescData = vescData;
+}
 
 void BMSController::init(CanBus* canbus) {
   canbus_=canbus;
@@ -70,7 +73,6 @@ void BMSController::broadcastVESCBMS()
 
   canbus_->bmsI(relay->getCurrentMilliamps() / 1000.0f > 0.0f ? relay->getCurrentMilliamps() / 1000.0f : 0.0f);
 
-
   boolean isBalancing;
   boolean isCharging=relay->isCharging();
   if (isCharging && relay->getBmsReportedSOC()>=99)
@@ -126,8 +128,8 @@ void BMSController::broadcastVESCBMS()
 
   if(isBatteryCellOvercharged(cellMillivolts,cellSeries)) fault_state=BMS_FAULT_CODE_CELL_SOFT_OVER_VOLTAGE;
   if(isBatteryCellUndercharged(cellMillivolts,cellSeries)) fault_state=BMS_FAULT_CODE_CELL_SOFT_UNDER_VOLTAGE;
-  //FAULT CODE not yet finalized
-  //if(isBatteryCellImbalanced(cellMillivolts,cellSeries)) fault_state=BMS_FAULT_CODE_CELL_IMBALANCE;
+  //if(batteryCellVariance(cellMillivolts,cellSeries)>=cellMaxVarianceSoft) fault_state=BMS_FAULT_CODE_CELL_SOFT_IMBALANCE;
+  //if(batteryCellVariance(cellMillivolts,cellSeries)>=cellMaxVarianceHard) fault_state=BMS_FAULT_CODE_CELL_HARD_IMBALANCE;
   if(isBatteryCellTempMax(thermTemps,cellThermistors)) fault_state = (isCharging) ? BMS_FAULT_CODE_CHARGE_OVER_TEMP_CELLS : BMS_FAULT_CODE_DISCHARGE_OVER_TEMP_CELLS;
   if(isBatteryCellTempMin(thermTemps,cellThermistors)) fault_state = (isCharging) ? BMS_FAULT_CODE_CHARGE_UNDER_TEMP_CELLS : BMS_FAULT_CODE_DISCHARGE_UNDER_TEMP_CELLS;
   const int8_t bmsTemp=thermTemps[4];
@@ -156,7 +158,7 @@ boolean BMSController::isBatteryCellUndercharged(const uint16_t* cellMillivolts,
   return false;
 }
 
-boolean BMSController::isBatteryCellImbalanced(const uint16_t* cellMillivolts, int numCells)
+float BMSController::batteryCellVariance(const uint16_t* cellMillivolts, int numCells)
 {
     // Calculate the mean
     float sum = 0.0;
@@ -172,8 +174,7 @@ boolean BMSController::isBatteryCellImbalanced(const uint16_t* cellMillivolts, i
     }
     variance /= numCells;
 
-    if(variance>=cellMaxVariance) return true;
-    return false;
+    return variance;
 }
 
 boolean BMSController::isBatteryCellTempMax(const int8_t* thermTemps, int temp_max)

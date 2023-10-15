@@ -6,13 +6,16 @@
 #include "settings.h"
 #include "ArduinoJson.h"
 #include "CanBus.h"
+#include "VescData.h"
+#include "VescCanConstants.h"
 
 //https://github.com/lolwheel/Owie/commit/8f10e0897eda7f6e3ca40afeaff909a97b9f7751
 
 // UART RX is connected to the *BMS* White line for OneWheel Pint.
 class BMSController {
 public:
-    BMSController();
+    BMSController(VescData *vescData);
+    VescData *vescData;
     void init(CanBus*);
     void loop();
     BmsRelay *relay;
@@ -29,7 +32,7 @@ private:
 
     boolean isBatteryCellOvercharged(const uint16_t*, int);
     boolean isBatteryCellUndercharged(const uint16_t*, int);
-    boolean isBatteryCellImbalanced(const uint16_t*, int);
+    float batteryCellVariance(const uint16_t*, int);
     boolean isBatteryCellTempMax(const int8_t*, int);
     boolean isBatteryCellTempMin(const int8_t*, int);
     boolean isBMSTempMax(const int8_t);
@@ -57,5 +60,7 @@ private:
     float cellTempMin=10;
     float bmsTempMax=60;
     float bmsTempMin=10;
-    float cellMaxVariance=0.0001;
+    float cellMaxVarianceSoft=0.00001f;
+    float cellMaxVarianceHard=0.00005f;
+    boolean chargeOnly=true;
 };
