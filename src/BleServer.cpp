@@ -26,6 +26,7 @@ std::string updateBuffer;
 unsigned long bleLoop = 0;
 unsigned long loopTimeSum = 0;
 unsigned long loopCount = 0;
+unsigned int bleWait = 5;
 
 BleServer::BleServer() = default;
 
@@ -186,7 +187,7 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
                     vescBuffer.clear();
                 }
                 pCharacteristicVescTx->notify();
-                delay(1); // bluetooth stack will go into congestion, if too many packets are sent
+                delay(bleWait); // bluetooth stack will go into congestion, if too many packets are sent
             }
         }
     }
@@ -347,7 +348,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             Logger::notice(LOG_TAG_BLESERVER, buf);
         }
     }
-    delay(1); // needed to give BLE stack some time
+    delay(bleWait); // needed to give BLE stack some time
 }
 
 //NimBLECharacteristicCallbacks::onSubscribe
@@ -379,7 +380,7 @@ void BleServer::sendValue(NimBLECharacteristic *pCharacteristic, std::string key
     pCharacteristic->setValue(ss.str());
     pCharacteristic->notify();
     ss.str("");
-    delay(1);
+    delay(bleWait);
 }
 
 static boolean isStringType(String a) { return true; }

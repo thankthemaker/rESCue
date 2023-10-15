@@ -44,6 +44,7 @@ boolean CanDevice::sendCanFrame(const twai_message_t *p_frame) {
     //Queue message for transmission
     if (twai_transmit(p_frame, pdMS_TO_TICKS(10)) != ESP_OK) {
         printf("Failed to queue message for transmission\n");
+        xSemaphoreGive(mutex_v);
         return false;
     }
     xSemaphoreGive(mutex_v);
