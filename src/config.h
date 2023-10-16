@@ -6,7 +6,7 @@
 // ###################################################################### //
 
 #define SOFTWARE_VERSION_MAJOR 2
-#define SOFTWARE_VERSION_MINOR 4
+#define SOFTWARE_VERSION_MINOR 5
 #define SOFTWARE_VERSION_PATCH 0
 
 #ifndef ESP32S3

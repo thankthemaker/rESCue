@@ -4,7 +4,7 @@ name: PlatformIO CI
 
 # Controls when the action will run. 
 on:
-  push:
+#  push:
   create:
 
   # Allows you to run this workflow manually from the Actions tab
