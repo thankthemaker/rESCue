@@ -49,8 +49,13 @@ struct Config {
     VISITABLE(boolean, sendConfig);
     VISITABLE(boolean, saveConfig);
     VISITABLE(String , ledType);
+    VISITABLE(String , lightBarLedType);
     VISITABLE(String , ledFrequency);
+    VISITABLE(String , lightBarLedFrequency);
+    VISITABLE(boolean , isLightBarReversed);
+    VISITABLE(boolean , isLightBarLedTypeDifferent);
     VISITABLE(int , idleLightTimeout);
+    VISITABLE(boolean , mallGrab);
     VISITABLE(int , mtuSize);
     VISITABLE(boolean , oddevenActive);
     VISITABLE(boolean, lightsSwitch);

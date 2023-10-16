@@ -12,7 +12,7 @@
 #include "CanDevice.h"
 #include "VescData.h"
 #include <vector>
-
+#include "buffer.h"
 #define B10000001 129
 #define B11000011 195
 
@@ -27,6 +27,18 @@ class CanBus {
       void init();
       void loop();
       void dumpVescValues();
+      boolean isInitialized();
+      int getInterval();
+      boolean bmsVTOT(float,float);
+      boolean bmsVCell(const uint16_t*,int);
+      boolean bmsTemps(const int8_t*,int);
+      boolean bmsBal(boolean);
+      boolean bmsI(float);
+      boolean bmsAHWH(float,float);
+      boolean bmsAHWHDischargeTotal(float,float);
+      boolean bmsAHWHChargeTotal(float,float);
+      boolean bmsSOCSOHTempStat(float,float,float,float,float,boolean,boolean,boolean,boolean);
+      boolean bmsState(bms_op_state op_state, bms_fault_state fault_state);
     private:
       const static int bufSize = 128;
       char buf[bufSize];
@@ -34,10 +46,12 @@ class CanBus {
       boolean requestFirmwareVersion();
       boolean requestRealtimeData();
       boolean requestBalanceData();
+      boolean requestFloatPackageData();
       void ping();
       static void clearFrame(twai_message_t rx_frame);
       static void printFrame(twai_message_t rx_frame, int frameCount);
       void processFrame(twai_message_t rx_frame, int frameCount);
+      float readFloatValueFromBuffer(int startbyte, boolean isProxyRequest);
       static int32_t readInt32Value(twai_message_t rx_frame, int startbyte);
       static int16_t readInt16Value(twai_message_t rx_frame, int startbyte);
       int32_t readInt32ValueFromBuffer(int startbyte, boolean isProxyRequest);

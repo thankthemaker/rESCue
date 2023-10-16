@@ -17,13 +17,26 @@ LightBarController::LightBarController() {
     min_voltage = (int) AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
     max_voltage = (int) AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
     pixelCountOdd = pixel_count % 2 == 1;
-    uint8_t ledType = LedControllerFactory::determineLedType();
+    uint8_t ledType;
+    if(AppConfiguration::getInstance()->config.isLightBarLedTypeDifferent)
+    {
+        ledType = LedControllerFactory::getInstance()->determineLedType(true);
+    }
+    else
+    {
+        ledType = LedControllerFactory::getInstance()->determineLedType();
+    }
     voltage_range = max_voltage - min_voltage;
     lightPixels.updateLength(pixel_count);
     lightPixels.updateType(ledType);
     lightPixels.begin(); // This initializes the NeoPixel library.
     for (int j = 0; j < pixel_count; j++) {
-        lightPixels.setPixelColor(j, 51, 153, 255);
+        int actualIndex = j;
+        if(AppConfiguration::getInstance()->config.isLightBarReversed)
+        {
+            actualIndex = pixel_count - 1 - j;
+        }
+        lightPixels.setPixelColor(actualIndex, 51, 153, 255);
     }
     lightPixels.show();
 }
@@ -56,10 +69,14 @@ void LightBarController::updateLightBar(double voltage, uint16_t switchstate, do
 
     if (adcState != lastAdcState) {
         for (int i = 0; i < pixel_count; i++) {
-            lightPixels.setPixelColor(i, 0, 0, 0);
+            int actualIndex = i;
+            #ifdef REVERSE_LED_STRIP
+                actualIndex = pixel_count - 1 - i;
+            #endif
+            lightPixels.setPixelColor(actualIndex, 0, 0, 0);
             switch (adcState) {
                 case ADC_NONE:
-                    lightPixels.setPixelColor(i, 153, 0, 153); // full purple
+                    lightPixels.setPixelColor(actualIndex, 153, 0, 153); // full purple
                     break;
                 case ADC_HALF_ADC1:
                     if ((pixelCountOdd && i > (pixel_count / 2)) || (!pixelCountOdd && i >= (pixel_count / 2))) {
@@ -68,11 +85,11 @@ void LightBarController::updateLightBar(double voltage, uint16_t switchstate, do
                     break;
                 case ADC_HALF_ADC2:
                     if (i < (pixel_count / 2)) {
-                        lightPixels.setPixelColor(i, 153, 0, 153); // half purple
+                        lightPixels.setPixelColor(actualIndex, 153, 0, 153); // half purple
                     }
                     break;
                 case ADC_FULL:
-                    lightPixels.setPixelColor(i, 0, 0, 153); // full blue
+                    lightPixels.setPixelColor(actualIndex, 0, 0, 153); // full blue
                     break;
             }
         }
@@ -80,6 +97,10 @@ void LightBarController::updateLightBar(double voltage, uint16_t switchstate, do
     } else if (adcState == lastAdcState && millis() - lastAdcStateChange >= 2000) {
         // update every pixel individually
         for (int i = 0; i < pixel_count; i++) {
+            int actualIndex = i;
+            #ifdef REVERSE_LED_STRIP
+                actualIndex = pixel_count - 1 - i;
+            #endif
             if (i == whole) {
                 // the last pixel, the battery voltage somewhere in the range of this pixel
                 // the lower the remaining value the more the pixel goes from green to red
@@ -89,15 +110,15 @@ void LightBarController::updateLightBar(double voltage, uint16_t switchstate, do
             }
             if (i > whole) {
                 // these pixels must be turned off, we already reached a lower battery voltage
-                lightPixels.setPixelColor(i, 0, 0, 0);
+                lightPixels.setPixelColor(actualIndex, 0, 0, 0);
             }
             if (i < whole) {
                 // turn on this pixel completely green, the battery voltage is still above this value
-                lightPixels.setPixelColor(i, 0, AppConfiguration::getInstance()->config.lightbarMaxBrightness, 0);
+                lightPixels.setPixelColor(actualIndex, 0, AppConfiguration::getInstance()->config.lightbarMaxBrightness, 0);
             }
             if (value < 0) {
                 // ohhh, we already hit the absolute minimum, set all pixel to full red.
-                lightPixels.setPixelColor(i, AppConfiguration::getInstance()->config.lightbarMaxBrightness, 0, 0);
+                lightPixels.setPixelColor(actualIndex, AppConfiguration::getInstance()->config.lightbarMaxBrightness, 0, 0);
             }
         }
     }

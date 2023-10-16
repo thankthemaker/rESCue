@@ -15,6 +15,10 @@
 const int mainBufSize = 128;
 char mainBuf[mainBufSize];
 
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+  #include "BMSController.h"
+#endif
+
 unsigned long mainLoop = 0;
 unsigned long loopTime = 0;
 unsigned long maxLoopTime = 0;
@@ -22,6 +26,7 @@ int new_forward = LOW;
 int new_backward = LOW;
 int new_brake = LOW;
 int idle = LOW;
+int mall_grab = LOW;
 double idle_erpm = 10.0;
 boolean updateInProgress = false;
 
@@ -44,6 +49,10 @@ BleServer *bleServer = new BleServer();
 LightBarController *lightbar = new LightBarController();
 // Declare the local logger function before it is called.
 void localLogger(Logger::Level level, const char *module, const char *message);
+
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+  BMSController *bmsController = new BMSController(&vescData);
+#endif
 
 void setup() {
 
@@ -89,6 +98,12 @@ Serial.println("after createLED");
 #endif //CANBUS_ENABLED
 
 Serial.println("after canbis init");
+
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+    bmsController->init(canbus);
+#endif
+
+Serial.println("after BMS init\n");
 
     // initializes the battery monitor
     batMonitor->init();
@@ -145,19 +160,25 @@ void loop() {
     new_backward = vescData.erpm < -idle_erpm ? HIGH : LOW;
     idle = (abs(vescData.erpm) < idle_erpm && vescData.switchState == 0) ? HIGH : LOW;
     new_brake = (abs(vescData.erpm) > idle_erpm && vescData.current < -4.0) ? HIGH : LOW;
+    mall_grab = (vescData.pitch > 70.0) ? HIGH : LOW;
 #else
     new_forward  = digitalRead(PIN_FORWARD);
     new_backward = digitalRead(PIN_BACKWARD);
     new_brake    = digitalRead(PIN_BRAKE);
     idle         = new_forward == LOW && new_backward == LOW;
+    mall_grab    = LOW;
 #endif
 
 #ifdef CANBUS_ENABLED
     canbus->loop();
 #endif
 
+#if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
+    bmsController->loop();
+#endif
+
     // call the led controller loop
-    ledController->loop(&new_forward, &new_backward, &idle, &new_brake);
+    ledController->loop(&new_forward, &new_backward, &idle, &new_brake, &mall_grab);
 
     // measure and check voltage
     batMonitor->checkValues();

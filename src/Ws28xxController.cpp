@@ -50,6 +50,9 @@ void Ws28xxController::update() {
             case RAINBOW_CYCLE:
                 rainbowCycleUpdate();
                 break;
+            case TRANS_PRIDE:
+                transPrideUpdate();
+                break;
             case THEATER_CHASE:
                 theaterChaseUpdate();
                 break;
@@ -160,6 +163,9 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
         case RAINBOW_CYCLE:
             rainbowCycle(10, isForward ? Direction::FORWARD : Direction::REVERSE);
             break;
+        case TRANS_PRIDE:
+            transPride(120, isForward ? Direction::FORWARD : Direction::REVERSE);
+            break;
         case THEATER_CHASE:
             theaterChase(
                     Color((config.lightColorPrimaryRed * maxBrightness) >> 8,
@@ -225,6 +231,33 @@ void Ws28xxController::rainbowCycleUpdate() {
         setPixelColor(i, wheel(((i * 256 / numPixels()) + index) & 255));
     }
 }
+
+void Ws28xxController::transPride(uint8_t timeinterval, Direction dir) {
+    activePattern = Pattern::TRANS_PRIDE;
+    interval = timeinterval;
+    totalSteps = numPixels();
+    index = 0;
+    direction = dir;
+}
+
+void Ws28xxController::transPrideUpdate() {
+    int pixelsPerStripe = numPixels() / 5;
+    for (int i = 0; i < numPixels(); i++) {
+        int shiftedIndex = (i + index) % (pixelsPerStripe * 5); // Use modulo here for wrap-around
+        int stripe = shiftedIndex / pixelsPerStripe; // Integer division to find the stripe color
+        uint32_t color;
+        switch(stripe % 5) {
+            case 0: color = 0x0000FF; break; // Blue
+            case 1: color = 0xFF69B4; break; // Pink
+            case 2: color = 0xFFFFFF; break; // White
+            case 3: color = 0xFF69B4; break; // Pink
+            case 4: color = 0x0000FF; break; // Blue
+        }
+        setPixelColor(i, color);
+    }
+    index = (index + 1) % (pixelsPerStripe * 5); // Increment and wrap around
+}
+
 
 void Ws28xxController::flashLight(uint8_t timeinterval, Direction dir) {
     activePattern = Pattern::RESCUE_FLASH_LIGHT;
@@ -513,11 +546,14 @@ void Ws28xxController::idleSequence() {
             pattern = Pattern::RAINBOW_CYCLE;
             break;
         case 4:
-            pattern = Pattern::PULSE;
-            break;
+          pattern = Pattern::PULSE;
+          break;
         case 5:
-            pattern = Pattern::BATTERY_INDICATOR;
-            break;
+          pattern = Pattern::BATTERY_INDICATOR;
+          break;
+        case 6:
+          pattern = Pattern::TRANS_PRIDE;
+          break;
         default:
             pattern = Pattern::PULSE;
     }
