@@ -151,7 +151,7 @@ void loop() {
     }
     if (AppConfiguration::getInstance()->config.saveConfig) {
         AppConfiguration::getInstance()->savePreferences();
-        AppConfiguration::getInstance()->saveMelodies();
+        //AppConfiguration::getInstance()->saveMelodies();
         AppConfiguration::getInstance()->config.saveConfig = false;
     }
 

@@ -253,7 +253,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 key = str.substr(0, middle);
                 value = str.substr(middle + 1, str.size() - (middle + 1));
             }
-
+            
             //Serial.println(String(key.c_str()) + String("=") + String(value.c_str()));
 
             if (key == "config") {
@@ -327,6 +327,16 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.ledType = value.c_str();
             } else if (key == "ledFrequency") {
                 AppConfiguration::getInstance()->config.ledFrequency = value.c_str();
+            } else if (key == "lightBarLedType") {
+                AppConfiguration::getInstance()->config.lightBarLedType = value.c_str();
+            } else if (key == "lightBarLedFrequency") {
+                AppConfiguration::getInstance()->config.lightBarLedFrequency = value.c_str();
+            } else if (key == "isLightBarReversed") {
+                AppConfiguration::getInstance()->config.isLightBarReversed = value.c_str();
+            } else if (key == "isLightBarLedTypeDifferent") {
+                AppConfiguration::getInstance()->config.isLightBarLedTypeDifferent = value.c_str();
+            } else if (key == "mallGrab") {
+                AppConfiguration::getInstance()->config.mallGrab = value.c_str();
             } else if (key == "logLevel") {
                 AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(strtol(value.c_str(), nullptr, 10));
             } else if (key == "mtuSize") {
@@ -420,7 +430,7 @@ struct BleServer::sendConfigValue {
         pCharacteristic->setValue(ss.str());
         pCharacteristic->notify();
         ss.str("");
-        delay(1);
+        delay(bleWait);
     }
 };
 

@@ -64,7 +64,7 @@ uint8_t LedControllerFactory::determineLedType(bool lightBar) {
     } else {
         ledFreqStr = std::string(AppConfiguration::getInstance()->config.ledFrequency.c_str());
     }
-    if (ledFreqStr == "KHZ800") {
+    if (ledFreqStr == "800kHz") {
         ledType = ledType + 0x0000;
     } else {
         ledType = ledType + 0x0100;
