@@ -156,9 +156,9 @@ void BleServer::init(Stream *vesc) {
     NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(VESC_SERVICE_UUID);
     pAdvertising->addServiceUUID(RESCUE_SERVICE_UUID);
-    pAdvertising->setAppearance(0x00);
-    pAdvertising->setScanResponse(true);
-    pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
+//    pAdvertising->setAppearance(0x00);
+//    pAdvertising->setScanResponse(true);
+//    pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
 
     pAdvertising->start();
     Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
@@ -404,6 +404,7 @@ double BleServer::parseDouble(const std::string& strValue) {
 struct BleServer::sendConfigValue {
     NimBLECharacteristic *pCharacteristic;
     std::stringstream ss;
+    char localbuf[128];
 
     explicit sendConfigValue(NimBLECharacteristic *pCharacteristic) {
         this->pCharacteristic = pCharacteristic;
@@ -416,11 +417,13 @@ struct BleServer::sendConfigValue {
         } else {
             ss << name << "=" << value;
         }
-        Serial.println("Sending: " + String(ss.str().c_str()));
+        snprintf(localbuf, 128, "Sending %s", ss.str().c_str());
+        Logger::notice(LOG_TAG_BLESERVER, localbuf);
+
         pCharacteristic->setValue(ss.str());
-        pCharacteristic->notify();
+        pCharacteristic->indicate();
         ss.str("");
-        delay(1);
+        delay(5*bleWait);
     }
 };
 

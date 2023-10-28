@@ -16,6 +16,8 @@ class Buzzer {
     public:
         static Buzzer* getInstance();
         static void startSequence();
+        static void startUpdateSequence();
+        static void finishUpdateSequence();
         static void warning();
         static void alarm();
         static void playSound(RTTTL_MELODIES selection);

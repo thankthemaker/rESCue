@@ -46,6 +46,14 @@ void Buzzer::startSequence() {
   playSound(val);
 }
 
+void Buzzer::startUpdateSequence() {
+  playSound(RTTTL_MELODIES::START_UPDATE);
+}
+
+void Buzzer::finishUpdateSequence() {
+  playSound(RTTTL_MELODIES::END_UPDATE);
+}
+
 void Buzzer::warning() {
   auto val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.batteryWarningSoundIndex);
   playSound(val);

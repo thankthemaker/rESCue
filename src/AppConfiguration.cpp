@@ -127,7 +127,9 @@ boolean AppConfiguration::savePreferences() {
 }
 
 boolean AppConfiguration::readMelodies() {
+    return true;
 }
 
 boolean AppConfiguration::saveMelodies() {
+    return true;
 }

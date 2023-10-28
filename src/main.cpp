@@ -70,14 +70,15 @@ void setup() {
     AppConfiguration::getInstance()->config.sendConfig = false;
     Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
     if (Logger::getLogLevel() != Logger::SILENT) {
+#ifdef ESP32S3
+        Serial.setRxBufferSize(2048);
+#endif
         Serial.begin(VESC_BAUD_RATE);
     }
 
     if (AppConfiguration::getInstance()->config.otaUpdateActive) {
         return;
     }
-
-Serial.println("before createLED");
 
     ledController = LedControllerFactory::getInstance()->createLedController(&vescData);
 
@@ -87,9 +88,6 @@ Serial.println("before createLED");
     pinMode(PIN_BRAKE, INPUT);
     #endif
 
-Serial.println("after createLED");
-
-
 //    vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
     delay(50);
 #ifdef CANBUS_ENABLED
@@ -97,13 +95,9 @@ Serial.println("after createLED");
     canbus->init();
 #endif //CANBUS_ENABLED
 
-Serial.println("after canbis init");
-
 #if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
     bmsController->init(canbus);
 #endif
-
-Serial.println("after BMS init\n");
 
     // initializes the battery monitor
     batMonitor->init();
@@ -138,6 +132,7 @@ void loop() {
 
     if (AppConfiguration::getInstance()->config.otaUpdateActive) {
         if(!updateInProgress) {
+            Buzzer::startUpdateSequence();
             bleServer->stop();
             ota_dfu_ble.begin(AppConfiguration::getInstance()->config.deviceName.c_str()); 
             updateInProgress = true;
@@ -190,13 +185,14 @@ void loop() {
 }
 
 void localLogger(Logger::Level level, const char *module, const char *message) {
-    Serial.print(F("["));
-    Serial.print(Logger::asString(level));
-    Serial.print(F("] "));
+    log_printf(F("["));
+    log_printf(Logger::asString(level));
+    log_printf(F("] "));
     if (strlen(module) > 0) {
-        Serial.print(F(": "));
-        Serial.print(module);
-        Serial.print(" ");
+        log_printf(F(": "));
+        log_printf(module);
+        log_printf(" ");
     }
-    Serial.println(message);
+    log_printf(message);
+    log_printf("\n");
 }
