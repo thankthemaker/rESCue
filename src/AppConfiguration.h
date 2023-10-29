@@ -4,7 +4,6 @@
 #include <config.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
-#include "Logger.h"
 #include "visit_struct.hh"
 #include "visit_struct_intrusive.hh"
 
@@ -45,7 +44,6 @@ struct Config {
     VISITABLE(int, numberPixelLight);
     VISITABLE(int, numberPixelBatMon);
     VISITABLE(int, vescId);
-    VISITABLE(Logger::Level, logLevel);
     VISITABLE(boolean, saveConfig);
     VISITABLE(boolean, sendConfig);
     VISITABLE(String , ledType);

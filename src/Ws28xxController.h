@@ -11,7 +11,7 @@
  #define PIN_NEOPIXEL   5
 #endif //PIN_NEOPIXEL
 
-#define LOG_TAG_WS28XX "Ws28xxController"
+static const char* LOG_TAG_WS28XX = "Ws28xxController";
 
 class Ws28xxController : public ILedController, Adafruit_NeoPixel {
     public:

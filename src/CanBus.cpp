@@ -58,7 +58,7 @@ void CanBus::loop() {
         initRetryCounter--;
         lastRetry = millis();
         if(initRetryCounter == 0) {
-            Logger::error("CANBUS initialization failed");
+            ESP_LOGE(LOG_TAG_CANBUS, "CANBUS initialization failed");
             initRetryCounter = 1;
             lastRetry = (millis() + 5000);
         }
@@ -70,13 +70,13 @@ void CanBus::loop() {
             this->vescData->connected = true;
         }
         if (!initialized) {
-            Logger::notice(LOG_TAG_CANBUS, "CANBUS is now initialized");
+            ESP_LOGI(LOG_TAG_CANBUS, "CANBUS is now initialized");
             initialized = true;
         }
         frameCount++;
         //VESC only uses ext packages, so skip std packages
         if (rx_frame.extd) {
-            if (Logger::getLogLevel() == Logger::VERBOSE) {
+            if (esp_log_level_get(LOG_TAG_CANBUS) > ESP_LOG_DEBUG) {
                 printFrame(rx_frame, frameCount);
             }
             processFrame(rx_frame, frameCount);
@@ -84,12 +84,12 @@ void CanBus::loop() {
         clearFrame(rx_frame);
         if (frameCount > 1000) {
             // WORKAROUND if messages arrive too fast
-            Logger::error(LOG_TAG_CANBUS, "reached 1000 frames in one loop, abort");
+            ESP_LOGE(LOG_TAG_CANBUS, "reached 1000 frames in one loop, abort");
             buffer.clear();
             return;
         }
     }
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
+    if (esp_log_level_get(LOG_TAG_CANBUS) > ESP_LOG_DEBUG) {
         dumpVescValues();
     }
 }
@@ -335,7 +335,7 @@ boolean CanBus::bmsState(bms_op_state op_state, bms_fault_state fault_state) {
 }
 
 boolean CanBus::requestFirmwareVersion() {
-    Logger::notice(LOG_TAG_CANBUS, "requestFirmwareVersion");
+    ESP_LOGI(LOG_TAG_CANBUS, "requestFirmwareVersion");
     twai_message_t tx_frame = {};
 
     tx_frame.extd = 1;
@@ -348,7 +348,7 @@ boolean CanBus::requestFirmwareVersion() {
 }
 
 boolean CanBus::requestRealtimeData() {
-    Logger::notice(LOG_TAG_CANBUS, "requestRealtimeData");
+    ESP_LOGI(LOG_TAG_CANBUS, "requestRealtimeData");
     twai_message_t tx_frame = {};
 
     tx_frame.extd = 1;
@@ -366,7 +366,7 @@ boolean CanBus::requestRealtimeData() {
 }
 
 boolean CanBus::requestBalanceData() {
-    Logger::notice(LOG_TAG_CANBUS, "requestBalanceData");
+    ESP_LOGI(LOG_TAG_CANBUS, "requestBalanceData");
     twai_message_t tx_frame = {};
 
     tx_frame.extd = 1;
@@ -379,7 +379,7 @@ boolean CanBus::requestBalanceData() {
 }
 
 boolean CanBus::requestFloatPackageData() {
-    Logger::notice(LOG_TAG_CANBUS, "requestFloatPackageData");
+    ESP_LOGI(LOG_TAG_CANBUS, "requestFloatPackageData");
     twai_message_t tx_frame = {};
 
     tx_frame.extd = 1;
@@ -692,14 +692,13 @@ void CanBus::processFrame(twai_message_t rx_frame, int frameCount) {
         }
     }
 
-    if (Logger::getLogLevel() <= Logger::NOTICE) {
-        snprintf(buf, bufSize, "processed frame #%d, type %s", frameCount, frametype.c_str());
-        Logger::verbose(LOG_TAG_CANBUS, buf);
+    if (esp_log_level_get(LOG_TAG_CANBUS) >= ESP_LOG_DEBUG) {
+        ESP_LOGD(LOG_TAG_CANBUS, "processed frame #%d, type %s", frameCount, frametype.c_str());
     }
 }
 
 void CanBus::dumpVescValues() {
-    if (Logger::getLogLevel() != Logger::VERBOSE || millis() - lastDump < 1000) {
+    if (esp_log_level_get(LOG_TAG_CANBUS) < ESP_LOG_DEBUG || millis() - lastDump < 1000) {
         return;
     }
     std::string bufferString;
@@ -772,7 +771,7 @@ void CanBus::dumpVescValues() {
     bufferString += ", fault=";
     snprintf(buf, bufSize, "%d", vescData->fault);
     bufferString += buf;
-    Logger::verbose(LOG_TAG_CANBUS, bufferString.c_str());
+    ESP_LOGD(LOG_TAG_CANBUS, "%s", bufferString.c_str());
     lastDump = millis();
 }
 

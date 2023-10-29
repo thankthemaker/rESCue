@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <Logger.h>
+#include "esp_log.h"
 #include "config.h"
 #include "BatteryMonitor.h"
 #include "Buzzer.h"
@@ -47,8 +47,6 @@ BatteryMonitor *batMonitor = new BatteryMonitor(&vescData);
 
 BleServer *bleServer = new BleServer();
 LightBarController *lightbar = new LightBarController();
-// Declare the local logger function before it is called.
-void localLogger(Logger::Level level, const char *module, const char *message);
 
 #if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
   BMSController *bmsController = new BMSController(&vescData);
@@ -62,14 +60,12 @@ void setup() {
     digitalWrite(PIN_BOARD_LED,LOW);
 #endif
 
-    Logger::setOutputFunction(localLogger);
-
     AppConfiguration::getInstance()->readPreferences();
  //   AppConfiguration::getInstance()->readMelodies();
     delay(10);
     AppConfiguration::getInstance()->config.sendConfig = false;
-    Logger::setLogLevel(AppConfiguration::getInstance()->config.logLevel);
-    if (Logger::getLogLevel() != Logger::SILENT) {
+
+    if (esp_log_level_get("*") != ESP_LOG_NONE) {
 #ifdef ESP32S3
         Serial.setRxBufferSize(2048);
 #endif
@@ -116,7 +112,7 @@ void setup() {
     snprintf(mainBuf, mainBufSize, " sw-version %d.%d.%d is happily running on hw-version %d.%d",
              SOFTWARE_VERSION_MAJOR, SOFTWARE_VERSION_MINOR, SOFTWARE_VERSION_PATCH,
              HARDWARE_VERSION_MAJOR, HARDWARE_VERSION_MINOR);
-    Logger::notice("rESCue", mainBuf);
+    ESP_LOGI("rESCue", "%s", mainBuf);
 
 #ifdef PIN_BOARD_LED
     digitalWrite(PIN_BOARD_LED,HIGH);
@@ -182,17 +178,4 @@ void loop() {
 
     // call the VESC UART-to-Bluetooth bridge
     bleServer->loop(&vescData, loopTime, maxLoopTime);
-}
-
-void localLogger(Logger::Level level, const char *module, const char *message) {
-    log_printf(F("["));
-    log_printf(Logger::asString(level));
-    log_printf(F("] "));
-    if (strlen(module) > 0) {
-        log_printf(F(": "));
-        log_printf(module);
-        log_printf(" ");
-    }
-    log_printf(message);
-    log_printf("\n");
 }

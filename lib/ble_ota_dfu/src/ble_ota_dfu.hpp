@@ -27,6 +27,8 @@ const bool FASTMODE = true;
 #endif
 // #endif
 
+static const char* LOG_TAG_BLE_OTA = "BleOtaDfu";
+
 const char SERVICE_OTA_BLE_UUID[] = "fe590001-54ae-4a28-9f74-dfccb248601d";
 const char CHARACTERISTIC_OTA_BL_UUID_RX[] =
     "fe590002-54ae-4a28-9f74-dfccb248601d";

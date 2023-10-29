@@ -1,5 +1,4 @@
 #include "BleServer.h"
-#include <Logger.h>
 #include <sstream>
 
 int MTU_SIZE = 128;
@@ -36,9 +35,8 @@ uint32_t frameNumber = 0;
 // NimBLEServerCallbacks::onConnect
 inline
 void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
-    snprintf(buf, bufSize, "Client connected: %s",  NimBLEAddress(desc->peer_ota_addr).toString().c_str());
-    Logger::notice(LOG_TAG_BLESERVER, buf);
-    Logger::notice(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
+    ESP_LOGI(LOG_TAG_BLESERVER, "Client connected: %s",  NimBLEAddress(desc->peer_ota_addr).toString().c_str());
+    ESP_LOGI(LOG_TAG_BLESERVER, "Multi-connect support: start advertising");
     deviceConnected = true;
     NimBLEDevice::startAdvertising();
 }
@@ -46,7 +44,7 @@ void BleServer::onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc) {
 // NimBLEServerCallbacks::onDisconnect
 inline
 void BleServer::onDisconnect(NimBLEServer *pServer) {
-    Logger::notice(LOG_TAG_BLESERVER, "Client disconnected - start advertising");
+    ESP_LOGI(LOG_TAG_BLESERVER, "Client disconnected - start advertising");
     deviceConnected = false;
     NimBLEDevice::startAdvertising();
 }
@@ -54,8 +52,7 @@ void BleServer::onDisconnect(NimBLEServer *pServer) {
 // NimBLEServerCallbacks::onMTUChange
 inline
 void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
-    snprintf(buf, bufSize, "MTU changed - new size %d, peer %s", MTU, NimBLEAddress(desc->peer_ota_addr).toString().c_str());
-    Logger::notice(LOG_TAG_BLESERVER, buf);
+    ESP_LOGI(LOG_TAG_BLESERVER, "MTU changed - new size %d, peer %s", MTU, NimBLEAddress(desc->peer_ota_addr).toString().c_str());
     MTU_SIZE = MTU;
     PACKET_SIZE = MTU_SIZE - 3;
 }
@@ -73,8 +70,7 @@ void BleServer::init(Stream *vesc) {
     NimBLEDevice::setMTU(mtu_size);
     NimBLEDevice::setPower(ESP_PWR_LVL_P9);
 
-    snprintf(buf, bufSize, "Initial MTU size %d", mtu_size);
-    Logger::notice(LOG_TAG_BLESERVER, buf);
+    ESP_LOGI(LOG_TAG_BLESERVER, "Initial MTU size %d", mtu_size);
 #if defined(CANBUS_ENABLED)
     this->canbus = canbus;
 #endif
@@ -161,7 +157,7 @@ void BleServer::init(Stream *vesc) {
 //    pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
 
     pAdvertising->start();
-    Logger::notice(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
+    ESP_LOGI(LOG_TAG_BLESERVER, "waiting a client connection to notify...");
 }
 
 void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long maxLoopTime) {
@@ -196,7 +192,7 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
     if (!deviceConnected && oldDeviceConnected) {
         delay(500); // give the bluetooth stack the chance to get things ready
         pServer->startAdvertising(); // restart advertising
-        Logger::notice(LOG_TAG_BLESERVER, "start advertising");
+        ESP_LOGI(LOG_TAG_BLESERVER, "start advertising");
         oldDeviceConnected = deviceConnected;
     }
     // connecting
@@ -218,20 +214,19 @@ void BleServer::stop() {
 }
 
 void BleServer::dumpBuffer(std::string header, std::string buffer) {
-    if(Logger::getLogLevel() != Logger::VERBOSE) {
+    if(esp_log_level_get(LOG_TAG_BLESERVER) < ESP_LOG_DEBUG) {
         return;
     }
     int length = snprintf(tmpbuf, 50, "%s : len = %d / ", header.c_str(), buffer.length());
     for (char i : buffer) {
         length += snprintf(tmpbuf+length, 1024-length, "%02x ", i);
     }
-    Logger::verbose(LOG_TAG_BLESERVER, tmpbuf);
+    ESP_LOGD(LOG_TAG_BLESERVER, "%s", tmpbuf);
 }
 
 //NimBLECharacteristicCallbacks::onWrite
 void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
-    snprintf(buf, bufSize, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
-    Logger::verbose(LOG_TAG_BLESERVER, buf);
+    ESP_LOGD(LOG_TAG_BLESERVER, "onWrite to characteristics: %s", pCharacteristic->getUUID().toString().c_str());
     std::string rxValue = pCharacteristic->getValue();
     if (rxValue.length() > 0) {
         if (pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
@@ -337,15 +332,12 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.isLightBarLedTypeDifferent = value.c_str();
             } else if (key == "mallGrab") {
                 AppConfiguration::getInstance()->config.mallGrab = value.c_str();
-            } else if (key == "logLevel") {
-                AppConfiguration::getInstance()->config.logLevel = static_cast<Logger::Level>(strtol(value.c_str(), nullptr, 10));
             } else if (key == "mtuSize") {
                 uint16_t mtu = strtol(value.c_str(), nullptr, 10);
                 AppConfiguration::getInstance()->config.mtuSize = mtu;
                 if (mtu != 0 && mtu < MTU_SIZE) {
                     NimBLEDevice::setMTU(mtu);
-                    snprintf(buf, bufSize, "New MTU-size: %d", mtu);
-                    Logger::warning(LOG_TAG_BLESERVER, buf);
+                    ESP_LOGW(LOG_TAG_BLESERVER, "New MTU-size: %d", mtu);
                 }
             } else if(key == "lightsSwitch") {
                 AppConfiguration::getInstance()->config.lightsSwitch = ("true" == value);
@@ -355,7 +347,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                     snprintf(buf, bufSize, "startUpdate");
                 }
             }
-            Logger::notice(LOG_TAG_BLESERVER, buf);
+            ESP_LOGI(LOG_TAG_BLESERVER, "%s", buf);
         }
     }
     delay(bleWait); // needed to give BLE stack some time
@@ -363,19 +355,15 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
 
 //NimBLECharacteristicCallbacks::onSubscribe
 void BleServer::onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
-    snprintf(buf, bufSize, "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
+    ESP_LOGI(LOG_TAG_BLESERVER,  "Client ID: %d, Address: %s, Subvalue %d, Characteristics %s ",
              desc->conn_handle, NimBLEAddress(desc->peer_ota_addr).toString().c_str(), subValue,
              pCharacteristic->getUUID().toString().c_str());
-    Logger::notice(LOG_TAG_BLESERVER, buf);
 }
 
 //NimBLECharacteristicCallbacks::onStatus
 void BleServer::onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code) {
-    if(Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "Notification/Indication characteristics: %s, status code: %d, return code: %d", 
+        ESP_LOGD(LOG_TAG_BLESERVER, "Notification/Indication characteristics: %s, status code: %d, return code: %d", 
         pCharacteristic->getUUID().toString().c_str(), status, code);
-        Logger::verbose(LOG_TAG_BLESERVER, buf);
-    }
 }
 
 void BleServer::updateRescueApp(long count, long loopTime, long maxLoopTime) {
@@ -414,7 +402,6 @@ double BleServer::parseDouble(const std::string& strValue) {
 struct BleServer::sendConfigValue {
     NimBLECharacteristic *pCharacteristic;
     std::stringstream ss;
-    char localbuf[128];
 
     explicit sendConfigValue(NimBLECharacteristic *pCharacteristic) {
         this->pCharacteristic = pCharacteristic;
@@ -427,8 +414,7 @@ struct BleServer::sendConfigValue {
         } else {
             ss << name << "=" << value;
         }
-        snprintf(localbuf, 128, "Sending %s", ss.str().c_str());
-        Logger::notice(LOG_TAG_BLESERVER, localbuf);
+        ESP_LOGI(LOG_TAG_BLESERVER, "Sending %s", ss.str().c_str());
 
         pCharacteristic->setValue(ss.str());
         pCharacteristic->indicate();

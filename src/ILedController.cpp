@@ -1,6 +1,5 @@
 #include "ILedController.h"
 #include "AppConfiguration.h"
-#include <Logger.h>
 
 unsigned long idleTimer = 0;
 
@@ -17,10 +16,9 @@ void ILedController::loop(const int *new_forward, const int *new_backward, const
 
     // is there a change detected
     if (old_forward != *(new_forward) || old_backward != *(new_backward)) {
-        if (Logger::getLogLevel() == Logger::VERBOSE) {
-            snprintf(buf, bufSize, "change detected: forward is %d was %d, backward is %d was %d",
+        if (esp_log_level_get(LOG_TAG_LED) >= ESP_LOG_DEBUG) {
+            ESP_LOGD(LOG_TAG_LED, "change detected: forward is %d was %d, backward is %d was %d",
                      *(new_forward), old_forward, *(new_backward), old_backward);
-            Logger::verbose(LOG_TAG_LED, buf);
         }
 
         this->changePattern(Pattern::FADE, (*new_forward) == HIGH, false);
@@ -50,7 +48,7 @@ void ILedController::loop(const int *new_forward, const int *new_backward, const
 
     if (idleTimer != 0 && AppConfiguration::getInstance()->config.idleLightTimeout > 0 &&
       millis() - idleTimer > AppConfiguration::getInstance()->config.idleLightTimeout) {
-        Logger::notice(LOG_TAG_LED, "Turn off idle light");
+        ESP_LOGI(LOG_TAG_LED, "Turn off idle light");
         this->changePattern(NONE, true, false);
         idleTimer = 0;
     }

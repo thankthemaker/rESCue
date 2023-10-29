@@ -2,7 +2,6 @@
 #define __BUZZER_H__
 
 #include <Arduino.h>
-#include <Logger.h>
 #include <melody_player.h>
 #include <melody_factory.h>
 #include "RTTTL.h"

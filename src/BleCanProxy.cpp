@@ -30,10 +30,7 @@ void BleCanProxy::proxyIn(std::string in) {
             default:
                 return;
         }
-        if (Logger::getLogLevel() == Logger::VERBOSE) {
-            snprintf(buf, bufSize, "Proxy in, command %d, length %d\n", command, length);
-            Logger::verbose(LOG_TAG_BLE_CAN_PROXY, buf);
-        }
+        ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, command %d, length %d\n", command, length);
     }
 
     if (length <= 6) {
@@ -126,13 +123,10 @@ void BleCanProxy::proxyIn(std::string in) {
 
 void BleCanProxy::proxyOut(uint8_t *data, unsigned int size, uint8_t crc1, uint8_t crc2) {
     if (size > BUFFER_SIZE) {
-        Logger::error(LOG_TAG_BLE_CAN_PROXY, "proxyOut - Buffer size exceeded, abort (message not sent via proxy)");
+        ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "proxyOut - Buffer size exceeded, abort (message not sent via proxy)");
         return;
     }
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "Proxy out, sending %d bytes\n", size);
-        Logger::verbose(LOG_TAG_BLE_CAN_PROXY, buf);
-    }
+    ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy out, sending %d bytes\n", size);
     //Start bit, package size
     if (size <= 255) {
         //Serial.print(0x02);
