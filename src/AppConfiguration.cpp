@@ -59,8 +59,8 @@ boolean AppConfiguration::readPreferences() {
     config.lightbarTurnOffErpm =  doc["lightbarTurnOffErpm"] | 1000;
     config.ledType = doc["ledType"] | "RGB";
     config.lightBarLedType = doc["lightBarLedType"] | "GRB";
-    config.ledFrequency = doc["ledFrequency"] | "KHZ800";
-    config.lightBarLedFrequency = doc["lightBarLedFrequency"] | "KHZ800";
+    config.ledFrequency = doc["ledFrequency"] | "800kHz";
+    config.lightBarLedFrequency = doc["lightBarLedFrequency"] | "800kHz";
     config.isLightBarReversed = doc["isLightBarReversed"] | false;
     config.isLightBarLedTypeDifferent = doc["isLightBarLedTypeDifferent"] | false;
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
@@ -127,7 +127,9 @@ boolean AppConfiguration::savePreferences() {
 }
 
 boolean AppConfiguration::readMelodies() {
+    return true;
 }
 
 boolean AppConfiguration::saveMelodies() {
+    return true;
 }
