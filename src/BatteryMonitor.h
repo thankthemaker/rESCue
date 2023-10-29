@@ -1,10 +1,11 @@
 #ifndef __BATTERY_CONTROLLER_H__
 #define __BATTERY_CONTROLLER_H__
 
-#include <Logger.h>
 #include "config.h"
 #include "Buzzer.h"
 #include "CanBus.h"
+
+static const char* LOG_TAG_BATMON = "BatteryMonitor";
 
 class BatteryMonitor {
     public:

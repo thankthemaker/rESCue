@@ -6,7 +6,6 @@
 
 #include "AppConfiguration.h"
 #include <LoopbackStream.h>
-#include <Logger.h>
 #include "VescCanConstants.h"
 #include "BleCanProxy.h"
 #include "CanDevice.h"
@@ -16,7 +15,7 @@
 #define B10000001 129
 #define B11000011 195
 
-#define LOG_TAG_CANBUS "CanBus"
+static const char* LOG_TAG_CANBUS = "CanBus";
 
 class CanBus {
     public:

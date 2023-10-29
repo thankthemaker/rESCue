@@ -1,11 +1,10 @@
 #include <Arduino.h>
-#include <Logger.h>
 #include "CobController.h"
 
 CobController::CobController() = default;
 
 void CobController::init() {
-    Logger::notice(LOG_TAG_COB, "initializing ...");
+    ESP_LOGI(LOG_TAG_COB, "initializing ...");
     ledcAttachPin(MOSFET_PIN_1, 0); // assign a led pins to a channel
 #ifdef DUAL_MOSFET
     ledcAttachPin(MOSFET_PIN_2, 1); // assign a led pins to a channel
@@ -20,11 +19,7 @@ void CobController::init() {
 }
 
 void CobController::changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) {
-    //if (Logger::getLogLevel() == Logger::VERBOSE) {
-    char buf[128];
-    snprintf(buf, 128, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
-    Logger::error(LOG_TAG_COB, buf);
-    ///}
+    ESP_LOGD(LOG_TAG_COB, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
 
     if (activePattern == pattern && isForward == (direction == Direction::FORWARD)) {
         return;
@@ -151,7 +146,7 @@ void CobController::stop() {
 }
 
 void CobController::startSequence() {
-    Logger::notice(LOG_TAG_COB, "run startSequence");
+    ESP_LOGI(LOG_TAG_COB, "run startSequence");
     //changePattern(RESCUE_FLASH_LIGHT, true, true);
 }
 

@@ -164,7 +164,7 @@ void BLEOverTheAirDeviceFirmwareUpdate::onNotify(
   uint8_t *pData = (uint8_t *)value.data();
 
   if (pData != NULL) {
-    ESP_LOGD(TAG, "Notify callback for characteristic %s  of data length %d",
+    ESP_LOGD(LOG_TAG_BLE_OTA, "Notify callback for characteristic %s  of data length %d",
              pCharacteristic->getUUID().toString().c_str(), len);
 
     // Print transferred packets
@@ -189,7 +189,7 @@ void BLEOverTheAirDeviceFirmwareUpdate::onWrite(
   if (pData != NULL) {
 // #define DEBUG_BLE_OTA_DFU_RX
 #ifdef DEBUG_BLE_OTA_DFU_RX
-    ESP_LOGD(TAG, "Write callback for characteristic %s of data length %d",
+    ESP_LOGD(LOG_TAG_BLE_OTA, "Write callback for characteristic %s of data length %d",
              pCharacteristic->getUUID().toString().c_str(), len);
     Serial.print("RX  ");
     for (uint16_t index = 0; index < len; index++) {
@@ -261,7 +261,7 @@ void BLEOverTheAirDeviceFirmwareUpdate::onWrite(
                            write_len[selected_updater]);
 
           if (received_file_size > expected_file_size) {
-            ESP_LOGW(TAG, "Unexpected size:\n Expected: %d\nReceived: %d",
+            ESP_LOGW(LOG_TAG_BLE_OTA, "Unexpected size:\n Expected: %d\nReceived: %d",
                      expected_file_size, received_file_size);
           }
 
@@ -308,7 +308,7 @@ void BLEOverTheAirDeviceFirmwareUpdate::onWrite(
       break;
 
     default:
-      ESP_LOGW(TAG, "Unknown command: %02X", pData[0]);
+      ESP_LOGW(LOG_TAG_BLE_OTA, "Unknown command: %02X", pData[0]);
       break;
     }
     // Serial.printf("Not stuck in loop");

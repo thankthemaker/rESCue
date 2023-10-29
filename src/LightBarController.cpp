@@ -59,12 +59,10 @@ void LightBarController::updateLightBar(double voltage, uint16_t switchstate, do
     int whole = count; // number of "full" green pixels
     int remainder = (count - whole) * 100; // percentage of usage of current pixel
 
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        Logger::verbose(LOG_TAG_LIGHTBAR, String("used=" + String(used) + ", value=" + String(value)).c_str());
-        Logger::verbose(LOG_TAG_LIGHTBAR,
-                        String("count=" + String(count) + ", diffPerPixel=" + String(diffPerPixel)).c_str());
-        Logger::verbose(LOG_TAG_LIGHTBAR,
-                        String("whole=" + String(whole) + ", remainder=" + String(remainder)).c_str());
+    if (esp_log_level_get(LOG_TAG_LIGHTBAR) >= ESP_LOG_DEBUG) {
+        ESP_LOGD(LOG_TAG_LIGHTBAR, "used=%d, value=%d", used, value);
+        ESP_LOGD(LOG_TAG_LIGHTBAR, "count=%f, diffPerPixel=%f", count, diffPerPixel);
+        ESP_LOGD(LOG_TAG_LIGHTBAR, "whole=%d, remainder=%d", whole, remainder);
     }
 
     if (adcState != lastAdcState) {
@@ -143,7 +141,7 @@ AdcState LightBarController::mapSwitchState(uint16_t intState, boolean isAdc1Ena
         case 2:
             return AdcState::ADC_FULL;
         default:
-            Logger::error(LOG_TAG_LIGHTBAR, "Unknown switch state");
+            ESP_LOGE(LOG_TAG_LIGHTBAR, "Unknown switch state");
     }
     return AdcState::ADC_NONE;
 }

@@ -1,6 +1,8 @@
 #include "AppConfiguration.h"
 #include "config.h"
 
+static const char* TAG = "AppConfiguration";
+
 AppConfiguration* AppConfiguration::instance = nullptr;
 
 AppConfiguration* AppConfiguration::getInstance() {
@@ -13,15 +15,15 @@ AppConfiguration* AppConfiguration::getInstance() {
 boolean AppConfiguration::readPreferences() {
     String json = "";
     if(!preferences.begin("rESCue", true)) {
-        log_e("no config file found");
+        ESP_LOGE(TAG, "no config file found");
     } else {
-        log_n("found config file");
+        ESP_LOGI(TAG, "found config file");
         json = preferences.getString("config", "");
     }
     StaticJsonDocument<1024> doc;
     deserializeJson(doc, json);
     preferences.end();
-    log_n("readPreferences: %s", json.c_str());
+    ESP_LOGI(TAG, "readPreferences: %s", json.c_str());
     config.deviceName = doc["deviceName"] | "rESCue";
     config.otaUpdateActive = false;
     config.isNotificationEnabled = doc["isNotificationEnabled"] | false;
@@ -65,7 +67,6 @@ boolean AppConfiguration::readPreferences() {
     config.isLightBarLedTypeDifferent = doc["isLightBarLedTypeDifferent"] | false;
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.mallGrab = doc["mallGrab"] | false;
-    config.logLevel = doc["logLevel"] | Logger::SILENT;
     config.mtuSize = doc["mtuSize"] | 512;
     config.oddevenActive = doc["oddevenActive"] | true;
     config.lightsSwitch = true;
@@ -110,11 +111,10 @@ boolean AppConfiguration::savePreferences() {
     doc["isLightBarLedTypeDifferent"] = config.isLightBarLedTypeDifferent;
     doc["idleLightTimeout"] = config.idleLightTimeout;
     doc["mallGrab"] = config.mallGrab;
-    doc["logLevel"] = config.logLevel;
     doc["mtuSize"] = config.mtuSize;
     String json = "";
     serializeJson(doc, json);
-    log_n("savePreferences: %s", json.c_str());
+    ESP_LOGI(TAG, "savePreferences: %s", json.c_str());
 
     if(doc.overflowed()) {
       return false;

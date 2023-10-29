@@ -2,12 +2,11 @@
 #define __LIGHTBAR_CONTROLLER_H__
 
 #include <Arduino.h>
-#include <Logger.h>
 #include "config.h"
 #include "AppConfiguration.h"
 #include "ILedController.h"
 
-#define LOG_TAG_LIGHTBAR "LightBar"
+static const char* LOG_TAG_LIGHTBAR = "LightBar";
 
 
 #include <Adafruit_NeoPixel.h>

@@ -3,10 +3,9 @@
 
 #include "Arduino.h"
 #include "config.h"
-#include <Logger.h>
 #include "driver/twai.h"
 
-#define LOG_TAG_CANDEVICE "CanDevice"
+static const char* LOG_TAG_CANDEVICE = "CanDevice";
 
 #ifndef CAN_TX_PIN
 #define CAN_TX_PIN 26

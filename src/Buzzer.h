@@ -2,7 +2,6 @@
 #define __BUZZER_H__
 
 #include <Arduino.h>
-#include <Logger.h>
 #include <melody_player.h>
 #include <melody_factory.h>
 #include "RTTTL.h"
@@ -16,6 +15,8 @@ class Buzzer {
     public:
         static Buzzer* getInstance();
         static void startSequence();
+        static void startUpdateSequence();
+        static void finishUpdateSequence();
         static void warning();
         static void alarm();
         static void playSound(RTTTL_MELODIES selection);

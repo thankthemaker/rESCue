@@ -12,7 +12,7 @@
  #define MOSFET_PIN_2  23
 #endif //MOSFET_PIN_2
 
-#define LOG_TAG_COB "CobController"
+static const char* LOG_TAG_COB = "CobController";
 
 class CobController : public ILedController {
     public:

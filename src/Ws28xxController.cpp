@@ -1,5 +1,4 @@
 #include "Ws28xxController.h"
-#include <Logger.h>
 
 //stuff for using seperate front and back pins. 
 Ws28xxController::Ws28xxController(uint16_t pixels, uint8_t frontPin, uint8_t backPin, uint8_t type, VescData *vescData)
@@ -104,9 +103,8 @@ void Ws28xxController::increment() {
 
 // Reverse pattern direction
 void Ws28xxController::reverse() {
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "reversing pattern %d, direction %d", activePattern, direction);
-        Logger::warning(LOG_TAG_WS28XX, buf);
+    if (esp_log_level_get(LOG_TAG_WS28XX) >= ESP_LOG_DEBUG) {
+        ESP_LOGD(LOG_TAG_WS28XX, "reversing pattern %d, direction %d", activePattern, direction);
     }
     if (direction == FORWARD) {
         direction = REVERSE;
@@ -118,10 +116,9 @@ void Ws28xxController::reverse() {
 }
 
 void Ws28xxController::onComplete() {
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
+    if (esp_log_level_get(LOG_TAG_WS28XX) >= ESP_LOG_DEBUG) {
+        ESP_LOGD(LOG_TAG_WS28XX, "onComplete pattern %d, startSequence %d, reverseonComplete %d, repeat %d",
                  activePattern, isStartSequence, reverseOnComplete, repeat);
-        Logger::verbose(LOG_TAG_WS28XX, buf);
     }
     stopPattern = true;
     blockChange = false;
@@ -150,9 +147,8 @@ void Ws28xxController::changePattern(Pattern pattern, boolean isForward, boolean
         return;
     }
 
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
-        Logger::verbose(LOG_TAG_WS28XX, buf);
+    if (esp_log_level_get(LOG_TAG_WS28XX) >= ESP_LOG_DEBUG) {
+        ESP_LOGD(LOG_TAG_WS28XX, "changePattern new pattern %d, forward %d, repeat %d", pattern, isForward, repeatPattern);
     }
 
     maxBrightness = config.lightMaxBrightness;
@@ -265,9 +261,8 @@ void Ws28xxController::flashLight(uint8_t timeinterval, Direction dir) {
     totalSteps = 10;
     index = 0;
     direction = dir;
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "flash %s", direction == FORWARD ? "forward" : "backward");
-        Logger::verbose(LOG_TAG_WS28XX, buf);
+    if (esp_log_level_get(LOG_TAG_WS28XX) >= ESP_LOG_DEBUG) {
+        ESP_LOGD(LOG_TAG_WS28XX, "flash %s", direction == FORWARD ? "forward" : "backward");
     }
 }
 
@@ -325,9 +320,8 @@ void Ws28xxController::fadeLight(uint8_t timeinterval, Direction dir) {
     totalSteps = maxBrightness;
     direction = dir;
     index = dir == Direction::FORWARD ? 0 : totalSteps - 1;
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
-        snprintf(buf, bufSize, "fade %s", direction == FORWARD ? "forward" : "backward");
-        Logger::verbose(LOG_TAG_WS28XX, buf);
+    if (esp_log_level_get(LOG_TAG_WS28XX) >= ESP_LOG_DEBUG) {
+        ESP_LOGD(LOG_TAG_WS28XX, "fade %s", direction == FORWARD ? "forward" : "backward");
     }
 }
 
@@ -479,14 +473,14 @@ uint32_t Ws28xxController::wheel(byte wheelPos) {
 }
 
 void Ws28xxController::init() {
-    Logger::notice(LOG_TAG_WS28XX, "initializing ...");
+    ESP_LOGI(LOG_TAG_WS28XX, "initializing ...");
     begin(); // This initializes the NeoPixel library.
     maxBrightness = config.lightMaxBrightness;
     show();
 }
 
 void Ws28xxController::stop() {
-    Logger::verbose("stop");
+    ESP_LOGD(LOG_TAG_WS28XX, "stop");
     activePattern = NONE;
     for (int i = 0; i < numPixels(); i++) {
         setPixelColor(i, Color(0, 0, 0, 0));
@@ -561,7 +555,7 @@ void Ws28xxController::idleSequence() {
 }
 
 void Ws28xxController::startSequence() {
-    Logger::notice(LOG_TAG_WS28XX, "run startSequence");
+    ESP_LOGI(LOG_TAG_WS28XX, "run startSequence");
     blockChange = true;
     isStartSequence = true;
     int timeinterval = 0;

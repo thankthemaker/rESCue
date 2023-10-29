@@ -19,12 +19,12 @@ void Buzzer::playSound(RTTTL_MELODIES selection){
     return;
   }
   if(player.isPlaying()) {
-    Logger::notice(LOG_TAG_BUZZER, "Still playing melody, abort!");
+    ESP_LOGI(LOG_TAG_BUZZER, "Still playing melody, abort!");
     return;
   }
   auto it = RTTTL_MELODIES_VALUES.find(selection);
   if (it == RTTTL_MELODIES_VALUES.end()) {
-      Logger::error(LOG_TAG_BUZZER, "Melody not found");
+      ESP_LOGE(LOG_TAG_BUZZER, "Melody not found");
       return;
   }
   Melody sound = MelodyFactory.loadRtttlString(it->second);
@@ -44,6 +44,14 @@ boolean Buzzer::isPlayingSound() {
 void Buzzer::startSequence() {
   auto val = static_cast<RTTTL_MELODIES>(AppConfiguration::getInstance()->config.startSoundIndex);
   playSound(val);
+}
+
+void Buzzer::startUpdateSequence() {
+  playSound(RTTTL_MELODIES::START_UPDATE);
+}
+
+void Buzzer::finishUpdateSequence() {
+  playSound(RTTTL_MELODIES::END_UPDATE);
 }
 
 void Buzzer::warning() {

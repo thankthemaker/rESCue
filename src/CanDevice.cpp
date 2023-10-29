@@ -9,25 +9,25 @@ boolean CanDevice::init() {
 
     // Install TWAI driver
     if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
-        printf("Driver installed\n");
+        ESP_LOGI(LOG_TAG_CANDEVICE, "Driver installed\n");
     } else {
-        printf("Failed to install driver\n");
+        ESP_LOGE(LOG_TAG_CANDEVICE, "Failed to install driver\n");
         return false;
     }
     // Start TWAI driver
     if (twai_start() == ESP_OK) {
-        printf("Driver started\n");
+        ESP_LOGI(LOG_TAG_CANDEVICE, "Driver started\n");
     } else {
-        printf("Failed to start driver\n");
+        ESP_LOGE(LOG_TAG_CANDEVICE, "Failed to start driver\n");
         return false;
     }
     return true;
 }
 
 boolean CanDevice::sendCanFrame(const twai_message_t *p_frame) {
-    if (Logger::getLogLevel() == Logger::VERBOSE) {
+    if (esp_log_level_get(LOG_TAG_CANDEVICE) >= ESP_LOG_DEBUG) {
         char buf[128];
-        snprintf(buf, 128, "Sending CAN frame %" PRIu32 " DLC %d, [%d, %d, %d, %d, %d, %d, %d, %d]",
+        ESP_LOGD(LOG_TAG_CANDEVICE, "Sending CAN frame %" PRIu32 " DLC %d, [%d, %d, %d, %d, %d, %d, %d, %d]",
                 p_frame->identifier,
                 p_frame->data_length_code,
                 p_frame->data[0],
@@ -38,12 +38,11 @@ boolean CanDevice::sendCanFrame(const twai_message_t *p_frame) {
                 p_frame->data[5],
                 p_frame->data[6],
                 p_frame->data[7]);
-        Logger::verbose(LOG_TAG_CANDEVICE, buf);
     }
     xSemaphoreTake(mutex_v, portMAX_DELAY);
     //Queue message for transmission
     if (twai_transmit(p_frame, pdMS_TO_TICKS(10)) != ESP_OK) {
-        printf("Failed to queue message for transmission\n");
+        ESP_LOGE(LOG_TAG_CANDEVICE, "Failed to queue message for transmission\n");
         xSemaphoreGive(mutex_v);
         return false;
     }

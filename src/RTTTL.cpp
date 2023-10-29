@@ -39,6 +39,8 @@ const char *rtttl_beep_positive   = "positive:d=4,o=5,b=100:16c#,a";
 const char *rtttl_beep_negative   = "negative:d=4,o=5,b=100:16a,c#";
 
 RTTTL_MELODIES_MAP  RTTTL_MELODIES_VALUES { 
+  { RTTTL_MELODIES::START_UPDATE, rtttl_beep_scale_up }, 
+  { RTTTL_MELODIES::END_UPDATE, rtttl_beep_scale_down }, 
   { RTTTL_MELODIES::SIMPSONS, rtttl_simpsons }, 
   { RTTTL_MELODIES::TOPGUN, rtttl_topgun },
   { RTTTL_MELODIES::A_TEAM, rtttl_a_team }, 

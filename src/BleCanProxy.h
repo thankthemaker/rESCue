@@ -3,12 +3,11 @@
 
 #include "Arduino.h"
 #include "config.h"
-#include <Logger.h>
 #include "VescCanConstants.h"
 #include "LoopbackStream.h"
 #include "CanDevice.h"
 
-#define LOG_TAG_BLE_CAN_PROXY "BleCanProxy"
+static const char* LOG_TAG_BLE_CAN_PROXY = "BleCanProxy";
 
 class BleCanProxy {
   public:

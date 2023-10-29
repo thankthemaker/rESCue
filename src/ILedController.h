@@ -5,7 +5,7 @@
 #include "CanBus.h"
 #include "VescData.h"
 
-#define LOG_TAG_LED "ILedController"
+static const char* LOG_TAG_LED = "ILedController";
 
 // Pattern types supported:
 enum  Pattern { NONE, RAINBOW_CYCLE, THEATER_CHASE, COLOR_WIPE, CYLON, FADE, RESCUE_FLASH_LIGHT, PULSE, SLIDE, BATTERY_INDICATOR, TRANS_PRIDE};
