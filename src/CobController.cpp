@@ -5,17 +5,15 @@ CobController::CobController() = default;
 
 void CobController::init() {
     ESP_LOGI(LOG_TAG_COB, "initializing ...");
-    ledcAttachPin(MOSFET_PIN_1, 0); // assign a led pins to a channel
-#ifdef DUAL_MOSFET
-    ledcAttachPin(MOSFET_PIN_2, 1); // assign a led pins to a channel
-#endif
+
     // Initialize channels
     // channels 0-15, resolution 1-16 bits, freq limits depend on resolution
     // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
     ledcSetup(0, 4000, 8); // 12 kHz PWM, 8-bit resolution
-#ifdef DUAL_MOSFET
     ledcSetup(1, 4000, 8); // 12 kHz PWM, 8-bit resolution
-#endif
+
+    ledcAttachPin(MOSFET_PIN_1, 0); // assign a led pins to a channel
+    ledcAttachPin(MOSFET_PIN_2, 1); // assign a led pins to a channel
 }
 
 void CobController::changePattern(Pattern pattern, boolean isForward, boolean repeatPattern) {
@@ -57,6 +55,9 @@ void CobController::update() {
             case RESCUE_FLASH_LIGHT:
                 flash();
                 break;
+            case NONE:
+                stop();
+                break;
             default:
                 break;
         }
@@ -83,11 +84,6 @@ void CobController::increment() {
 }
 
 void CobController::onComplete() {
-    Serial.print("onComplete: ");
-    Serial.print("reverseOnComplete  ");
-    Serial.print(reverseOnComplete);
-    Serial.print(", repeat ");
-    Serial.println(repeat);
     stopPattern = true;
     if (reverseOnComplete) {
         reverse();
@@ -102,7 +98,6 @@ void CobController::onComplete() {
 
 // Reverse pattern direction
 void CobController::reverse() {
-    Serial.println("reverse: ");
     if (direction == FORWARD) {
         direction = REVERSE;
         index = totalSteps;
@@ -113,18 +108,8 @@ void CobController::reverse() {
 }
 
 void CobController::fade() {
-#ifdef DUAL_MOSFET
-    writePWM(0, index);
-    writePWM(1,totalSteps - index - 1);
-    Serial.print("direction ");
-    Serial.print(direction);
-    Serial.print(", val1: ");
-    Serial.print(index);
-    Serial.print(", val2: ");
-    Serial.println(totalSteps - index - 1);
-#else
-    writePWM(0, MAX_BRIGHTNESS);
-#endif
+  writePWM(0, index);
+  writePWM(1,totalSteps - index - 1);
 }
 
 void CobController::flash() {
@@ -147,13 +132,13 @@ void CobController::stop() {
 
 void CobController::startSequence() {
     ESP_LOGI(LOG_TAG_COB, "run startSequence");
-    //changePattern(RESCUE_FLASH_LIGHT, true, true);
+    changePattern(RESCUE_FLASH_LIGHT, true, true);
 }
 
 void CobController::idleSequence() {
-    //changePattern(FADE, true, true);
-    //totalSteps = MAX_BRIGHTNESS / 2;
-    //reverseOnComplete = true;
+    changePattern(FADE, true, true);
+    totalSteps = MAX_BRIGHTNESS / 2;
+    reverseOnComplete = true;
 }
 
 void CobController::writePWM(int channel, int dutyCycle) {
