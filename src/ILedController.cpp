@@ -29,13 +29,17 @@ void ILedController::loop(const int *new_forward, const int *new_backward, const
 
     //idle state???
     if (old_idle != *(new_idle) || old_mall_grab != *(new_mall_grab)) {
+        ESP_LOGI(LOG_TAG_LED, "Idle/Mall Grab detected:  old_idle %d, new_idle %d, old_mall_grab %d, new_mall_grab %d",
+        old_idle, *(new_idle), old_mall_grab, *(new_mall_grab));
+
         if (*(new_idle) == HIGH || old_mall_grab != *(new_mall_grab)) {
             if (idleTimer == 0) {
                 idleTimer = millis();
             }
             if (AppConfiguration::getInstance()->config.mallGrab && *(new_mall_grab) == HIGH)
             {
-                this->changePattern(Pattern::BATTERY_INDICATOR, true, false);
+              ESP_LOGI(LOG_TAG_LED, "Changing Pattern BATTERY_INDICATOR");
+              this->changePattern(Pattern::BATTERY_INDICATOR, true, false);
             }
             else
             {

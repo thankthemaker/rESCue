@@ -20,7 +20,7 @@ boolean AppConfiguration::readPreferences() {
         ESP_LOGI(TAG, "found config file");
         json = preferences.getString("config", "");
     }
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<2048> doc;
     deserializeJson(doc, json);
     preferences.end();
     ESP_LOGI(TAG, "readPreferences: %s", json.c_str());
@@ -66,12 +66,13 @@ boolean AppConfiguration::readPreferences() {
     config.isLightBarReversed = doc["isLightBarReversed"] | false;
     config.isLightBarLedTypeDifferent = doc["isLightBarLedTypeDifferent"] | false;
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
-    config.mallGrab = doc["mallGrab"] | false;
+    config.mallGrab = doc["mallGrab"].as<boolean>()| false;
     config.mtuSize = doc["mtuSize"] | 512;
     config.oddevenActive = doc["oddevenActive"] | true;
     config.lightsSwitch = true;
     config.saveConfig = false;
     config.sendConfig = false;
+    
     if(doc.overflowed()) {
       return false;
     } 
@@ -79,7 +80,7 @@ boolean AppConfiguration::readPreferences() {
 }
 
 boolean AppConfiguration::savePreferences() {
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<2048> doc;
     doc["deviceName"] = config.deviceName;
     doc["otaUpdateActive"] = config.otaUpdateActive;
     doc["isNotificationEnabled"] = config.isNotificationEnabled;
