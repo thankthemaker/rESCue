@@ -218,6 +218,10 @@ To build the firmware and upload it to you ESP32 MCU run
 ```shell
 platformio run --target upload
 ```
+OR, for custom targets
+```shell
+platformio run --environment <custom_env> --target upload
+```
 
 ## Donate
 
