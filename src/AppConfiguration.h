@@ -53,7 +53,7 @@ struct Config {
     VISITABLE(boolean , isLightBarReversed);
     VISITABLE(boolean , isLightBarLedTypeDifferent);
     VISITABLE(int , idleLightTimeout);
-    VISITABLE(boolean , mallGrab);
+    VISITABLE(bool , mallGrab);
     VISITABLE(int , mtuSize);
     VISITABLE(boolean , oddevenActive);
     VISITABLE(boolean, lightsSwitch);
