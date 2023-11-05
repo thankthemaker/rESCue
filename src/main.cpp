@@ -84,9 +84,10 @@ void setup() {
     pinMode(PIN_BRAKE, INPUT);
     #endif
 
-//    vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
     delay(50);
-#ifdef CANBUS_ENABLED
+#ifndef CANBUS_ENABLED
+    vesc.begin(VESC_BAUD_RATE, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN, false);
+#else
     // initializes the CANBUS
     canbus->init();
 #endif //CANBUS_ENABLED
