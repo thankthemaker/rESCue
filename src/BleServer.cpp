@@ -251,6 +251,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             
             //Serial.println(String(key.c_str()) + String("=") + String(value.c_str()));
 
+            snprintf(buf, bufSize, "Updated param \"%s\" to %s", key.c_str(), value.c_str());
             if (key == "config") {
                 AppConfiguration::getInstance()->config.sendConfig = true;
             } else if (key == "save") {
@@ -273,7 +274,6 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
                 AppConfiguration::getInstance()->config.startSoundIndex = parseInt(value);
                 Buzzer::stopSound();
                 Buzzer::playSound(RTTTL_MELODIES(strtol(value.c_str(), nullptr, 10)));
-                snprintf(buf, bufSize, "Updated param \"StartSoundIndex\" to %s", value.c_str());
             } else if (key == "startLightIndex") {
                 AppConfiguration::getInstance()->config.startLightIndex = parseInt(value);
             } else if (key == "batteryWarningSoundIndex") {
@@ -327,11 +327,11 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             } else if (key == "lightBarLedFrequency") {
                 AppConfiguration::getInstance()->config.lightBarLedFrequency = value.c_str();
             } else if (key == "isLightBarReversed") {
-                AppConfiguration::getInstance()->config.isLightBarReversed = value.c_str();
+                AppConfiguration::getInstance()->config.isLightBarReversed = parseInt(value);
             } else if (key == "isLightBarLedTypeDifferent") {
-                AppConfiguration::getInstance()->config.isLightBarLedTypeDifferent = value.c_str();
+                AppConfiguration::getInstance()->config.isLightBarLedTypeDifferent = parseInt(value);
             } else if (key == "mallGrab") {
-                AppConfiguration::getInstance()->config.mallGrab = value.c_str();
+                AppConfiguration::getInstance()->config.mallGrab = parseInt(value);
             } else if (key == "mtuSize") {
                 uint16_t mtu = strtol(value.c_str(), nullptr, 10);
                 AppConfiguration::getInstance()->config.mtuSize = mtu;

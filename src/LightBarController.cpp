@@ -12,18 +12,17 @@ boolean pixelCountOdd = false;
 AdcState lastAdcState = AdcState::ADC_NONE;
 unsigned long lastAdcStateChange = 0;
 
-LightBarController::LightBarController() {
+LightBarController::LightBarController() {}
+
+void LightBarController::init() {
     pixel_count = AppConfiguration::getInstance()->config.numberPixelBatMon;
     min_voltage = (int) AppConfiguration::getInstance()->config.minBatteryVoltage * 100;
     max_voltage = (int) AppConfiguration::getInstance()->config.maxBatteryVoltage * 100;
     pixelCountOdd = pixel_count % 2 == 1;
     uint8_t ledType;
-    if(AppConfiguration::getInstance()->config.isLightBarLedTypeDifferent)
-    {
+    if(AppConfiguration::getInstance()->config.isLightBarLedTypeDifferent) {
         ledType = LedControllerFactory::getInstance()->determineLedType(true);
-    }
-    else
-    {
+    } else {
         ledType = LedControllerFactory::getInstance()->determineLedType();
     }
     voltage_range = max_voltage - min_voltage;
@@ -32,14 +31,14 @@ LightBarController::LightBarController() {
     lightPixels.begin(); // This initializes the NeoPixel library.
     for (int j = 0; j < pixel_count; j++) {
         int actualIndex = j;
-        if(AppConfiguration::getInstance()->config.isLightBarReversed)
-        {
+        if(AppConfiguration::getInstance()->config.isLightBarReversed) {
             actualIndex = pixel_count - 1 - j;
         }
         lightPixels.setPixelColor(actualIndex, 51, 153, 255);
     }
     lightPixels.show();
 }
+
 
 // updates the light bar, depending on the LED count
 void LightBarController::updateLightBar(double voltage, uint16_t switchstate, double adc1, double adc2, double erpm) {
@@ -68,9 +67,9 @@ void LightBarController::updateLightBar(double voltage, uint16_t switchstate, do
     if (adcState != lastAdcState) {
         for (int i = 0; i < pixel_count; i++) {
             int actualIndex = i;
-            #ifdef REVERSE_LED_STRIP
+            if(AppConfiguration::getInstance()->config.isLightBarReversed) {
                 actualIndex = pixel_count - 1 - i;
-            #endif
+            }
             lightPixels.setPixelColor(actualIndex, 0, 0, 0);
             switch (adcState) {
                 case ADC_NONE:
@@ -96,15 +95,14 @@ void LightBarController::updateLightBar(double voltage, uint16_t switchstate, do
         // update every pixel individually
         for (int i = 0; i < pixel_count; i++) {
             int actualIndex = i;
-            #ifdef REVERSE_LED_STRIP
+            if(AppConfiguration::getInstance()->config.isLightBarReversed) {
                 actualIndex = pixel_count - 1 - i;
-            #endif
+            }
             if (i == whole) {
                 // the last pixel, the battery voltage somewhere in the range of this pixel
                 // the lower the remaining value the more the pixel goes from green to red
                 int val = calcVal(remainder);
-                lightPixels.setPixelColor(i, AppConfiguration::getInstance()->config.lightbarMaxBrightness - val, val,
-                                          0);
+                lightPixels.setPixelColor(i, AppConfiguration::getInstance()->config.lightbarMaxBrightness - val, val, 0);
             }
             if (i > whole) {
                 // these pixels must be turned off, we already reached a lower battery voltage
