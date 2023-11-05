@@ -26,6 +26,7 @@ enum AdcState {
 class LightBarController {
 public:
     LightBarController();
+    void init();
     void updateLightBar(double voltage, uint16_t switchstate, double adc1, double adc2, double erpm);
 
 private:

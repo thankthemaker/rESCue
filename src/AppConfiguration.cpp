@@ -68,10 +68,11 @@ boolean AppConfiguration::readPreferences() {
     config.idleLightTimeout = doc["idleLightTimeout"] | 60000;
     config.mallGrab = doc["mallGrab"].as<boolean>()| false;
     config.mtuSize = doc["mtuSize"] | 512;
-    config.oddevenActive = doc["oddevenActive"] | true;
+    config.oddevenActive = doc["oddevenActive"] | false;
     config.lightsSwitch = true;
     config.saveConfig = false;
     config.sendConfig = false;
+    config.sendConfigFinished = true;
     
     if(doc.overflowed()) {
       return false;
@@ -113,6 +114,8 @@ boolean AppConfiguration::savePreferences() {
     doc["idleLightTimeout"] = config.idleLightTimeout;
     doc["mallGrab"] = config.mallGrab;
     doc["mtuSize"] = config.mtuSize;
+    doc["oddevenActive"] = config.oddevenActive;
+
     String json = "";
     serializeJson(doc, json);
     ESP_LOGI(TAG, "savePreferences: %s", json.c_str());

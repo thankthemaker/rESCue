@@ -106,6 +106,7 @@ void setup() {
 #endif
     // initialize the LED (either COB or Neopixel)
     ledController->init();
+    lightbar->init();
 
     Buzzer::startSequence();
     ledController->startSequence();
