@@ -54,6 +54,9 @@ LightBarController *lightbar = new LightBarController();
 
 void setup() {
 
+  // give some time to avoid brownouts
+  delay(500);
+
 //Debug LED on board
 #ifdef PIN_BOARD_LED
     pinMode(PIN_BOARD_LED,OUTPUT);
