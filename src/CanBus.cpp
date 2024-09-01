@@ -59,7 +59,7 @@ CanBus::CanBus(VescData *vescData) {
 }
 
 void CanBus::init() {
-    AppConfiguration::getInstance()->config.vescId;
+    vesc_id = AppConfiguration::getInstance()->config.vescId;
     
     esp_can_id = vesc_id + 1;
     ble_proxy_can_id = vesc_id + 2;
