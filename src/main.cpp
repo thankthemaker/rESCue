@@ -149,6 +149,10 @@ void loop() {
         AppConfiguration::getInstance()->savePreferences();
         //AppConfiguration::getInstance()->saveMelodies();
         AppConfiguration::getInstance()->config.saveConfig = false;
+
+        // reboot to take over config, specially for the vesc can id
+        ESP_LOGI("rESCue", "Rebooting to take over new saved config...");
+        ESP.restart();
     }
 
 #ifdef CANBUS_ENABLED
