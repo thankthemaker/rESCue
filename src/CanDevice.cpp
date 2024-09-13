@@ -25,7 +25,7 @@ boolean CanDevice::init() {
 }
 
 boolean CanDevice::sendCanFrame(const twai_message_t *p_frame) {
-    ESP_LOGE(LOG_TAG_CANDEVICE, "Sending CAN frame %" PRIu32 " DLC %d, [%02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x]",
+    /*ESP_LOGE(LOG_TAG_CANDEVICE, "Sending CAN frame %" PRIu32 " DLC %d, [%02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x]",
                 p_frame->identifier,
                 p_frame->data_length_code,
                 p_frame->data[0],
@@ -35,7 +35,7 @@ boolean CanDevice::sendCanFrame(const twai_message_t *p_frame) {
                 p_frame->data[4],
                 p_frame->data[5],
                 p_frame->data[6],
-                p_frame->data[7]);
+                p_frame->data[7]);*/
 
     if (esp_log_level_get(LOG_TAG_CANDEVICE) >= ESP_LOG_DEBUG) {
         char buf[128];

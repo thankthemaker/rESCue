@@ -9,9 +9,9 @@ BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, 
 }
 
 void BleCanProxy::proxyIn(std::string in) {
-    ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "Proxy in, input=%d\n", in.size());
+    ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, input=%d\n", in.size());
     longPackBuffer += in;
-    ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "Proxy in, buffer=%d\n", longPackBuffer.size());
+    ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, buffer=%d\n", longPackBuffer.size());
     
     // we need at least 4 bytes for initial packet parsing
     if (longPackBuffer.size() < 4) {
@@ -23,17 +23,16 @@ void BleCanProxy::proxyIn(std::string in) {
     if (!longPacket) {
         switch (packet_type) {
             case 2:
-                // start_or_packttype_byte(1) + length(1) + payload(length)) + crc(2) + end_byte(1)
+                // packet_type(1) + length(1) + payload(length)) + crc(2) + end_byte(1) 
                 length = (uint8_t) longPackBuffer.at(1);
                 command = (uint8_t) longPackBuffer.at(2);
-                processing = true;
-                //if (length > (longPackBuffer.size() - 5)) {
+                processing = true;                
                 if (length > 6) {
                     longPacket = true;
                 }
                 break;
             case 3:
-                // start_or_packttype_byte(1) + length(2) + payload(length)) + crc(2) + end_byte(1)
+                // packet_type(1) + length(2) + payload(length)) + crc(2) + end_byte(1)
                 length = ((uint8_t) in.at(1) << 8) + (uint8_t) in.at(2);
                 command = (uint8_t) in.at(3);
                 longPacket = true;
@@ -42,10 +41,10 @@ void BleCanProxy::proxyIn(std::string in) {
             default:
                 return;
         }
-        ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "Proxy in, command %d, length %d\n", command, length);
+        ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, command %d, length %d\n", command, length);
     }
 
-    if (length <= 6) { // short packet
+    if (length <= 6) { // short packet (nocrc?)
 
         if (length + 3 > longPackBuffer.size()) {            
             return;
@@ -62,8 +61,7 @@ void BleCanProxy::proxyIn(std::string in) {
             tx_frame.data[i] = (uint8_t) longPackBuffer.at(i);
         }
         candevice->sendCanFrame(&tx_frame);
-    } else { // long packet
-        //longPackBuffer += in;
+    } else { // long packet        
         if (length + 5 > longPackBuffer.size()) {
             //Serial.printf("Buffer not full, needed %d, is %d\n", length + 5, longPackBuffer.size());
             return;
@@ -84,7 +82,7 @@ void BleCanProxy::proxyIn(std::string in) {
             int sendLen = (length >= byteNum+ 7) ? 7 : length - byteNum;
             //Serial.printf("bufLen %d, byteNum %d, sendlen %d\n", length, byteNum , sendLen);
 
-            ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "Proxy in, CAN_PACKET_FILL_RX_BUFFER");
+            ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, CAN_PACKET_FILL_RX_BUFFER");
             twai_message_t tx_frame = {};
             tx_frame.extd = 1;
             tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + vesc_id;
@@ -103,7 +101,7 @@ void BleCanProxy::proxyIn(std::string in) {
             int sendLen = (length >= byteNum + 6) ? 6 : length - byteNum ;
             //Serial.printf("bufLen %d, byteNum %d, sendlen %d\n", length, byteNum , sendLen);
 
-            ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "Proxy in, CAN_PACKET_FILL_RX_BUFFER_LONG");
+            ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, CAN_PACKET_FILL_RX_BUFFER_LONG");
             twai_message_t tx_frame = {};
             tx_frame.extd = 1;
             tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + vesc_id;
@@ -119,7 +117,7 @@ void BleCanProxy::proxyIn(std::string in) {
             candevice->sendCanFrame(&tx_frame);
         }
 
-        ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "Proxy in, CAN_PACKET_PROCESS_RX_BUFFER");
+        ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, CAN_PACKET_PROCESS_RX_BUFFER");
         twai_message_t tx_frame = {};
         tx_frame.extd = 1;
         tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + vesc_id;
