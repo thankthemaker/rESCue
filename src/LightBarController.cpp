@@ -137,6 +137,8 @@ AdcState LightBarController::mapSwitchState(uint16_t intState, boolean isAdc1Ena
         case 1:
             return isAdc1Enabled ? AdcState::ADC_HALF_ADC1 : AdcState::ADC_HALF_ADC2;
         case 2:
+            return AdcState::ADC_HALF_ADC2;
+        case 3:
             return AdcState::ADC_FULL;
         default:
             ESP_LOGE(LOG_TAG_LIGHTBAR, "Unknown switch state");
