@@ -39,20 +39,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio run -e wemos_d1_mini32 -e wemos_d1_mini32_cob -e wemos_d1_mini32_uart -e wemos_d1_mini32_cob_uart -e lolin_wemos_s3_mini -e lolin_wemos_s3_mini_cob -e lolin_wemos_s3_mini_uart -e lolin_wemos_s3_mini_cob_uart
+      run: pio run -e wemos_d1_mini32 -e wemos_d1_mini32_cob -e wemos_d1_mini32_uart -e wemos_d1_mini32_cob_uart -e lolin_wemos_s3_mini -e lolin_wemos_s3_mini_cob -e lolin_wemos_s3_mini_uart -e lolin_wemos_s3_mini_cob_uart -e esp32c3_devkitm_1 -e esp32c3_devkitm_1_uart -e nodemcu-32s_uart
     - name: Rename firmware files
       run: |
         mv .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini.bin                   .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini-v${{ github.ref_name }}.bin
         mv .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob.bin           .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini-cob-v${{ github.ref_name }}.bin
         mv .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini_uart.bin         .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini-uart-v${{ github.ref_name }}.bin
         mv .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini_cob_uart.bin .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini-cob_uart-v${{ github.ref_name }}.bin
+        mv .pio/build/esp32c3_devkitm_1/firmware_esp32c3_devkitm_1.bin                       .pio/build/esp32c3_devkitm_1/firmware_esp32c3_devkitm_1-v${{ github.ref_name }}.bin
+        mv .pio/build/esp32c3_devkitm_1_uart/firmware_esp32c3_devkitm_1_uart.bin             .pio/build/esp32c3_devkitm_1_uart/firmware_esp32c3_devkitm_1_uart-v${{ github.ref_name }}.bin
+        mv .pio/build/nodemcu-32s_uart/firmware_nodemcu-32s_uart.bin                         .pio/build/nodemcu-32s_uart/firmware_nodemcu-32s_uart-v${{ github.ref_name }}.bin
         mv .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32.bin                           .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.ref_name }}.bin
         mv .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32_cob.bin                   .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32-cob-v${{ github.ref_name }}.bin
         mv .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart.bin                 .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32-uart-v${{ github.ref_name }}.bin
         mv .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart.bin         .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32-cob_uart-v${{ github.ref_name }}.bin
     - name: Calculate checksums
       run: |
-        for file in $(ls .pio/build/wemos_d1_mini32*/*.bin .pio/build/lolin_wemos_s3_mini*/*.bin); do
+        for file in $(ls .pio/build/wemos_d1_mini32*/*.bin .pio/build/lolin_wemos_s3_mini*/*.bin .pio/build/esp32c3_devkitm_1*/*.bin .pio/build/nodemcu-32s_uart/*.bin); do
           sha256sum $file | cut -d " " -f 1 > $file.sha256
         done
     - name: Release
@@ -66,6 +69,9 @@ jobs:
           .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini-cob-v${{ github.ref_name }}.bin
           .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini-uart-v${{ github.ref_name }}.bin
           .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini-cob_uart-v${{ github.ref_name }}.bin
+          .pio/build/esp32c3_devkitm_1/firmware_esp32c3_devkitm_1-v${{ github.ref_name }}.bin
+          .pio/build/esp32c3_devkitm_1_uart/firmware_esp32c3_devkitm_1_uart-v${{ github.ref_name }}.bin
+          .pio/build/nodemcu-32s_uart/firmware_nodemcu-32s_uart-v${{ github.ref_name }}.bin
           .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.ref_name }}.bin
           .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32-cob-v${{ github.ref_name }}.bin
           .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32-uart-v${{ github.ref_name }}.bin
@@ -76,6 +82,9 @@ jobs:
           .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini-cob-v${{ github.ref_name }}.bin.sha256
           .pio/build/lolin_wemos_s3_mini_uart/firmware_lolin_wemos_s3_mini-uart-v${{ github.ref_name }}.bin.sha256
           .pio/build/lolin_wemos_s3_mini_cob_uart/firmware_lolin_wemos_s3_mini-cob_uart-v${{ github.ref_name }}.bin.sha256
+          .pio/build/esp32c3_devkitm_1/firmware_esp32c3_devkitm_1-v${{ github.ref_name }}.bin.sha256
+          .pio/build/esp32c3_devkitm_1_uart/firmware_esp32c3_devkitm_1_uart-v${{ github.ref_name }}.bin.sha256
+          .pio/build/nodemcu-32s_uart/firmware_nodemcu-32s_uart-v${{ github.ref_name }}.bin.sha256
           .pio/build/wemos_d1_mini32/firmware_wemos_d1_mini32-v${{ github.ref_name }}.bin.sha256
           .pio/build/wemos_d1_mini32_cob/firmware_wemos_d1_mini32-cob-v${{ github.ref_name }}.bin.sha256
           .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32-uart-v${{ github.ref_name }}.bin.sha256

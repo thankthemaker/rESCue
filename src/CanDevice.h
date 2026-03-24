@@ -15,18 +15,11 @@ static const char* LOG_TAG_CANDEVICE = "CanDevice";
 #define CAN_RX_PIN 27
 #endif //CAN_RX_PIN
 
-//Macros to fix actually being able to map the CAN GPIO pins in platformio.ini instead of them being hard coded in init() for TWAI_GENERAL_CONFIG_DEFAULT();
-#ifndef ESP32S3
-  #define GPIO_NUM_HELPER(x) GPIO_NUM##x
-  #define GPIO_NUM(x) GPIO_NUM_HELPER(x)
-  #define GPIO_CAN_TX_PIN GPIO_NUM(CAN_TX_PIN)
-  #define GPIO_CAN_RX_PIN GPIO_NUM(CAN_RX_PIN)
-#else
-  #define GPIO_NUM_HELPER(x) GPIO_NUM_##x
-  #define GPIO_NUM_(x) GPIO_NUM_HELPER(x)
-  #define GPIO_CAN_TX_PIN GPIO_NUM_(CAN_TX_PIN)
-  #define GPIO_CAN_RX_PIN GPIO_NUM_(CAN_RX_PIN)
-#endif
+// Map numeric CAN pin defines (e.g. 9) to gpio_num_t enum constants (GPIO_NUM_9).
+#define GPIO_NUM_HELPER(x) GPIO_NUM_##x
+#define GPIO_NUM_(x) GPIO_NUM_HELPER(x)
+#define GPIO_CAN_TX_PIN GPIO_NUM_(CAN_TX_PIN)
+#define GPIO_CAN_RX_PIN GPIO_NUM_(CAN_RX_PIN)
 
 class CanDevice {
   private:

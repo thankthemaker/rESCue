@@ -12,3 +12,7 @@ extensions.json
 /CMakeListsPrivate.txt
 rESCue.code-workspace
 .vscode/settings.json
+
+# Clangd related:
+.cache
+compile_commands.json

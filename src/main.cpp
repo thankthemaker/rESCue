@@ -15,6 +15,14 @@
 const int mainBufSize = 128;
 char mainBuf[mainBufSize];
 
+#if defined(CANBUS_ENABLED) && !defined(CANBUS_ONLY)
+  #error "CANBUS_ENABLED and CANBUS_ONLY must both be defined for CANBUS mode. For UART mode, define neither."
+#endif
+
+#if defined(CANBUS_ONLY) && !defined(CANBUS_ENABLED)
+  #error "CANBUS_ENABLED and CANBUS_ONLY must both be defined for CANBUS mode. For UART mode, define neither."
+#endif
+
 #if defined(CANBUS_ENABLED) && defined(BMS_TX_PIN) && defined(BMS_ON_PIN)
   #include "BMSController.h"
 #endif
@@ -35,7 +43,7 @@ BLE_OTA_DFU ota_dfu_ble;
 VescData vescData;
 
 #ifndef CANBUS_ENABLED
-  HardwareSerial vesc(2);
+  HardwareSerial vesc(VESC_UART_PORT);
 #endif
 
 ILedController *ledController;
