@@ -9,12 +9,21 @@ BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, 
     this->ble_proxy_can_id = ble_proxy_can_id;
 }
 
+void BleCanProxy::sendFrame(twai_message_t &frame) {
+    if (candevice->sendCanFrame(&frame)) {
+        framesSent++;
+    }
+}
+
 void BleCanProxy::proxyIn(const std::string &in) {
     if (in.size() < 2) {
         return; // not enough for a packet start byte plus its length
     }
 
+    const unsigned long startedAt = millis();
+
     if (!longPacket) {
+        framesSent = 0;
         const uint8_t packetType = (uint8_t) in[0];
 
         switch (packetType) {
@@ -60,7 +69,7 @@ void BleCanProxy::proxyIn(const std::string &in) {
         for (int i = 3; i < length + 2; i++) {
             tx_frame.data[i] = (uint8_t) in.at(i);
         }
-        candevice->sendCanFrame(&tx_frame);
+        sendFrame(tx_frame);
     } else {
         longPackBuffer += in;
 
@@ -91,7 +100,7 @@ void BleCanProxy::proxyIn(const std::string &in) {
             for (int i = 1; i < sendLen + 1; i++) {
                 tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum - 1 + i);
             }
-            candevice->sendCanFrame(&tx_frame);
+            sendFrame(tx_frame);
         }
 
         for (unsigned int byteNum = end_a; byteNum < length; byteNum += 6) {
@@ -108,7 +117,7 @@ void BleCanProxy::proxyIn(const std::string &in) {
                 tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum - 2 + i);
             }
 
-            candevice->sendCanFrame(&tx_frame);
+            sendFrame(tx_frame);
         }
 
         twai_message_t tx_frame = {};
@@ -122,7 +131,18 @@ void BleCanProxy::proxyIn(const std::string &in) {
         // the buffer holds payload + crc (2) + end byte (1), so the CRC sits at size-3 / size-2
         tx_frame.data[4] = longPackBuffer.at(longPackBuffer.size() - 3);
         tx_frame.data[5] = longPackBuffer.at(longPackBuffer.size() - 2);
-        candevice->sendCanFrame(&tx_frame);
+        sendFrame(tx_frame);
+    }
+
+    if (framesSent > 0) {
+        const unsigned long elapsed = millis() - startedAt;
+        if (elapsed > 50) {
+            ESP_LOGI(LOG_TAG_BLE_CAN_PROXY, "proxyIn: %u bytes in %u CAN frames took %lu ms",
+                     (unsigned) length, framesSent, elapsed);
+        } else {
+            ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "proxyIn: %u bytes in %u CAN frames took %lu ms",
+                     (unsigned) length, framesSent, elapsed);
+        }
     }
 
     length = 0;
@@ -152,5 +172,7 @@ void BleCanProxy::proxyOut(const uint8_t *payload, unsigned int size) {
     }
 
     ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy out, sending %d bytes\n", size);
+    const unsigned long startedAt = millis();
     stream->write(reinterpret_cast<const uint8_t *>(frameBuffer.data()), (size_t) written);
+    ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "proxyOut: %u bytes took %lu ms", size, millis() - startedAt);
 }

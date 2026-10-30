@@ -7,6 +7,11 @@
 
 static const char* LOG_TAG_CANDEVICE = "CanDevice";
 
+/** How long a frame may wait for a free slot in the TX queue before giving up. */
+#define CAN_TX_TIMEOUT_MS 50
+/** Depth of the TX queue - must absorb a burst of a whole CAN proxy transfer. */
+#define CAN_TX_QUEUE_LEN 64
+
 #ifndef CAN_TX_PIN
 #define CAN_TX_PIN 26
 #endif //CAN_TX_PIN

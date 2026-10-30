@@ -32,6 +32,8 @@ class BleCanProxy {
     boolean processing = false;
 
   private:
+    void sendFrame(twai_message_t &frame);
+
     CanDevice *candevice;
     Stream *stream;
     uint16_t length = 0;
@@ -42,6 +44,7 @@ class BleCanProxy {
     std::string frameBuffer;
     uint8_t vesc_id;
     uint8_t ble_proxy_can_id;
+    unsigned int framesSent = 0;
 };
 
 #endif //RESCUE_BLECANPROXY_H
