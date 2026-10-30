@@ -6,6 +6,7 @@
 #define RESCUE_VESCDATA_H
 
 #include <cstdint>
+#include <string>
 
 struct VescData {
     uint8_t majorVersion;
@@ -13,7 +14,7 @@ struct VescData {
     std::string name;
     std::string uuid;
 
-    boolean connected = false;
+    bool connected = false;
     double dutyCycle = 0.0;
     double erpm = 0.0;
     double current = 0.0;

@@ -19,7 +19,6 @@ char tmpbuf[1024]; // CAUTION: always use a global buffer, local buffer will flo
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t value = 0;
-Stream *vescSerial;
 std::string vescBuffer;
 std::string updateBuffer;
 unsigned long bleLoop = 0;
@@ -57,12 +56,8 @@ void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
     PACKET_SIZE = MTU_SIZE - 3;
 }
 
-#if defined(CANBUS_ENABLED)
-void BleServer::init(Stream *vesc, CanBus *canbus) {
-#else
-void BleServer::init(Stream *vesc) {
-#endif
-    vescSerial = vesc;
+void BleServer::init(IVescCommunication *vescCommunication) {
+    this->vescCommunication = vescCommunication;
 
     // Create the BLE Device
     NimBLEDevice::init(AppConfiguration::getInstance()->config.deviceName.c_str());
@@ -71,9 +66,6 @@ void BleServer::init(Stream *vesc) {
     NimBLEDevice::setPower(ESP_PWR_LVL_P9);
 
     ESP_LOGI(LOG_TAG_BLESERVER, "Initial MTU size %d", mtu_size);
-#if defined(CANBUS_ENABLED)
-    this->canbus = canbus;
-#endif
     // Create the BLE Server
     pServer = NimBLEDevice::createServer();
     pServer->setCallbacks(this);
@@ -124,7 +116,7 @@ void BleServer::init(Stream *vesc) {
             NIMBLE_PROPERTY::WRITE |
             NIMBLE_PROPERTY::WRITE_NR
     );
-    pCharacteristicConf->setCallbacks(this);
+    pCharacteristicFw->setCallbacks(this);
 
     pCharacteristicLoop = pServiceRescue->createCharacteristic(
             RESCUE_CHARACTERISTIC_UUID_LOOP,
@@ -164,27 +156,25 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
     loopCount++;
     loopTimeSum += loopTime;
     
-    if (vescSerial->available()) {
-        int oneByte;
-        while (vescSerial->available()) {
-            oneByte = vescSerial->read();
-            vescBuffer.push_back(oneByte);
+    // Only pull data while a client is connected - otherwise the buffer would grow without bound.
+    if (deviceConnected) {
+        vescCommunication->fromVesc(vescBuffer);
+        if (vescBuffer.length() > BLE_VESC_BUFFER_MAX) {
+            ESP_LOGW(LOG_TAG_BLESERVER, "dropping %d stale bytes from the VESC buffer", (int) vescBuffer.length());
+            vescBuffer.clear();
         }
-
-        if (deviceConnected) {
-            while (vescBuffer.length() > 0) {
-                if (vescBuffer.length() > PACKET_SIZE) {
-                    dumpBuffer("VESC => BLE/UART", vescBuffer.substr(0, PACKET_SIZE));
-                    pCharacteristicVescTx->setValue(vescBuffer.substr(0, PACKET_SIZE));
-                    vescBuffer = vescBuffer.substr(PACKET_SIZE);
-                } else {
-                    dumpBuffer("VESC => BLE/UART", vescBuffer);
-                    pCharacteristicVescTx->setValue(vescBuffer);
-                    vescBuffer.clear();
-                }
-                pCharacteristicVescTx->notify();
-                delay(bleWait); // bluetooth stack will go into congestion, if too many packets are sent
+        while (vescBuffer.length() > 0) {
+            if (vescBuffer.length() > PACKET_SIZE) {
+                dumpBuffer("VESC => BLE/UART", vescBuffer.substr(0, PACKET_SIZE));
+                pCharacteristicVescTx->setValue(vescBuffer.substr(0, PACKET_SIZE));
+                vescBuffer = vescBuffer.substr(PACKET_SIZE);
+            } else {
+                dumpBuffer("VESC => BLE/UART", vescBuffer);
+                pCharacteristicVescTx->setValue(vescBuffer);
+                vescBuffer.clear();
             }
+            pCharacteristicVescTx->notify();
+            delay(bleWait); // bluetooth stack will go into congestion, if too many packets are sent
         }
     }
 
@@ -217,8 +207,14 @@ void BleServer::dumpBuffer(std::string header, std::string buffer) {
     if(esp_log_level_get(LOG_TAG_BLESERVER) < ESP_LOG_DEBUG) {
         return;
     }
-    int length = snprintf(tmpbuf, 50, "%s : len = %d / ", header.c_str(), buffer.length());
+    int length = snprintf(tmpbuf, 50, "%s : len = %d / ", header.c_str(), (int) buffer.length());
+    if (length > 50) {
+        length = 50; // snprintf returns the untruncated length, keep it inside the header area
+    }
     for (char i : buffer) {
+        if (length > 1024 - 4) {
+            break; // never write past tmpbuf
+        }
         length += snprintf(tmpbuf+length, 1024-length, "%02x ", i);
     }
     ESP_LOGD(LOG_TAG_BLESERVER, "%s", tmpbuf);
@@ -231,14 +227,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
     if (rxValue.length() > 0) {
         if (pCharacteristic->getUUID().equals(pCharacteristicVescRx->getUUID())) {
             dumpBuffer("BLE/UART => VESC: ", rxValue);
-
-#ifdef CANBUS_ONLY
-          canbus->proxy->proxyIn(rxValue);
-#else
-            for (int i = 0; i < rxValue.length(); i++) {
-                vescSerial->write(rxValue[i]);
-            }
-#endif
+            vescCommunication->toVesc(rxValue);
         } else if (pCharacteristic->getUUID().equals(pCharacteristicConf->getUUID())) {
             const std::string& str(rxValue);
             std::string::size_type middle = str.find('='); // Find position of '='
@@ -252,6 +241,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             //Serial.println(String(key.c_str()) + String("=") + String(value.c_str()));
 
             snprintf(buf, bufSize, "Updated param \"%s\" to %s", key.c_str(), value.c_str());
+            bool handled = true;
             if (key == "config") {
                 AppConfiguration::getInstance()->config.sendConfig = true;
             } else if (key == "save") {
@@ -317,7 +307,13 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             } else if (key == "numberPixelBatMon") {
                 AppConfiguration::getInstance()->config.numberPixelBatMon = parseInt(value);
             } else if (key == "vescId") {
-                AppConfiguration::getInstance()->config.vescId = parseInt(value);
+                // esp_can_id = vescId + 1 and ble_proxy_can_id = vescId + 2 must stay within one byte
+                const int newVescId = parseInt(value);
+                if (newVescId >= 0 && newVescId <= 253) {
+                    AppConfiguration::getInstance()->config.vescId = newVescId;
+                } else {
+                    ESP_LOGW(LOG_TAG_BLESERVER, "ignoring out of range vescId %d", newVescId);
+                }
             } else if (key == "ledType") {
                 AppConfiguration::getInstance()->config.ledType = value.c_str();
             } else if (key == "ledFrequency") {
@@ -342,12 +338,17 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             } else if(key == "lightsSwitch") {
                 AppConfiguration::getInstance()->config.lightsSwitch = ("true" == value);
             } else if(key == "update"){
-                if (value == "start") { // && !updateFlag) { //If it's the first packet of OTA since bootup, begin OTA
+                if (value == "start") { //If it's the first packet of OTA since bootup, begin OTA
                     AppConfiguration::getInstance()->config.otaUpdateActive = true;
                     snprintf(buf, bufSize, "startUpdate");
                 }
+            } else {
+                ESP_LOGW(LOG_TAG_BLESERVER, "ignoring unknown config key \"%s\"", key.c_str());
+                handled = false;
             }
-            ESP_LOGI(LOG_TAG_BLESERVER, "%s", buf);
+            if (handled) {
+                ESP_LOGI(LOG_TAG_BLESERVER, "%s", buf);
+            }
         }
     }
     delay(bleWait); // needed to give BLE stack some time

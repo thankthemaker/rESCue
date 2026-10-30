@@ -3,13 +3,16 @@
 
 #include <Arduino.h>
 #include "config.h"
-#include "CanBus.h"
 #include "AppConfiguration.h"
 #include "Buzzer.h"
 #include <NimBLEDevice.h>
 #include "base64.h"
+#include "IVescCommunication.h"
 
 static const char* LOG_TAG_BLESERVER = "BleServer";
+
+/** Upper bound for the buffer holding VESC data that is waiting for the BLE client. */
+#define BLE_VESC_BUFFER_MAX 8192
 
 #define VESC_SERVICE_UUID            "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 #define VESC_CHARACTERISTIC_UUID_RX  "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -27,11 +30,7 @@ class BleServer :
   public BLECharacteristicCallbacks  {
     public:
       BleServer();
-#ifdef CANBUS_ENABLED
-      void init(Stream *vesc, CanBus *canbus);
-#else
-      void init(Stream *vesc);
-#endif      
+      void init(IVescCommunication *vescCommunication);
       void loop(VescData *vescData, unsigned long loopTime,  unsigned long maxLoopTime);
       void stop();
 
@@ -52,7 +51,7 @@ class BleServer :
     private:
       const static int bufSize = 256;
       char buf[bufSize];
-      CanBus *canbus{};
+      IVescCommunication *vescCommunication{};
       struct sendConfigValue;
       static void dumpBuffer(std::string header, std::string buffer);
       static int parseInt(const std::string& strValue);
