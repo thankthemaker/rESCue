@@ -2,7 +2,7 @@
 
 boolean CanDevice::init() {
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_CAN_TX_PIN, GPIO_CAN_RX_PIN, TWAI_MODE_NORMAL);
-    g_config.rx_queue_len=1000;
+    g_config.rx_queue_len=CAN_RX_QUEUE_LEN;
     g_config.tx_queue_len=CAN_TX_QUEUE_LEN;
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();

@@ -1,7 +1,12 @@
 #ifndef RESCUE_VESCCANCONSTANTS_H
 #define RESCUE_VESCCANCONSTANTS_H
 
-#define BUFFER_SIZE 65535
+/*
+ * Size of the loopback stream that carries VESC data to the BLE client.
+ * The VESC never produces a payload larger than PACKET_MAX_PL_LEN (512), so a
+ * few kilobytes are plenty - the stream is drained on every main loop pass.
+ */
+#define BUFFER_SIZE 4096
 
 // CAN commands
 typedef enum {

@@ -10,8 +10,9 @@
 
 static const char* LOG_TAG_BLE_CAN_PROXY = "BleCanProxy";
 
-/** Upper bound for the buffer holding incoming (possibly incomplete) client data. */
-#define BLE_PROXY_RX_BUFFER_MAX 8192
+/** Upper bound for the buffer holding incoming (possibly incomplete) client data.
+ *  A framed VESC packet is at most 518 bytes, so this leaves room for batched writes. */
+#define BLE_PROXY_RX_BUFFER_MAX 2048
 /** Give up on a partially received packet after this long and resume polling. */
 #define BLE_PROXY_PACKET_TIMEOUT_MS 2000
 

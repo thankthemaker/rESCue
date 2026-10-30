@@ -62,7 +62,9 @@ class CanBus : public VescCommunicationBase {
     bool sendFrame(const twai_message_t &frame) { return candevice->sendCanFrame(&frame); }
 
     const static int maxFramesPerLoop = 1000;
-    const static size_t maxBufferSize = 4096;
+    /** Cap for assembled VESC payloads. The VESC limits a payload to
+     *  PACKET_MAX_PL_LEN (512) bytes, so this is a safety margin, not a target. */
+    const static size_t maxBufferSize = 2048;
 
     CanDevice *candevice = nullptr;
     LoopbackStream *stream = nullptr;
