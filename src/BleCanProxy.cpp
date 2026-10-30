@@ -1,4 +1,5 @@
 #include "BleCanProxy.h"
+#include "vesc_packet.h"
 
 
 BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, uint8_t ble_proxy_can_id) {
@@ -8,22 +9,35 @@ BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, 
     this->ble_proxy_can_id = ble_proxy_can_id;
 }
 
-void BleCanProxy::proxyIn(std::string in) {
-    auto packet_type = (uint8_t) in.at(0);
+void BleCanProxy::proxyIn(const std::string &in) {
+    if (in.size() < 2) {
+        return; // not enough for a packet start byte plus its length
+    }
 
     if (!longPacket) {
-        switch (packet_type) {
+        const uint8_t packetType = (uint8_t) in[0];
+
+        switch (packetType) {
             case 2:
-                length = (uint8_t) in.at(1);
-                command = (uint8_t) in.at(2);
+                if (in.size() < 3) {
+                    return; // need start byte, length and the command byte
+                }
+                headerLength = 2;
+                length = (uint8_t) in[1];
+                command = (uint8_t) in[2];
                 processing = true;
-                if (length > (in.size() - 5)) {
+                // a short packet is only "long" if this chunk does not hold it completely
+                if (in.size() < (size_t) headerLength + (size_t) length + 3) {
                     longPacket = true;
                 }
                 break;
             case 3:
-                length = ((uint8_t) in.at(1) << 8) + (uint8_t) in.at(2);
-                command = (uint8_t) in.at(3);
+                if (in.size() < 4) {
+                    return;
+                }
+                headerLength = 3;
+                length = (uint16_t) (((uint8_t) in[1] << 8) | (uint8_t) in[2]);
+                command = (uint8_t) in[3];
                 longPacket = true;
                 processing = true;
                 break;
@@ -33,7 +47,9 @@ void BleCanProxy::proxyIn(std::string in) {
         ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, command %d, length %d\n", command, length);
     }
 
-    if (length <= 6) {
+    if (length <= 6 && !longPacket) {
+        // short packet -> one CAN_PACKET_PROCESS_SHORT_BUFFER frame
+        // layout expected by the VESC: [id, send flag, payload...]
         twai_message_t tx_frame = {};
         tx_frame.extd = 1;
         tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
@@ -47,14 +63,14 @@ void BleCanProxy::proxyIn(std::string in) {
         candevice->sendCanFrame(&tx_frame);
     } else {
         longPackBuffer += in;
-        if (length + 5 > longPackBuffer.size()) {
-            //Serial.printf("Buffer not full, needed %d, is %d\n", length + 5, longPackBuffer.size());
-            return;
-        }
-        //Serial.printf("Buffer full now processing, needed %d, is %d\n", length +  5, longPackBuffer.size());
 
-        int pos = longPacket && length>>8 != 0 ? 3 : 2;
-        longPackBuffer = longPackBuffer.substr(pos, longPackBuffer.length()-pos);
+        // a complete packet is header + payload + crc (2) + end byte (1)
+        const size_t frameLength = (size_t) headerLength + (size_t) length + 3;
+        if (longPackBuffer.size() < frameLength) {
+            return; // wait for the remaining chunks
+        }
+        // keep exactly one packet, so the CRC bytes read below are always in place
+        longPackBuffer = longPackBuffer.substr(headerLength, length + 3);
 
         unsigned int end_a = 0;
         for (unsigned int byteNum = 0; byteNum < length; byteNum += 7) {
@@ -64,37 +80,32 @@ void BleCanProxy::proxyIn(std::string in) {
 
             end_a = byteNum + 7;
 
-            int sendLen = (length >= byteNum+ 7) ? 7 : length - byteNum;
-            //Serial.printf("bufLen %d, byteNum %d, sendlen %d\n", length, byteNum , sendLen);
+            const int sendLen = (length >= byteNum + 7) ? 7 : length - byteNum;
 
             twai_message_t tx_frame = {};
             tx_frame.extd = 1;
             tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + vesc_id;
             tx_frame.data_length_code = sendLen + 1;
-            tx_frame.data[0] = byteNum; //startbyte counter of frame
+            tx_frame.data[0] = byteNum; // start byte counter of the frame
 
-
-            for (int i = 1; i < sendLen+1; i++) {
-                //Serial.printf("Reading byte %d, length %d, index %d, sendlen %d\n", byteNum + i, bufLen, i, sendLen);
-                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum-1 + i);
+            for (int i = 1; i < sendLen + 1; i++) {
+                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum - 1 + i);
             }
             candevice->sendCanFrame(&tx_frame);
         }
 
-        for (unsigned int byteNum = end_a; byteNum<length; byteNum += 6) {
-            int sendLen = (length >= byteNum + 6) ? 6 : length - byteNum ;
-            //Serial.printf("bufLen %d, byteNum %d, sendlen %d\n", length, byteNum , sendLen);
+        for (unsigned int byteNum = end_a; byteNum < length; byteNum += 6) {
+            const int sendLen = (length >= byteNum + 6) ? 6 : length - byteNum;
 
             twai_message_t tx_frame = {};
             tx_frame.extd = 1;
             tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + vesc_id;
-            tx_frame.data_length_code= sendLen + 2;
+            tx_frame.data_length_code = sendLen + 2;
             tx_frame.data[0] = byteNum >> 8;
             tx_frame.data[1] = byteNum & 0xFF;
 
-            for (int i = 2; i < sendLen+2; i++) {
-                //Serial.printf("Reading byte %d, length %d, index %d, sendlen %d\n", byteNum + i, bufLen, i, sendLen);
-                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum-2 + i);
+            for (int i = 2; i < sendLen + 2; i++) {
+                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum - 2 + i);
             }
 
             candevice->sendCanFrame(&tx_frame);
@@ -105,70 +116,41 @@ void BleCanProxy::proxyIn(std::string in) {
         tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_RX_BUFFER) << 8) + vesc_id;
         tx_frame.data_length_code = 6;
         tx_frame.data[0] = ble_proxy_can_id;
-        tx_frame.data[1] = 0; // IS THIS CORRECT?????
+        tx_frame.data[1] = 0; // 0 -> the VESC sends a reply back to ble_proxy_can_id
         tx_frame.data[2] = length >> 8;
         tx_frame.data[3] = length & 0xFF;
+        // the buffer holds payload + crc (2) + end byte (1), so the CRC sits at size-3 / size-2
         tx_frame.data[4] = longPackBuffer.at(longPackBuffer.size() - 3);
         tx_frame.data[5] = longPackBuffer.at(longPackBuffer.size() - 2);
         candevice->sendCanFrame(&tx_frame);
-
     }
 
     length = 0;
     command = 0;
     processing = false;
     longPacket = false;
-    longPackBuffer = "";
+    longPackBuffer.clear();
 }
 
-void BleCanProxy::proxyOut(uint8_t *data, unsigned int size, uint8_t crc1, uint8_t crc2) {
+void BleCanProxy::proxyOut(const uint8_t *payload, unsigned int size) {
+    if (payload == nullptr || size == 0) {
+        return;
+    }
     if (size > BUFFER_SIZE) {
         ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "proxyOut - Buffer size exceeded, abort (message not sent via proxy)");
         return;
     }
+
+    // Framing and CRC are added here: the VESC short buffer frames carry no CRC,
+    // so it has to be derived from the payload for every reply.
+    const unsigned int frameLength = vesc_packet_frame_length(size);
+    frameBuffer.resize(frameLength);
+    const int written = vesc_packet_encode(payload, size, reinterpret_cast<uint8_t *>(&frameBuffer[0]), frameLength);
+    if (written <= 0) {
+        ESP_LOGE(LOG_TAG_BLE_CAN_PROXY, "proxyOut - could not encode packet, abort");
+        return;
+    }
+
     ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy out, sending %d bytes\n", size);
-    //Start bit, package size
-    if (size <= 255) {
-        //Serial.print(0x02);
-        stream->write(0x02);
-        // size
-        //Serial.print(size);
-        stream->write(size);
-    } else if (size <= 65535) {
-        //Serial.print(0x03);
-        stream->write(0x03);
-        // size
-        //Serial.print(size >> 8);
-        //Serial.print(size & 0xFF);
-        stream->write(size >> 8);
-        stream->write(size & 0xFF);
-    } else {
-        //Serial.print(0x04);
-        stream->write(0x04);
-        // size
-        //Serial.print(size >> 16);
-        //Serial.print((size >> 8) & 0x0F);
-        //Serial.print(size & 0xFF);
-        stream->write(size >> 16);
-        stream->write((size >> 8) & 0x0F);
-        stream->write(size & 0xFF);
-    }
-
-    // data
-    for (int i = 0; i < size; i++) {
-        //Serial.print(data[i]);
-        stream->write(data[i]);
-    }
-
-    //crc 2 byte
-    //Serial.print(crc1);
-    //Serial.print(crc2);
-    stream->write(crc1);
-    stream->write(crc2);
-
-    // Stop bit
-    //Serial.print(0x03);
-    stream->write(0x03);
-
-    //Serial.println("");
+    stream->write(reinterpret_cast<const uint8_t *>(frameBuffer.data()), (size_t) written);
 }

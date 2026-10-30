@@ -1,5 +1,6 @@
 #include "CanBus.h"
 #include "buffer.h"
+#include "vesc_packet.h"
 
 CanBus::CanBus(VescData *vescData) : VescCommunicationBase(vescData) {
     this->stream = new LoopbackStream(BUFFER_SIZE);
@@ -391,13 +392,13 @@ void CanBus::processFrame(const twai_message_t &rx_frame, int frameCount) {
         vescData->inputVoltage += AppConfiguration::getInstance()->config.batteryDrift;
     } else if (RECV_PROCESS_SHORT_BUFFER_PROXY == ID) {
         frametype = "process short buffer for <<BLE proxy>>";
-        for (int i = 1; i < rx_frame.data_length_code && proxybuffer.size() < maxBufferSize; i++) {
-            proxybuffer.push_back(rx_frame.data[i]);
+        // VESC short buffer frame layout: [controller id, send flag, payload...].
+        // Such a frame carries no CRC, so it must be derived from the payload.
+        const uint8_t *payload = nullptr;
+        const int payloadLen = vesc_short_buffer_payload(rx_frame.data, rx_frame.data_length_code, &payload);
+        if (payloadLen > 0) {
+            proxy->proxyOut(payload, (unsigned int) payloadLen);
         }
-        if (rx_frame.data_length_code >= 6) {
-            proxy->proxyOut(proxybuffer.data(), proxybuffer.size(), rx_frame.data[4], rx_frame.data[5]);
-        }
-        proxybuffer.clear();
     } else if (RECV_FILL_RX_BUFFER == ID) {
         frametype = "fill rx buffer";
         for (int i = 1; i < rx_frame.data_length_code && buffer.size() < maxBufferSize; i++) {
@@ -423,9 +424,7 @@ void CanBus::processFrame(const twai_message_t &rx_frame, int frameCount) {
                                                     AppConfiguration::getInstance()->config.batteryDrift, millis());
 
         if (isProxyRequest) {
-            if (rx_frame.data_length_code >= 6) {
-                proxy->proxyOut(pending.data(), pending.size(), rx_frame.data[4], rx_frame.data[5]);
-            }
+            proxy->proxyOut(pending.data(), pending.size());
             proxybuffer.clear();
         } else {
             buffer.clear();
