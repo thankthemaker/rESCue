@@ -85,7 +85,7 @@ void Uart::parseFrames() {
         }
 
         vescCommandParser->parseCommand(rxBuffer.data() + index + headerLength, payloadLength, vescData,
-                                        AppConfiguration::getInstance()->config.batteryDrift);
+                                        AppConfiguration::getInstance()->config.batteryDrift, millis());
         index += frameLength;
     }
 

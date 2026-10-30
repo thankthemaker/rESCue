@@ -23,9 +23,11 @@ class VescCommandParser {
      * @param length      number of valid bytes in data
      * @param vescData    destination for the decoded values
      * @param batteryDrift voltage correction added to the measured input voltage
+     * @param now         current time in milliseconds, used to stamp received data
      * @return a human readable name of the handled command (for logging)
      */
-    std::string parseCommand(const uint8_t *data, size_t length, VescData *vescData, double batteryDrift);
+    std::string parseCommand(const uint8_t *data, size_t length, VescData *vescData, double batteryDrift,
+                             unsigned long now);
 
     unsigned long getLastRealtimeDataTimestamp() const { return lastRealtimeData; }
     unsigned long getBalanceDataTimestamp() const { return lastBalanceData; }

@@ -1,5 +1,4 @@
 #include "VescCommandParser.h"
-#include <Arduino.h>
 #include "buffer.h"
 
 namespace {
@@ -15,7 +14,8 @@ constexpr uint8_t FLOAT_PACKAGE = 101;
 constexpr uint8_t FLOAT_COMMAND_GET_RTDATA = 0x1;
 } // namespace
 
-std::string VescCommandParser::parseCommand(const uint8_t *data, size_t length, VescData *vescData, double batteryDrift) {
+std::string VescCommandParser::parseCommand(const uint8_t *data, size_t length, VescData *vescData, double batteryDrift,
+                                            unsigned long now) {
     if (data == nullptr || length == 0) {
         return "";
     }
@@ -24,19 +24,19 @@ std::string VescCommandParser::parseCommand(const uint8_t *data, size_t length, 
         case COMM_FW_VERSION:
             return handleFirmwareVersion(data, length, vescData);
         case COMM_GET_DECODED_BALANCE:
-            lastBalanceData = millis();
+            lastBalanceData = now;
             return handleDecodedBalance(data, length, vescData);
         case COMM_CUSTOM_APP_DATA:
-            lastBalanceData = millis();
+            lastBalanceData = now;
             return handleCustomAppData(data, length, vescData);
         case COMM_GET_VALUES_SELECTIVE:
-            lastRealtimeData = millis();
+            lastRealtimeData = now;
             return handleGetValuesSelective(data, length, vescData, batteryDrift);
         case COMM_GET_VALUES_SETUP_SELECTIVE:
-            lastRealtimeData = millis();
+            lastRealtimeData = now;
             return handleGetValuesSetupSelective(data, length, vescData, batteryDrift);
         case COMM_GET_VALUES:
-            lastRealtimeData = millis();
+            lastRealtimeData = now;
             return handleGetValues(data, length, vescData, batteryDrift);
         default:
             return "";

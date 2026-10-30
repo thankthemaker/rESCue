@@ -420,7 +420,7 @@ void CanBus::processFrame(const twai_message_t &rx_frame, int frameCount) {
         }
 
         frametype = vescCommandParser->parseCommand(pending.data(), pending.size(), vescData,
-                                                    AppConfiguration::getInstance()->config.batteryDrift);
+                                                    AppConfiguration::getInstance()->config.batteryDrift, millis());
 
         if (isProxyRequest) {
             if (rx_frame.data_length_code >= 6) {
