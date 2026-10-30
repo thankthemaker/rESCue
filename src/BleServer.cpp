@@ -1,8 +1,6 @@
 #include "BleServer.h"
 #include <sstream>
 
-int MTU_SIZE = 128;
-int PACKET_SIZE = MTU_SIZE-3;
 NimBLEServer *pServer = nullptr;
 NimBLEService *pServiceVesc = nullptr;
 NimBLEService *pServiceRescue = nullptr;
@@ -18,18 +16,13 @@ char tmpbuf[1024]; // CAUTION: always use a global buffer, local buffer will flo
 
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
-uint32_t value = 0;
 std::string vescBuffer;
-std::string updateBuffer;
 unsigned long bleLoop = 0;
 unsigned long loopTimeSum = 0;
 unsigned long loopCount = 0;
 unsigned int bleWait = 5;
 
 BleServer::BleServer() = default;
-
-uint32_t frameNumber = 0;
-
 
 // NimBLEServerCallbacks::onConnect
 inline
@@ -52,8 +45,8 @@ void BleServer::onDisconnect(NimBLEServer *pServer) {
 inline
 void BleServer::onMTUChange(uint16_t MTU, ble_gap_conn_desc* desc) {
     ESP_LOGI(LOG_TAG_BLESERVER, "MTU changed - new size %d, peer %s", MTU, NimBLEAddress(desc->peer_ota_addr).toString().c_str());
-    MTU_SIZE = MTU;
-    PACKET_SIZE = MTU_SIZE - 3;
+    attMtuSize = MTU;
+    packetSize = attMtuSize - 3;
 }
 
 void BleServer::init(IVescCommunication *vescCommunication) {
@@ -164,10 +157,10 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
             vescBuffer.clear();
         }
         while (vescBuffer.length() > 0) {
-            if (vescBuffer.length() > PACKET_SIZE) {
-                dumpBuffer("VESC => BLE/UART", vescBuffer.substr(0, PACKET_SIZE));
-                pCharacteristicVescTx->setValue(vescBuffer.substr(0, PACKET_SIZE));
-                vescBuffer = vescBuffer.substr(PACKET_SIZE);
+            if (vescBuffer.length() > packetSize) {
+                dumpBuffer("VESC => BLE/UART", vescBuffer.substr(0, packetSize));
+                pCharacteristicVescTx->setValue(vescBuffer.substr(0, packetSize));
+                vescBuffer = vescBuffer.substr(packetSize);
             } else {
                 dumpBuffer("VESC => BLE/UART", vescBuffer);
                 pCharacteristicVescTx->setValue(vescBuffer);
@@ -201,6 +194,10 @@ void BleServer::loop(VescData *vescData, unsigned long loopTime, unsigned long m
 
 void BleServer::stop() {
     NimBLEDevice::deinit(true);
+    // do not act on stale state should the server be started again later
+    deviceConnected = false;
+    oldDeviceConnected = false;
+    vescBuffer.clear();
 }
 
 void BleServer::dumpBuffer(std::string header, std::string buffer) {
@@ -331,7 +328,7 @@ void BleServer::onWrite(BLECharacteristic *pCharacteristic) {
             } else if (key == "mtuSize") {
                 uint16_t mtu = strtol(value.c_str(), nullptr, 10);
                 AppConfiguration::getInstance()->config.mtuSize = mtu;
-                if (mtu != 0 && mtu < MTU_SIZE) {
+                if (mtu != 0 && mtu < attMtuSize) {
                     NimBLEDevice::setMTU(mtu);
                     ESP_LOGW(LOG_TAG_BLESERVER, "New MTU-size: %d", mtu);
                 }

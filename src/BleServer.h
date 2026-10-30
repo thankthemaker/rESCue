@@ -51,6 +51,8 @@ class BleServer :
     private:
       const static int bufSize = 256;
       char buf[bufSize];
+      int attMtuSize = 128;   // ATT MTU as negotiated, see onMTUChange()
+      int packetSize = 125;   // payload bytes that fit into one notification
       IVescCommunication *vescCommunication{};
       struct sendConfigValue;
       static void dumpBuffer(std::string header, std::string buffer);
