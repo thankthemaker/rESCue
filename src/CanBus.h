@@ -9,6 +9,7 @@
 #include "CanDevice.h"
 #include "BleCanProxy.h"
 #include "VescCanConstants.h"
+#include "VescCanId.h"
 #include "VescData.h"
 #include "IVescCommunication.h"
 
@@ -58,10 +59,6 @@ class CanBus : public VescCommunicationBase {
     static int16_t readInt16Value(const twai_message_t &rx_frame, int startbyte);
     static void printFrame(const twai_message_t &rx_frame, int frameCount);
 
-    /** Build a VESC CAN identifier for the given packet type and target id. */
-    uint32_t canId(uint16_t packet, uint8_t id) const {
-        return (uint32_t(0x8000) << 16) + (uint16_t(packet) << 8) + id;
-    }
     bool sendFrame(const twai_message_t &frame) { return candevice->sendCanFrame(&frame); }
 
     const static int maxFramesPerLoop = 1000;

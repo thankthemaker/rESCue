@@ -10,19 +10,19 @@ void CanBus::init() {
     esp_can_id = vesc_id + 1;
     ble_proxy_can_id = vesc_id + 2;
 
-    RECV_STATUS_1 = canId(CAN_PACKET_STATUS, vesc_id);
-    RECV_STATUS_2 = canId(CAN_PACKET_STATUS_2, vesc_id);
-    RECV_STATUS_3 = canId(CAN_PACKET_STATUS_3, vesc_id);
-    RECV_STATUS_4 = canId(CAN_PACKET_STATUS_4, vesc_id);
-    RECV_STATUS_5 = canId(CAN_PACKET_STATUS_5, vesc_id);
+    RECV_STATUS_1 = canReceiveId(CAN_PACKET_STATUS, vesc_id);
+    RECV_STATUS_2 = canReceiveId(CAN_PACKET_STATUS_2, vesc_id);
+    RECV_STATUS_3 = canReceiveId(CAN_PACKET_STATUS_3, vesc_id);
+    RECV_STATUS_4 = canReceiveId(CAN_PACKET_STATUS_4, vesc_id);
+    RECV_STATUS_5 = canReceiveId(CAN_PACKET_STATUS_5, vesc_id);
 
-    RECV_FILL_RX_BUFFER = canId(CAN_PACKET_FILL_RX_BUFFER, esp_can_id);
-    RECV_PROCESS_RX_BUFFER = canId(CAN_PACKET_PROCESS_RX_BUFFER, esp_can_id);
+    RECV_FILL_RX_BUFFER = canReceiveId(CAN_PACKET_FILL_RX_BUFFER, esp_can_id);
+    RECV_PROCESS_RX_BUFFER = canReceiveId(CAN_PACKET_PROCESS_RX_BUFFER, esp_can_id);
 
-    RECV_PROCESS_SHORT_BUFFER_PROXY = canId(CAN_PACKET_PROCESS_SHORT_BUFFER, ble_proxy_can_id);
-    RECV_FILL_RX_BUFFER_PROXY = canId(CAN_PACKET_FILL_RX_BUFFER, ble_proxy_can_id);
-    RECV_FILL_RX_BUFFER_LONG_PROXY = canId(CAN_PACKET_FILL_RX_BUFFER_LONG, ble_proxy_can_id);
-    RECV_PROCESS_RX_BUFFER_PROXY = canId(CAN_PACKET_PROCESS_RX_BUFFER, ble_proxy_can_id);
+    RECV_PROCESS_SHORT_BUFFER_PROXY = canReceiveId(CAN_PACKET_PROCESS_SHORT_BUFFER, ble_proxy_can_id);
+    RECV_FILL_RX_BUFFER_PROXY = canReceiveId(CAN_PACKET_FILL_RX_BUFFER, ble_proxy_can_id);
+    RECV_FILL_RX_BUFFER_LONG_PROXY = canReceiveId(CAN_PACKET_FILL_RX_BUFFER_LONG, ble_proxy_can_id);
+    RECV_PROCESS_RX_BUFFER_PROXY = canReceiveId(CAN_PACKET_PROCESS_RX_BUFFER, ble_proxy_can_id);
 
     candevice = new CanDevice();
     candevice->init();
@@ -91,7 +91,7 @@ boolean CanBus::bmsVTOT(float v_tot, float v_charge) {
     buffer_append_float32_auto(buffer, v_charge, &send_index); // v_charge
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_V_TOT, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_V_TOT, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -129,7 +129,7 @@ boolean CanBus::bmsSOCSOHTempStat(float vCellMin, float vCellMax, float SOC, flo
             ((isChargeOk ? 1 : 0) << 3);
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_SOC_SOH_TEMP_STAT, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_SOC_SOH_TEMP_STAT, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -145,7 +145,7 @@ boolean CanBus::bmsAHWHDischargeTotal(float ampHours, float wattHours) {
     buffer_append_float32_auto(buffer, wattHours, &send_index);
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_AH_WH_DIS_TOTAL, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_AH_WH_DIS_TOTAL, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -161,7 +161,7 @@ boolean CanBus::bmsAHWHChargeTotal(float ampHours, float wattHours) {
     buffer_append_float32_auto(buffer, wattHours, &send_index);
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_AH_WH_CHG_TOTAL, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_AH_WH_CHG_TOTAL, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -177,7 +177,7 @@ boolean CanBus::bmsAHWH(float ampHours, float wattHours) {
     buffer_append_float32_auto(buffer, wattHours, &send_index);
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_AH_WH, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_AH_WH, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -194,7 +194,7 @@ boolean CanBus::bmsI(float currentAmps) {
     buffer_append_float32_auto(buffer, currentAmps, &send_index);
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_I, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_I, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -213,7 +213,7 @@ boolean CanBus::bmsBal(boolean isBalancing) {
     }
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_BAL, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_BAL, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -225,7 +225,7 @@ boolean CanBus::bmsVCell(const uint16_t *cellMillivolts, int cell_max) {
     while (cell_now < cell_max) {
         twai_message_t tx_frame = {};
         tx_frame.extd = 1;
-        tx_frame.identifier = canId(CAN_PACKET_BMS_V_CELL, vesc_id);
+        tx_frame.identifier = canSendId(CAN_PACKET_BMS_V_CELL, vesc_id);
         tx_frame.data_length_code = 0x8;
 
         uint8_t buffer[8];
@@ -252,7 +252,7 @@ boolean CanBus::bmsTemps(const int8_t *thermTemps, int temp_max) {
     while (temp_now < temp_max) {
         twai_message_t tx_frame = {};
         tx_frame.extd = 1;
-        tx_frame.identifier = canId(CAN_PACKET_BMS_TEMPS, vesc_id);
+        tx_frame.identifier = canSendId(CAN_PACKET_BMS_TEMPS, vesc_id);
         tx_frame.data_length_code = 0x8;
 
         uint8_t buffer[8];
@@ -275,7 +275,7 @@ boolean CanBus::bmsTemps(const int8_t *thermTemps, int temp_max) {
     if (temp_max > 4) {
         twai_message_t tx_frame = {};
         tx_frame.extd = 1;
-        tx_frame.identifier = canId(CAN_PACKET_BMS_HUM, vesc_id);
+        tx_frame.identifier = canSendId(CAN_PACKET_BMS_HUM, vesc_id);
         tx_frame.data_length_code = 0x8;
 
         uint8_t buffer[8];
@@ -296,7 +296,7 @@ boolean CanBus::bmsState(bms_op_state op_state, bms_fault_state fault_state) {
     buffer[1] = fault_state;
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_BMS_STATE, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_BMS_STATE, vesc_id);
     tx_frame.data_length_code = 0x8;
     memcpy(&tx_frame.data[0], buffer, 8);
 
@@ -308,7 +308,7 @@ boolean CanBus::sendFirmwareVersionRequest() {
     twai_message_t tx_frame = {};
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_PROCESS_SHORT_BUFFER, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_PROCESS_SHORT_BUFFER, vesc_id);
     tx_frame.data_length_code = 0x03;
     tx_frame.data[0] = esp_can_id;
     tx_frame.data[1] = 0x00;
@@ -321,7 +321,7 @@ boolean CanBus::sendRealtimeDataRequest() {
     twai_message_t tx_frame = {};
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_PROCESS_SHORT_BUFFER, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_PROCESS_SHORT_BUFFER, vesc_id);
     tx_frame.data_length_code = 0x07;
     tx_frame.data[0] = esp_can_id;
     tx_frame.data[1] = 0x00;
@@ -339,7 +339,7 @@ boolean CanBus::sendFloatPackageDataRequest() {
     twai_message_t tx_frame = {};
 
     tx_frame.extd = 1;
-    tx_frame.identifier = canId(CAN_PACKET_PROCESS_SHORT_BUFFER, vesc_id);
+    tx_frame.identifier = canSendId(CAN_PACKET_PROCESS_SHORT_BUFFER, vesc_id);
     tx_frame.data_length_code = 0x05;
     tx_frame.data[0] = esp_can_id;
     tx_frame.data[1] = 0x00;
