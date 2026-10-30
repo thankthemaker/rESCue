@@ -7,6 +7,7 @@ BleCanProxy::BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, 
     this->stream = stream;
     this->vesc_id = vesc_id;
     this->ble_proxy_can_id = ble_proxy_can_id;
+    this->rxMutex = xSemaphoreCreateMutex();
 }
 
 void BleCanProxy::sendFrame(twai_message_t &frame) {
@@ -16,37 +17,64 @@ void BleCanProxy::sendFrame(twai_message_t &frame) {
 }
 
 /*
- * BLE -> VESC.
+ * BLE -> VESC hand over.
  *
- * The client delivers arbitrary chunks (a packet split over several writes,
- * several packets in one write, or stray bytes), so everything is accumulated
- * and every complete packet found in the buffer is forwarded. Whatever cannot
- * be resolved is dropped after a timeout, otherwise the pending packet would
- * keep the periodic VESC polling paused forever.
+ * Called from the BLE callback, so it has to stay short: the bytes are only
+ * buffered here, all parsing, framing and CAN I/O happens in loop() on the main
+ * loop. A long transfer must not block the NimBLE host task.
  */
 void BleCanProxy::proxyIn(const std::string &in) {
     if (in.empty()) {
         return;
     }
-    rxBuffer += in;
-
-    const uint8_t *data = reinterpret_cast<const uint8_t *>(rxBuffer.data());
-    unsigned int offset = 0;
-    VescPacketView view;
-    while (vesc_packet_next(data, (unsigned int) rxBuffer.size(), &offset, &view)) {
-        transmitPacket(data + offset + view.headerLength, view.payloadLength);
-        offset += view.packetLength;
+    if (xSemaphoreTake(rxMutex, portMAX_DELAY) != pdTRUE) {
+        return;
     }
-
-    if (offset > 0) {
-        rxBuffer.erase(0, offset);
-    }
-
-    if (rxBuffer.size() > BLE_PROXY_RX_BUFFER_MAX) {
+    handOff += in;
+    if (handOff.size() > BLE_PROXY_RX_BUFFER_MAX) {
         ESP_LOGW(LOG_TAG_BLE_CAN_PROXY, "dropping %u bytes of unresolvable client data",
-                 (unsigned int) rxBuffer.size());
-        rxBuffer.clear();
-        processingSince = 0;
+                 (unsigned int) handOff.size());
+        handOff.clear();
+    }
+    xSemaphoreGive(rxMutex);
+}
+
+/*
+ * Main loop.
+ *
+ * The client delivers arbitrary chunks (a packet split over several writes,
+ * several packets in one write, or stray bytes), so everything is accumulated
+ * and every complete packet found in the buffer is forwarded to the VESC.
+ * Whatever cannot be resolved is dropped after a timeout, otherwise a partial
+ * packet would keep the periodic VESC polling paused forever.
+ */
+void BleCanProxy::loop() {
+    std::string incoming;
+    if (xSemaphoreTake(rxMutex, portMAX_DELAY) == pdTRUE) {
+        handOff.swap(incoming);
+        xSemaphoreGive(rxMutex);
+    }
+    if (!incoming.empty()) {
+        rxBuffer += incoming;
+    }
+
+    if (!rxBuffer.empty()) {
+        const uint8_t *data = reinterpret_cast<const uint8_t *>(rxBuffer.data());
+        unsigned int offset = 0;
+        VescPacketView view;
+        while (vesc_packet_next(data, (unsigned int) rxBuffer.size(), &offset, &view)) {
+            transmitPacket(data + offset + view.headerLength, view.payloadLength);
+            offset += view.packetLength;
+        }
+        if (offset > 0) {
+            rxBuffer.erase(0, offset);
+        }
+        if (rxBuffer.size() > BLE_PROXY_RX_BUFFER_MAX) {
+            ESP_LOGW(LOG_TAG_BLE_CAN_PROXY, "dropping %u bytes of unresolvable client data",
+                     (unsigned int) rxBuffer.size());
+            rxBuffer.clear();
+            processingSince = 0;
+        }
     }
 
     if (!rxBuffer.empty()) {

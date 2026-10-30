@@ -41,6 +41,12 @@ void CanBus::fromVesc(std::string &buffer) {
 }
 
 void CanBus::afterRead() {
+    // forward whatever the BLE client has sent - the proxy deliberately does no
+    // CAN I/O in the BLE callback, this runs on the main loop
+    if (proxy != nullptr) {
+        proxy->loop();
+    }
+
     if (esp_log_level_get(LOG_TAG_CANBUS) > ESP_LOG_DEBUG) {
         dumpVescValues();
     }

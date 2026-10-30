@@ -28,11 +28,21 @@ class BleCanProxy {
   public:
     BleCanProxy(CanDevice *candevice, Stream *stream, uint8_t vesc_id, uint8_t ble_proxy_can_id);
 
-    /** BLE -> VESC: translate a VESC packet into the CAN transport frames. */
+    /** BLE -> VESC: hand incoming client bytes over to the main loop. */
     void proxyIn(const std::string &in);
 
-    /** VESC -> BLE: write a VESC packet (framing and CRC are added here) to the stream. */
+    /**
+     * VESC -> BLE: write a VESC packet (framing and CRC are added here) to the
+     * stream. Called from the main loop.
+     */
     void proxyOut(const uint8_t *payload, unsigned int size);
+
+    /**
+     * Main loop: parse buffered client data and send the CAN transport frames.
+     * All proxy work (parsing, framing, CAN I/O) happens here, never in the BLE
+     * callback - a long transfer must not block the NimBLE host task.
+     */
+    void loop();
 
     /** true while a multi frame packet from the BLE client is being assembled. */
     boolean processing = false;
@@ -43,7 +53,9 @@ class BleCanProxy {
 
     CanDevice *candevice;
     Stream *stream;
-    std::string rxBuffer;
+    SemaphoreHandle_t rxMutex;   /**< guards handOff between the BLE and the loop task */
+    std::string handOff;         /**< written by the BLE task, taken by loop() */
+    std::string rxBuffer;        /**< main loop only: reassembly of client packets */
     std::string frameBuffer;
     unsigned long processingSince = 0;
     uint8_t vesc_id;
