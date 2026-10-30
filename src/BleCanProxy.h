@@ -10,6 +10,11 @@
 
 static const char* LOG_TAG_BLE_CAN_PROXY = "BleCanProxy";
 
+/** Upper bound for the buffer holding incoming (possibly incomplete) client data. */
+#define BLE_PROXY_RX_BUFFER_MAX 8192
+/** Give up on a partially received packet after this long and resume polling. */
+#define BLE_PROXY_PACKET_TIMEOUT_MS 2000
+
 /**
  * Transparent bridge between the BLE client (VESC app) and the VESC on CANBUS.
  *
@@ -33,15 +38,13 @@ class BleCanProxy {
 
   private:
     void sendFrame(twai_message_t &frame);
+    void transmitPacket(const uint8_t *payload, unsigned int payloadLen);
 
     CanDevice *candevice;
     Stream *stream;
-    uint16_t length = 0;
-    uint8_t command = 0;
-    int headerLength = 2;
-    boolean longPacket = false;
-    std::string longPackBuffer;
+    std::string rxBuffer;
     std::string frameBuffer;
+    unsigned long processingSince = 0;
     uint8_t vesc_id;
     uint8_t ble_proxy_can_id;
     unsigned int framesSent = 0;

@@ -76,3 +76,60 @@ int vesc_short_buffer_payload(const uint8_t *data, unsigned int dlc, const uint8
     *payload = data + 2;
     return (int) (dlc - 2);
 }
+
+bool vesc_packet_next(const uint8_t *buf, unsigned int len, unsigned int *searchOffset, VescPacketView *view) {
+    if (buf == nullptr || searchOffset == nullptr || view == nullptr) {
+        return false;
+    }
+
+    unsigned int offset = *searchOffset;
+
+    while (offset < len) {
+        const uint8_t start = buf[offset];
+        unsigned int headerLength;
+        unsigned int payloadLength;
+
+        if (start == 2) {
+            if (offset + 2 > len) {
+                break; // header not complete yet
+            }
+            headerLength = 2;
+            payloadLength = buf[offset + 1];
+        } else if (start == 3) {
+            if (offset + 3 > len) {
+                break;
+            }
+            headerLength = 3;
+            payloadLength = ((unsigned int) buf[offset + 1] << 8) | (unsigned int) buf[offset + 2];
+        } else if (start == 4) {
+            if (offset + 4 > len) {
+                break;
+            }
+            headerLength = 4;
+            payloadLength = ((unsigned int) buf[offset + 1] << 16) |
+                            ((unsigned int) buf[offset + 2] << 8) |
+                            (unsigned int) buf[offset + 3];
+        } else {
+            offset++; // not a start byte, resynchronise
+            continue;
+        }
+
+        const unsigned int packetLength = headerLength + payloadLength + 3;
+        if (offset + packetLength > len) {
+            break; // packet not complete yet, keep it buffered
+        }
+        if (buf[offset + packetLength - 1] != 3) {
+            offset++; // no end byte where it should be, resynchronise
+            continue;
+        }
+
+        view->packetLength = packetLength;
+        view->headerLength = headerLength;
+        view->payloadLength = payloadLength;
+        *searchOffset = offset;
+        return true;
+    }
+
+    *searchOffset = offset;
+    return false;
+}

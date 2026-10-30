@@ -10,6 +10,7 @@
  * Run with:  pio test -e native
  */
 #include <unity.h>
+#include <cstring>
 
 #include "../../lib/vesc-protocol/src/vesc_packet.h"
 
@@ -126,6 +127,110 @@ void test_encode_rejects_what_does_not_fit(void) {
     TEST_ASSERT_EQUAL_INT(-1, vesc_packet_encode(payload, 0, small, sizeof(small)));
 }
 
+/* Build a real VESC packet so the finder is tested against the encoder. */
+static unsigned int buildPacket(uint8_t *out, uint8_t command, const uint8_t *args, unsigned int argLen) {
+    uint8_t payload[512];
+    payload[0] = command;
+    if (argLen > 0) {
+        memcpy(payload + 1, args, argLen);
+    }
+    return (unsigned int) vesc_packet_encode(payload, 1 + argLen, out, 512);
+}
+
+void test_finder_returns_a_complete_packet(void) {
+    uint8_t buf[64];
+    const unsigned int n = buildPacket(buf, COMM_GET_VALUES, nullptr, 0);
+
+    unsigned int offset = 0;
+    VescPacketView view;
+    TEST_ASSERT_TRUE(vesc_packet_next(buf, n, &offset, &view));
+    TEST_ASSERT_EQUAL_UINT(0, offset);
+    TEST_ASSERT_EQUAL_UINT(n, view.packetLength);
+    TEST_ASSERT_EQUAL_UINT(2, view.headerLength);
+    TEST_ASSERT_EQUAL_UINT(1, view.payloadLength);
+    TEST_ASSERT_EQUAL_HEX8(COMM_GET_VALUES, buf[offset + view.headerLength]);
+}
+
+void test_finder_waits_for_an_incomplete_packet(void) {
+    uint8_t buf[64];
+    const unsigned int n = buildPacket(buf, COMM_GET_VALUES, nullptr, 0);
+
+    unsigned int offset = 0;
+    VescPacketView view;
+    TEST_ASSERT_FALSE(vesc_packet_next(buf, n - 1, &offset, &view));
+    // everything stays buffered, so the packet can complete on the next chunk
+    TEST_ASSERT_EQUAL_UINT(0, offset);
+}
+
+void test_finder_skips_leading_garbage(void) {
+    uint8_t buf[64];
+    const unsigned int n = buildPacket(buf, COMM_SET_MCCONF, nullptr, 0);
+
+    uint8_t stream[80] = {0xFF, 0x00, 0x99};
+    memcpy(stream + 3, buf, n);
+
+    unsigned int offset = 0;
+    VescPacketView view;
+    TEST_ASSERT_TRUE(vesc_packet_next(stream, 3 + n, &offset, &view));
+    TEST_ASSERT_EQUAL_UINT(3, offset);
+    TEST_ASSERT_EQUAL_HEX8(COMM_SET_MCCONF, stream[offset + view.headerLength]);
+}
+
+void test_finder_resynchronises_on_a_missing_end_byte(void) {
+    // a well formed looking header with a wrong end byte, followed by a real packet
+    const uint8_t bogus[6] = {0x02, 0x01, 0x41, 0x00, 0x00, 0x99};
+    uint8_t buf[64];
+    const unsigned int n = buildPacket(buf, COMM_GET_VALUES, nullptr, 0);
+
+    uint8_t stream[80];
+    memcpy(stream, bogus, sizeof(bogus));
+    memcpy(stream + sizeof(bogus), buf, n);
+
+    unsigned int offset = 0;
+    VescPacketView view;
+    TEST_ASSERT_TRUE(vesc_packet_next(stream, sizeof(bogus) + n, &offset, &view));
+    TEST_ASSERT_EQUAL_UINT(sizeof(bogus), offset);
+    TEST_ASSERT_EQUAL_HEX8(COMM_GET_VALUES, stream[offset + view.headerLength]);
+}
+
+/* Several packets in one chunk: the client may batch its writes. */
+void test_finder_returns_consecutive_packets(void) {
+    uint8_t buf[128];
+    const unsigned int n1 = buildPacket(buf, COMM_GET_VALUES, nullptr, 0);
+    const unsigned int n2 = buildPacket(buf + n1, COMM_SET_MCCONF, nullptr, 0);
+
+    unsigned int offset = 0;
+    VescPacketView view;
+    TEST_ASSERT_TRUE(vesc_packet_next(buf, n1 + n2, &offset, &view));
+    TEST_ASSERT_EQUAL_UINT(0, offset);
+    TEST_ASSERT_EQUAL_HEX8(COMM_GET_VALUES, buf[offset + view.headerLength]);
+
+    offset += view.packetLength;
+    TEST_ASSERT_TRUE(vesc_packet_next(buf, n1 + n2, &offset, &view));
+    TEST_ASSERT_EQUAL_UINT(n1, offset);
+    TEST_ASSERT_EQUAL_HEX8(COMM_SET_MCCONF, buf[offset + view.headerLength]);
+
+    offset += view.packetLength;
+    TEST_ASSERT_FALSE(vesc_packet_next(buf, n1 + n2, &offset, &view));
+    TEST_ASSERT_EQUAL_UINT(n1 + n2, offset);
+}
+
+void test_finder_handles_a_two_byte_length_header(void) {
+    uint8_t args[300];
+    memset(args, 0x11, sizeof(args));
+    uint8_t buf[512];
+    const unsigned int n = buildPacket(buf, COMM_SET_MCCONF, args, sizeof(args));
+
+    TEST_ASSERT_EQUAL_HEX8(0x03, buf[0]);
+
+    unsigned int offset = 0;
+    VescPacketView view;
+    TEST_ASSERT_TRUE(vesc_packet_next(buf, n, &offset, &view));
+    TEST_ASSERT_EQUAL_UINT(3, view.headerLength);
+    TEST_ASSERT_EQUAL_UINT(1 + sizeof(args), view.payloadLength);
+    TEST_ASSERT_EQUAL_UINT(n, view.packetLength);
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_crc16_matches_the_vesc_implementation);
@@ -135,5 +240,11 @@ int main(int argc, char **argv) {
     RUN_TEST(test_packet_header_length_follows_the_payload_size);
     RUN_TEST(test_encode_frames_a_large_payload_with_a_two_byte_length);
     RUN_TEST(test_encode_rejects_what_does_not_fit);
+    RUN_TEST(test_finder_returns_a_complete_packet);
+    RUN_TEST(test_finder_waits_for_an_incomplete_packet);
+    RUN_TEST(test_finder_skips_leading_garbage);
+    RUN_TEST(test_finder_resynchronises_on_a_missing_end_byte);
+    RUN_TEST(test_finder_returns_consecutive_packets);
+    RUN_TEST(test_finder_handles_a_two_byte_length_header);
     return UNITY_END();
 }

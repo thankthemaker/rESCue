@@ -37,4 +37,26 @@ int vesc_packet_encode(const uint8_t *payload, unsigned int payloadLen, uint8_t 
  */
 int vesc_short_buffer_payload(const uint8_t *data, unsigned int dlc, const uint8_t **payload);
 
+/** A complete VESC packet found in a raw byte stream. */
+struct VescPacketView {
+    unsigned int packetLength;   /**< total bytes: header + payload + crc (2) + end byte */
+    unsigned int headerLength;   /**< framing bytes in front of the payload */
+    unsigned int payloadLength;  /**< payload bytes */
+};
+
+/**
+ * Find the next complete VESC packet in a raw byte stream, skipping leading
+ * garbage. Used by the BLE proxy, where the client may deliver arbitrary chunks:
+ * several packets in one chunk, a packet split over chunks, or stray bytes.
+ *
+ * @param buf           raw bytes
+ * @param len           bytes available
+ * @param searchOffset  in/out. On return it is the packet start (success) or the
+ *                      offset up to which everything can be discarded (failure,
+ *                      i.e. the tail may still complete on the next call)
+ * @param view          filled on success
+ * @return true if a complete packet was found at *searchOffset
+ */
+bool vesc_packet_next(const uint8_t *buf, unsigned int len, unsigned int *searchOffset, VescPacketView *view);
+
 #endif //VESC_PACKET_H_

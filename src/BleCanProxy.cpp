@@ -15,108 +15,113 @@ void BleCanProxy::sendFrame(twai_message_t &frame) {
     }
 }
 
+/*
+ * BLE -> VESC.
+ *
+ * The client delivers arbitrary chunks (a packet split over several writes,
+ * several packets in one write, or stray bytes), so everything is accumulated
+ * and every complete packet found in the buffer is forwarded. Whatever cannot
+ * be resolved is dropped after a timeout, otherwise the pending packet would
+ * keep the periodic VESC polling paused forever.
+ */
 void BleCanProxy::proxyIn(const std::string &in) {
-    if (in.size() < 2) {
-        return; // not enough for a packet start byte plus its length
+    if (in.empty()) {
+        return;
+    }
+    rxBuffer += in;
+
+    const uint8_t *data = reinterpret_cast<const uint8_t *>(rxBuffer.data());
+    unsigned int offset = 0;
+    VescPacketView view;
+    while (vesc_packet_next(data, (unsigned int) rxBuffer.size(), &offset, &view)) {
+        transmitPacket(data + offset + view.headerLength, view.payloadLength);
+        offset += view.packetLength;
     }
 
-    const unsigned long startedAt = millis();
+    if (offset > 0) {
+        rxBuffer.erase(0, offset);
+    }
 
-    if (!longPacket) {
-        framesSent = 0;
-        const uint8_t packetType = (uint8_t) in[0];
+    if (rxBuffer.size() > BLE_PROXY_RX_BUFFER_MAX) {
+        ESP_LOGW(LOG_TAG_BLE_CAN_PROXY, "dropping %u bytes of unresolvable client data",
+                 (unsigned int) rxBuffer.size());
+        rxBuffer.clear();
+        processingSince = 0;
+    }
 
-        switch (packetType) {
-            case 2:
-                if (in.size() < 3) {
-                    return; // need start byte, length and the command byte
-                }
-                headerLength = 2;
-                length = (uint8_t) in[1];
-                command = (uint8_t) in[2];
-                processing = true;
-                // a short packet is only "long" if this chunk does not hold it completely
-                if (in.size() < (size_t) headerLength + (size_t) length + 3) {
-                    longPacket = true;
-                }
-                break;
-            case 3:
-                if (in.size() < 4) {
-                    return;
-                }
-                headerLength = 3;
-                length = (uint16_t) (((uint8_t) in[1] << 8) | (uint8_t) in[2]);
-                command = (uint8_t) in[3];
-                longPacket = true;
-                processing = true;
-                break;
-            default:
-                return;
+    if (!rxBuffer.empty()) {
+        if (processingSince == 0) {
+            processingSince = millis();
+        } else if (millis() - processingSince > BLE_PROXY_PACKET_TIMEOUT_MS) {
+            ESP_LOGW(LOG_TAG_BLE_CAN_PROXY, "dropping incomplete packet after %d ms",
+                     BLE_PROXY_PACKET_TIMEOUT_MS);
+            rxBuffer.clear();
+            processingSince = 0;
         }
-        ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "Proxy in, command %d, length %d\n", command, length);
+    } else {
+        processingSince = 0;
     }
 
-    if (length <= 6 && !longPacket) {
-        // short packet -> one CAN_PACKET_PROCESS_SHORT_BUFFER frame
-        // layout expected by the VESC: [id, send flag, payload...]
+    processing = !rxBuffer.empty();
+}
+
+/* Translate one VESC packet into the CAN transport frames for the VESC. */
+void BleCanProxy::transmitPacket(const uint8_t *payload, unsigned int payloadLen) {
+    framesSent = 0;
+    const unsigned long startedAt = millis();
+    ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "proxy in, command %d, length %u\n",
+             payloadLen > 0 ? payload[0] : 0, payloadLen);
+
+    if (payloadLen <= 6) {
+        // short packet -> one CAN_PACKET_PROCESS_SHORT_BUFFER frame.
+        // Layout expected by the VESC: [controller id, send flag, payload...]
         twai_message_t tx_frame = {};
         tx_frame.extd = 1;
         tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_PROCESS_SHORT_BUFFER) << 8) + vesc_id;
-        tx_frame.data_length_code = 0x02 + length;
+        tx_frame.data_length_code = 0x02 + payloadLen;
         tx_frame.data[0] = ble_proxy_can_id;
         tx_frame.data[1] = 0x00;
-        tx_frame.data[2] = command;
-        for (int i = 3; i < length + 2; i++) {
-            tx_frame.data[i] = (uint8_t) in.at(i);
+        for (unsigned int i = 0; i < payloadLen; i++) {
+            tx_frame.data[2 + i] = payload[i];
         }
         sendFrame(tx_frame);
     } else {
-        longPackBuffer += in;
-
-        // a complete packet is header + payload + crc (2) + end byte (1)
-        const size_t frameLength = (size_t) headerLength + (size_t) length + 3;
-        if (longPackBuffer.size() < frameLength) {
-            return; // wait for the remaining chunks
-        }
-        // keep exactly one packet, so the CRC bytes read below are always in place
-        longPackBuffer = longPackBuffer.substr(headerLength, length + 3);
-
-        unsigned int end_a = 0;
-        for (unsigned int byteNum = 0; byteNum < length; byteNum += 7) {
+        // long packet -> CAN_PACKET_FILL_RX_BUFFER[_LONG] frames plus a process frame.
+        // 7 payload bytes per frame up to offset 255, 6 bytes per frame beyond that.
+        unsigned int endA = 0;
+        for (unsigned int byteNum = 0; byteNum < payloadLen; byteNum += 7) {
             if (byteNum > 255) {
                 break;
             }
+            endA = byteNum + 7;
 
-            end_a = byteNum + 7;
-
-            const int sendLen = (length >= byteNum + 7) ? 7 : length - byteNum;
+            const unsigned int sendLen = (payloadLen >= byteNum + 7) ? 7 : payloadLen - byteNum;
 
             twai_message_t tx_frame = {};
             tx_frame.extd = 1;
             tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER) << 8) + vesc_id;
             tx_frame.data_length_code = sendLen + 1;
-            tx_frame.data[0] = byteNum; // start byte counter of the frame
+            tx_frame.data[0] = (uint8_t) byteNum; // start byte counter of the frame
 
-            for (int i = 1; i < sendLen + 1; i++) {
-                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum - 1 + i);
+            for (unsigned int i = 0; i < sendLen; i++) {
+                tx_frame.data[1 + i] = payload[byteNum + i];
             }
             sendFrame(tx_frame);
         }
 
-        for (unsigned int byteNum = end_a; byteNum < length; byteNum += 6) {
-            const int sendLen = (length >= byteNum + 6) ? 6 : length - byteNum;
+        for (unsigned int byteNum = endA; byteNum < payloadLen; byteNum += 6) {
+            const unsigned int sendLen = (payloadLen >= byteNum + 6) ? 6 : payloadLen - byteNum;
 
             twai_message_t tx_frame = {};
             tx_frame.extd = 1;
             tx_frame.identifier = (uint32_t(0x8000) << 16) + (uint16_t(CAN_PACKET_FILL_RX_BUFFER_LONG) << 8) + vesc_id;
             tx_frame.data_length_code = sendLen + 2;
-            tx_frame.data[0] = byteNum >> 8;
-            tx_frame.data[1] = byteNum & 0xFF;
+            tx_frame.data[0] = (uint8_t) (byteNum >> 8);
+            tx_frame.data[1] = (uint8_t) (byteNum & 0xFF);
 
-            for (int i = 2; i < sendLen + 2; i++) {
-                tx_frame.data[i] = (uint8_t) longPackBuffer.at(byteNum - 2 + i);
+            for (unsigned int i = 0; i < sendLen; i++) {
+                tx_frame.data[2 + i] = payload[byteNum + i];
             }
-
             sendFrame(tx_frame);
         }
 
@@ -126,11 +131,12 @@ void BleCanProxy::proxyIn(const std::string &in) {
         tx_frame.data_length_code = 6;
         tx_frame.data[0] = ble_proxy_can_id;
         tx_frame.data[1] = 0; // 0 -> the VESC sends a reply back to ble_proxy_can_id
-        tx_frame.data[2] = length >> 8;
-        tx_frame.data[3] = length & 0xFF;
-        // the buffer holds payload + crc (2) + end byte (1), so the CRC sits at size-3 / size-2
-        tx_frame.data[4] = longPackBuffer.at(longPackBuffer.size() - 3);
-        tx_frame.data[5] = longPackBuffer.at(longPackBuffer.size() - 2);
+        tx_frame.data[2] = (uint8_t) (payloadLen >> 8);
+        tx_frame.data[3] = (uint8_t) (payloadLen & 0xFF);
+        // derive the CRC ourselves instead of trusting the trailing bytes of the packet
+        const unsigned short crc = crc16(payload, payloadLen);
+        tx_frame.data[4] = (uint8_t) (crc >> 8);
+        tx_frame.data[5] = (uint8_t) (crc & 0xFF);
         sendFrame(tx_frame);
     }
 
@@ -138,18 +144,12 @@ void BleCanProxy::proxyIn(const std::string &in) {
         const unsigned long elapsed = millis() - startedAt;
         if (elapsed > 50) {
             ESP_LOGI(LOG_TAG_BLE_CAN_PROXY, "proxyIn: %u bytes in %u CAN frames took %lu ms",
-                     (unsigned) length, framesSent, elapsed);
+                     payloadLen, framesSent, elapsed);
         } else {
             ESP_LOGD(LOG_TAG_BLE_CAN_PROXY, "proxyIn: %u bytes in %u CAN frames took %lu ms",
-                     (unsigned) length, framesSent, elapsed);
+                     payloadLen, framesSent, elapsed);
         }
     }
-
-    length = 0;
-    command = 0;
-    processing = false;
-    longPacket = false;
-    longPackBuffer.clear();
 }
 
 void BleCanProxy::proxyOut(const uint8_t *payload, unsigned int size) {
