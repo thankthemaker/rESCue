@@ -461,15 +461,29 @@ void Ws28xxController::batteryIndicatorUpdate() {
 // The colours are a transition r - g - b - back to r.
 uint32_t Ws28xxController::wheel(byte wheelPos) {
     wheelPos = 255 - wheelPos;
+    uint8_t red = 0;
+    uint8_t green = 0;
+    uint8_t blue = 0;
+
     if (wheelPos < 85) {
-        return Color(255 - wheelPos * 3, 0, wheelPos * 3);
+        red = 255 - wheelPos * 3;
+        blue = wheelPos * 3;
     } else if (wheelPos < 170) {
         wheelPos -= 85;
-        return Color(0, wheelPos * 3, 255 - wheelPos * 3);
+        green = wheelPos * 3;
+        blue = 255 - wheelPos * 3;
     } else {
         wheelPos -= 170;
-        return Color(wheelPos * 3, 255 - wheelPos * 3, 0);
+        red = wheelPos * 3;
+        green = 255 - wheelPos * 3;
     }
+
+    const uint8_t brightness = (uint8_t) constrain(maxBrightness, 0, 255);
+    red = ((uint16_t) red * brightness) / 255;
+    green = ((uint16_t) green * brightness) / 255;
+    blue = ((uint16_t) blue * brightness) / 255;
+
+    return Color(red, green, blue);
 }
 
 void Ws28xxController::init() {
