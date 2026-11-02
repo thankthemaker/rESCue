@@ -38,9 +38,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade platformio
+    - name: Run unit tests
+      run: pio test -e native
     - name: Run PlatformIO
       run: pio run -e wemos_d1_mini32 -e wemos_d1_mini32_cob -e wemos_d1_mini32_uart -e wemos_d1_mini32_cob_uart -e lolin_wemos_s3_mini -e lolin_wemos_s3_mini_cob -e lolin_wemos_s3_mini_uart -e lolin_wemos_s3_mini_cob_uart
     - name: Rename firmware files
+      # firmware is only versioned for a release, and a branch name may contain '/'
+      if: startsWith(github.ref, 'refs/tags/')
       run: |
         mv .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini.bin                   .pio/build/lolin_wemos_s3_mini/firmware_lolin_wemos_s3_mini-v${{ github.ref_name }}.bin
         mv .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini_cob.bin           .pio/build/lolin_wemos_s3_mini_cob/firmware_lolin_wemos_s3_mini-cob-v${{ github.ref_name }}.bin
@@ -51,6 +55,7 @@ jobs:
         mv .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32_uart.bin                 .pio/build/wemos_d1_mini32_uart/firmware_wemos_d1_mini32-uart-v${{ github.ref_name }}.bin
         mv .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32_cob_uart.bin         .pio/build/wemos_d1_mini32_cob_uart/firmware_wemos_d1_mini32-cob_uart-v${{ github.ref_name }}.bin
     - name: Calculate checksums
+      if: startsWith(github.ref, 'refs/tags/')
       run: |
         for file in $(ls .pio/build/wemos_d1_mini32*/*.bin .pio/build/lolin_wemos_s3_mini*/*.bin); do
           sha256sum $file | cut -d " " -f 1 > $file.sha256

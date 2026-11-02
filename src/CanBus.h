@@ -1,85 +1,92 @@
 #ifndef __CANBUS_H__
 #define __CANBUS_H__
 
-#include "Arduino.h"
-#include "config.h"
-
-#include "AppConfiguration.h"
+#include <Arduino.h>
 #include <LoopbackStream.h>
-#include "VescCanConstants.h"
-#include "BleCanProxy.h"
-#include "CanDevice.h"
-#include "VescData.h"
 #include <vector>
-#include "buffer.h"
-#define B10000001 129
-#define B11000011 195
+#include "config.h"
+#include "AppConfiguration.h"
+#include "CanDevice.h"
+#include "BleCanProxy.h"
+#include "VescCanConstants.h"
+#include "VescCanId.h"
+#include "VescData.h"
+#include "IVescCommunication.h"
 
 static const char* LOG_TAG_CANBUS = "CanBus";
 
-class CanBus {
-    public:
-      CanBus(VescData *vescData);
-      VescData *vescData;
-      LoopbackStream *stream;
-      BleCanProxy *proxy;
-      void init();
-      void loop();
-      void dumpVescValues();
-      boolean isInitialized();
-      int getInterval();
-      boolean bmsVTOT(float,float);
-      boolean bmsVCell(const uint16_t*,int);
-      boolean bmsTemps(const int8_t*,int);
-      boolean bmsBal(boolean);
-      boolean bmsI(float);
-      boolean bmsAHWH(float,float);
-      boolean bmsAHWHDischargeTotal(float,float);
-      boolean bmsAHWHChargeTotal(float,float);
-      boolean bmsSOCSOHTempStat(float,float,float,float,float,boolean,boolean,boolean,boolean);
-      boolean bmsState(bms_op_state op_state, bms_fault_state fault_state);
-    private:
-      const static int bufSize = 128;
-      char buf[bufSize];
-      CanDevice *candevice;
-      boolean requestFirmwareVersion();
-      boolean requestRealtimeData();
-      boolean requestBalanceData();
-      boolean requestFloatPackageData();
-      void ping();
-      static void clearFrame(twai_message_t rx_frame);
-      static void printFrame(twai_message_t rx_frame, int frameCount);
-      void processFrame(twai_message_t rx_frame, int frameCount);
-      float readFloatValueFromBuffer(int startbyte, boolean isProxyRequest);
-      static int32_t readInt32Value(twai_message_t rx_frame, int startbyte);
-      static int16_t readInt16Value(twai_message_t rx_frame, int startbyte);
-      int32_t readInt32ValueFromBuffer(int startbyte, boolean isProxyRequest);
-      int16_t readInt16ValueFromBuffer(int startbyte, boolean isProxyRequest);
-      int8_t readInt8ValueFromBuffer(int startbyte, boolean isProxyRequest);
-      std::string readStringValueFromBuffer(int startbyte, int length, boolean isProxyRequest);
-      uint8_t vesc_id;
-      uint8_t esp_can_id;
-      uint8_t ble_proxy_can_id;
-      int32_t RECV_STATUS_1;
-      int32_t RECV_STATUS_2;
-      int32_t RECV_STATUS_3;
-      int32_t RECV_STATUS_4;
-      int32_t RECV_STATUS_5;
-      uint32_t RECV_FILL_RX_BUFFER;
-      uint32_t RECV_PROCESS_RX_BUFFER;
-      uint32_t RECV_PROCESS_SHORT_BUFFER_PROXY;
-      uint32_t RECV_FILL_RX_BUFFER_PROXY;
-      uint32_t RECV_FILL_RX_BUFFER_LONG_PROXY;
-      uint32_t RECV_PROCESS_RX_BUFFER_PROXY;
-      boolean initialized = false;
-      int interval = 500;
-      int initRetryCounter = 5;
-      unsigned long lastDump = 0;
-      unsigned long lastRetry = 0;
-      unsigned long lastRealtimeData = 0;
-      unsigned long lastBalanceData = 0;
-      std::vector<uint8_t> buffer = {};
-      std::vector<uint8_t> proxybuffer = {};
+/**
+ * VESC communication over CANBUS.
+ *
+ * Handles the CAN frames (status frames, command responses and the transparent
+ * BLE proxy) and implements the transport specific part of IVescCommunication.
+ * Decoding of command responses is delegated to the shared VescCommandParser.
+ */
+class CanBus : public VescCommunicationBase {
+  public:
+    explicit CanBus(VescData *vescData);
+
+    void init() override;
+    void toVesc(const std::string &value) override;
+    void fromVesc(std::string &buffer) override;
+
+    // BMS (OneWheel / OwIE) support, CANBUS only
+    bool bmsVTOT(float vTotal, float vCharge);
+    bool bmsVCell(const uint16_t *cellMillivolts, int cellMax);
+    bool bmsTemps(const int8_t *thermTemps, int tempMax);
+    bool bmsBal(bool isBalancing);
+    bool bmsI(float currentAmps);
+    bool bmsAHWH(float ampHours, float wattHours);
+    bool bmsAHWHDischargeTotal(float ampHours, float wattHours);
+    bool bmsAHWHChargeTotal(float ampHours, float wattHours);
+    bool bmsSOCSOHTempStat(float vCellMin, float vCellMax, float soc, float soh, float cellMaxTemp,
+                           bool isCharging, bool isBalancing, bool isChargeAllowed, bool isChargeOk);
+    bool bmsState(bms_op_state opState, bms_fault_state faultState);
+
+    /** true while the transparent BLE<->CAN proxy is assembling a packet. */
+    bool isProxyBusy() const { return proxy != nullptr && proxy->processing; }
+
+  private:
+    void readFromVesc() override;
+    bool sendFirmwareVersionRequest() override;
+    bool sendRealtimeDataRequest() override;
+    bool sendFloatPackageDataRequest() override;
+    bool requestSlotBusy() override { return isProxyBusy(); }
+    void afterRead() override;
+
+    void processFrame(const twai_message_t &rx_frame, int frameCount);
+    static int32_t readInt32Value(const twai_message_t &rx_frame, int startbyte);
+    static int16_t readInt16Value(const twai_message_t &rx_frame, int startbyte);
+    static void printFrame(const twai_message_t &rx_frame, int frameCount);
+
+    bool sendFrame(const twai_message_t &frame) { return candevice->sendCanFrame(&frame); }
+
+    const static int maxFramesPerLoop = 1000;
+    /** Cap for assembled VESC payloads. The VESC limits a payload to
+     *  PACKET_MAX_PL_LEN (512) bytes, so this is a safety margin, not a target. */
+    const static size_t maxBufferSize = 2048;
+
+    CanDevice *candevice = nullptr;
+    LoopbackStream *stream = nullptr;
+    BleCanProxy *proxy = nullptr;
+    uint8_t vesc_id = 0;
+    uint8_t esp_can_id = 0;
+    uint8_t ble_proxy_can_id = 0;
+
+    uint32_t RECV_STATUS_1 = 0;
+    uint32_t RECV_STATUS_2 = 0;
+    uint32_t RECV_STATUS_3 = 0;
+    uint32_t RECV_STATUS_4 = 0;
+    uint32_t RECV_STATUS_5 = 0;
+    uint32_t RECV_FILL_RX_BUFFER = 0;
+    uint32_t RECV_PROCESS_RX_BUFFER = 0;
+    uint32_t RECV_PROCESS_SHORT_BUFFER_PROXY = 0;
+    uint32_t RECV_FILL_RX_BUFFER_PROXY = 0;
+    uint32_t RECV_FILL_RX_BUFFER_LONG_PROXY = 0;
+    uint32_t RECV_PROCESS_RX_BUFFER_PROXY = 0;
+
+    std::vector<uint8_t> buffer = {};
+    std::vector<uint8_t> proxybuffer = {};
 };
 
 #endif //__CANBUS_H__

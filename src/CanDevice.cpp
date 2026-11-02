@@ -2,8 +2,8 @@
 
 boolean CanDevice::init() {
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_CAN_TX_PIN, GPIO_CAN_RX_PIN, TWAI_MODE_NORMAL);
-    g_config.rx_queue_len=1000;
-    g_config.tx_queue_len=10;
+    g_config.rx_queue_len=CAN_RX_QUEUE_LEN;
+    g_config.tx_queue_len=CAN_TX_QUEUE_LEN;
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
@@ -40,13 +40,14 @@ boolean CanDevice::sendCanFrame(const twai_message_t *p_frame) {
                 p_frame->data[7]);
     }
     xSemaphoreTake(mutex_v, portMAX_DELAY);
-    //Queue message for transmission
-    if (twai_transmit(p_frame, pdMS_TO_TICKS(10)) != ESP_OK) {
-        ESP_LOGE(LOG_TAG_CANDEVICE, "Failed to queue message for transmission\n");
-        xSemaphoreGive(mutex_v);
+    // Block until the driver has a free slot instead of sleeping a fixed
+    // millisecond after every frame: with a queue of CAN_TX_QUEUE_LEN the bus
+    // (not our delay) becomes the limit, without ever dropping a frame.
+    const esp_err_t result = twai_transmit(p_frame, pdMS_TO_TICKS(CAN_TX_TIMEOUT_MS));
+    xSemaphoreGive(mutex_v);
+    if (result != ESP_OK) {
+        ESP_LOGE(LOG_TAG_CANDEVICE, "Failed to queue message for transmission (%d)\n", (int) result);
         return false;
     }
-    xSemaphoreGive(mutex_v);
-    delay(1); // This is needed, dunno why!
     return true;
 }

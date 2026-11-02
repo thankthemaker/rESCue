@@ -37,9 +37,11 @@ void testCommandGetValuesSelective() {
     TEST_ASSERT_EQUAL(50, message.getCommand());
 }
 
-int main( int argc, char **argv) {
-    UNITY_BEGIN(); // IMPORTANT LINE!
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
     RUN_TEST(testCommandpingCan);
-    UNITY_END(); // stop unit testing
-    return 0;
+    RUN_TEST(testCommandFirmwareVersion);
+    RUN_TEST(testCommandGetValuesSelective);
+    return UNITY_END();
 }
+

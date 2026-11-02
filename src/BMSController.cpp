@@ -26,7 +26,7 @@ bms.begin(115200, SERIAL_8N1, BMS_TX_PIN, -1);
   relay->addReceivedPacketCallback([this](BmsRelay *, Packet *packet) {
     //do something with data. this is where we can construct a can packet for VESC BMS
     unsigned long now = millis();
-    if(canbus_->isInitialized() && (lastBMSData <= now && now - lastBMSData > canbus_->getInterval()) && !canbus_->proxy->processing)
+    if(canbus_->isInitialized() && (lastBMSData <= now && now - lastBMSData > canbus_->getInterval()) && !canbus_->isProxyBusy())
     {
     broadcastVESCBMS();
     lastBMSData = (millis() + 500);
